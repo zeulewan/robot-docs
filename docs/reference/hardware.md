@@ -99,4 +99,4 @@ sudo systemctl restart gdm
 nvidia-smi
 ```
 
-Installing `libnvidia-encode-550` can pull in conflicting server packages. The newer driver takes over -- restart GDM.
+Installing an older `libnvidia-encode` package (e.g., `-550`) can pull in conflicting server packages. The newer driver takes over -- restart GDM.

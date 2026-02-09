@@ -11,9 +11,9 @@ Develop software for a bipedal humanoid robot (Unitree G1) that walks, sees, and
 | Mode | What's running | Where |
 |---|---|---|
 | **Simulation** | A virtual G1 in a physics simulator | Workstation (RTX 3090) |
-| **Real robot** | Physical G1 with cameras, IMU, motors | G1's onboard Jetson Orin + workstation for heavy GPU tasks |
+| **Real robot** | Physical G1 with cameras, IMU, motors | G1's onboard Jetson Orin (runs autonomously) |
 
-Both modes use the same perception pipeline on the workstation.
+In simulation mode, the workstation runs both the simulator and perception. In real robot mode, the G1 runs everything onboard on its Jetson Orin -- the workstation is only used for simulation and training.
 
 ## The key software
 
@@ -30,7 +30,7 @@ Middleware framework for robotics. Programs ("nodes") communicate by publishing 
 NVIDIA's robot simulator. Renders a 3D world with accurate physics (contacts, gravity, friction) and simulates sensors (cameras, IMU, lidar). The simulated G1 publishes the same ROS 2 topics as the real robot -- downstream code doesn't know the difference.
 
 - Runs on workstation GPU (RTX 3090)
-- Launched from a desktop session (needs a display)
+- GUI mode needs a desktop session; headless mode available for training
 - Built-in ROS 2 bridge publishes sensor data
 
 ### Isaac ROS
@@ -43,7 +43,7 @@ GPU-accelerated ROS 2 packages from NVIDIA for robot perception:
 | **AprilTag** | Detects fiducial markers in camera images |
 | **nvblox** | Builds a 3D occupancy map from depth cameras |
 
-Run inside a Docker container on the workstation, receiving sensor data from either Isaac Sim (simulation) or the real G1 (over the network).
+Run inside a Docker container on the workstation in simulation mode. For the real G1, these same packages run onboard the Jetson Orin.
 
 ### Docker
 

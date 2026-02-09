@@ -8,18 +8,22 @@ Isaac Sim 5.1 and Isaac Lab setup, ROS 2 bridge, and troubleshooting.
 |---|---|
 | **Version** | 5.1.0 (pip) |
 | **Conda Env** | `isaaclab` (Python 3.11) |
-| **Launch** | `conda activate isaaclab && isaacsim` |
+| **Launch (GUI)** | `conda activate isaaclab && isaacsim` |
+| **Launch (headless)** | `conda activate isaaclab && isaacsim isaacsim.exp.full.kit --/app/window/enabled=false --/app/livestream/enabled=false` |
 
 ---
 
 ## Quick Start
 
 ```bash
+# GUI mode (requires desktop session via Sunshine/Moonlight)
 conda activate isaaclab
 isaacsim
-```
 
-Must launch from a desktop session (Sunshine/Moonlight) -- needs a display.
+# Headless mode (no display needed)
+conda activate isaaclab
+isaacsim isaacsim.exp.full.kit --/app/window/enabled=false --/app/livestream/enabled=false
+```
 
 ---
 

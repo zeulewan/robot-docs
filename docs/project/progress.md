@@ -4,14 +4,7 @@ What's currently in progress and what's next.
 
 ## In Progress
 
-### Isaac ROS Dockerfile
-**Status:** Full NVIDIA base image pulled, plan ready, awaiting Dockerfile creation.
-
-Replacing hand-built `isaac_ros_dev_container` (19.8 GB, `docker commit`) with a reproducible Dockerfile.
-
-- **Base image:** `nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_d3e84470d576702a380478a513fb3fc6-amd64` (pulled Feb 8, 2026)
-- **Custom additions:** Isaac ROS perception packages (AprilTag, cuVSLAM, nvblox), H.264 NVENC transport, FastDDS fix, entrypoint scripts
-- **Full plan:** [Dockerfile Plan](../reference/isaac-ros-dockerfile.md)
+(Nothing actively in progress.)
 
 ## Next Steps
 
@@ -36,3 +29,4 @@ GitHub Actions workflow to scan commits for leaked credentials before they reach
 - Tailscale peer relay setup (tsrelay in Toronto)
 - Architecture documentation for sim + real G1 workflows
 - Full NVIDIA Docker image pulled for container migration
+- Isaac ROS Dockerfile created and container rebuilt (reproducible build, docker-compose managed)

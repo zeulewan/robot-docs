@@ -74,24 +74,32 @@ Editable packages: `isaaclab` 0.54.2, `isaaclab_assets` 0.2.4, `isaaclab_tasks` 
 | **Docker** | 29.2.1 |
 | **nvidia-container-toolkit** | 1.18.2 (CDI support) |
 | **NVIDIA runtime** | Registered |
-| **isaac-ros-cli** | v2.0.0 |
-| **Container** | `isaac_ros_dev_container` (`--network host`, `--runtime nvidia`, `--ipc host`) |
-| **Committed image** | `isaac-ros-apriltag:latest` (~19 GB) |
+| **Container** | `isaac_ros_dev_container` (`--network host`, `--runtime nvidia`, `--ipc host`, `--privileged`) |
+| **Image** | `isaac-ros-dev:latest` (39.6 GB) — custom Dockerfile on top of NVIDIA base (38.8 GB) |
+| **Management** | docker-compose (`~/workspaces/isaac_ros-dev/docker-compose.yml`) |
 
 ### Packages installed in container
 
 - `ros-jazzy-isaac-ros-apriltag` -- GPU-accelerated AprilTag detection
-- `ros-jazzy-foxglove-bridge` -- WebSocket bridge (port 8765)
+- `ros-jazzy-isaac-ros-visual-slam` -- cuVSLAM (visual SLAM)
+- `ros-jazzy-isaac-ros-nvblox` -- GPU 3D reconstruction
+- `ros-jazzy-foxglove-bridge` -- WebSocket bridge (port 8765, in base image)
 - `ros-jazzy-foxglove-compressed-video-transport` -- H.264 NVENC video encoding for Foxglove (H.265 doesn't work with browser decoding)
 - `ros-jazzy-ffmpeg-encoder-decoder` -- ffmpeg with NVENC support
+- `ffmpeg` -- CLI video tool
+
+### Auto-start services
+
+- foxglove-bridge on port 8765 (via `50-foxglove-bridge.sh` entrypoint)
+- H.264 NVENC republisher (via `60-h264-republisher.sh` entrypoint)
 
 ### DDS cross-container fix
 
-FastDDS SHM transport breaks between Isaac Sim (host) and container. All `ros2` commands in container must set:
+FastDDS SHM transport breaks between Isaac Sim (host) and container. UDP-only XML config baked into the image at `/etc/fastdds_no_shm.xml`. Set via:
 ```bash
-export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml
+export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml
 ```
-Forces UDP-only transport (no shared memory). Must be recreated after container restart.
+Applied automatically by `/etc/profile.d/fastdds-fix.sh` (login shells) and explicitly in each entrypoint script.
 
 ## Remote Access
 

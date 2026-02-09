@@ -28,6 +28,8 @@ The container uses `--network host` so it shares the host's network stack — DD
 
 ## Quick Start
 
+The container is managed entirely with docker-compose — no special CLI tools required.
+
 ```bash
 # Start container
 docker compose -f ~/workspaces/isaac_ros-dev/docker-compose.yml up -d
@@ -37,6 +39,12 @@ docker exec -it -u admin isaac_ros_dev_container bash
 
 # Stop
 docker compose -f ~/workspaces/isaac_ros-dev/docker-compose.yml down
+```
+
+**Tip:** Add an alias for quick shell access:
+
+```bash
+alias iros='docker exec -it -u admin isaac_ros_dev_container bash'
 ```
 
 ---
@@ -195,6 +203,21 @@ docker exec isaac_ros_dev_container bash -c \
 
 ---
 
+## Why Not isaac-ros-cli?
+
+NVIDIA ships an apt package called `isaac-ros-cli` that provides `isaac-ros activate` and `isaac-ros init` commands for managing Isaac ROS containers. It was removed from this system (`sudo apt remove isaac-ros-cli`) and is not needed. Docker-compose replaces it entirely.
+
+Problems with `isaac-ros-cli`:
+
+- **Raw `docker run`** — it launches containers with `docker run` rather than compose, so there's no declarative config to version-control or reproduce.
+- **Undocumented image key system** — it layers customizations using an internal "image key" mechanism that isn't well documented. Understanding what ends up in the final image requires reading the CLI's source.
+- **Destroys customizations** — running `isaac-ros activate` without specifying the correct custom keys recreates the container from the stock NVIDIA base image, silently losing any packages or configs you added.
+- **Redundant configs** — it ships its own Dockerfiles and FastDDS configs in `/etc/isaac-ros-cli/`, duplicating what's already managed in `~/workspaces/isaac_ros-dev/`.
+
+The docker-compose approach at `~/workspaces/isaac_ros-dev/` gives full control over the image, explicit configuration in version-controlled files, and predictable `up`/`down` lifecycle management.
+
+---
+
 ## Troubleshooting
 
 ### Topics visible but no data flowing
@@ -221,4 +244,4 @@ docker exec isaac_ros_dev_container bash -c \
 
 ### Container missing packages after restart
 
-If you used `isaac-ros activate` to start the container, it recreated from the base image (losing customizations). Always use `docker compose up -d` instead.
+This happens when a container is recreated from the stock NVIDIA base image instead of the custom `isaac-ros-dev:latest` image. A common cause was `isaac-ros activate` (from the `isaac-ros-cli` package), which silently recreates containers from base without custom layers. That tool has been removed — see [Why Not isaac-ros-cli?](#why-not-isaac-ros-cli) above. Always use `docker compose up -d` to manage the container.
