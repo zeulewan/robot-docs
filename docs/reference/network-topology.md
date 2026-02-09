@@ -66,18 +66,16 @@ Backup access: Teleport VPN can reach workstation at LAN IP 192.168.2.239 when T
 flowchart TD
     subgraph TOR["Toronto — Home"]
         TONT["Bell ONT"] -- "PPPoE" --> UX["UniFi UX<br/>dynamic public IP"]
-        UX --> ZMAC["zmac<br/>192.168.177.133"]
-        UX --> TSR["tsrelay<br/>192.168.177.228"]
-        BHH["Bell Home Hub"] -- "Bell Wi-Fi" --> ZMAC2["zmac<br/>(Bell Wi-Fi)"]
+        UX --> ZMAC["zmac<br/>192.168.177.133<br/>TS: 100.117.222.41"]
+        UX --> TSR["tsrelay<br/>192.168.177.228<br/>TS: 100.95.40.19<br/>relay :40000"]
+        BHH["Bell Home Hub"] --> ZMAC2["zmac (Bell Wi-Fi)"]
     end
     subgraph KNG["Kingston — Remote"]
-        KONT["Bell ONT"] -- "PPPoE" --> KUX["UniFi<br/>10.130.37.119"]
-        KUX -- "CGNAT" --> CGNAT["Bell CGNAT"]
-        KUX --> WS["workstation<br/>192.168.2.239"]
-        KUX --> STOR["storage<br/>192.168.2.26"]
+        CGNAT["Bell CGNAT"] --> KONT["Bell ONT"]
+        KONT -- "PPPoE" --> KUX["UniFi<br/>WAN 10.130.37.119"]
+        KUX --> WS["workstation<br/>192.168.2.239<br/>TS: 100.101.214.44"]
+        KUX --> STOR["storage<br/>192.168.2.26<br/>TS: 100.106.137.64"]
     end
-
-    TOR -. "Tailscale VPN<br/>direct + peer relay :40000" .-> WS
 ```
 
 ---
