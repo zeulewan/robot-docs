@@ -63,20 +63,21 @@ Backup access: Teleport VPN can reach workstation at LAN IP 192.168.2.239 when T
 ## Network Diagram
 
 ```mermaid
-flowchart TB
-    subgraph TOR["TORONTO (Home)"]
-        TONT["Bell ONT"] -- "PPPoE" --> UX["UniFi UX<br/>dynamic public IP<br/>no CGNAT"]
+flowchart TD
+    subgraph TOR["Toronto — Home"]
+        TONT["Bell ONT"] -- "PPPoE" --> UX["UniFi UX<br/>dynamic public IP"]
         UX --> ZMAC["zmac<br/>192.168.177.133"]
         UX --> TSR["tsrelay<br/>192.168.177.228"]
-        BHH["Bell Home Hub<br/>(separate)"] -- "Bell Wi-Fi" --> ZMAC2["zmac<br/>(when on Bell Wi-Fi)"]
+        BHH["Bell Home Hub"] -- "Bell Wi-Fi" --> ZMAC2["zmac<br/>(Bell Wi-Fi)"]
     end
-    subgraph KNG["KINGSTON (Remote)"]
+    subgraph KNG["Kingston — Remote"]
         KONT["Bell ONT"] -- "PPPoE" --> KUX["UniFi<br/>10.130.37.119"]
         KUX -- "CGNAT" --> CGNAT["Bell CGNAT"]
-        KUX --> WSENP5["workstation enp5s0<br/>192.168.2.239<br/>ACTIVE PATH"]
-        KONT -. "10G direct<br/>PPPoE inactive" .-> WSENP3["workstation enp3s0.35"]
-        KUX --> STOR["storage<br/>Synology DS620slim<br/>192.168.2.26"]
+        KUX --> WS["workstation<br/>192.168.2.239"]
+        KUX --> STOR["storage<br/>192.168.2.26"]
     end
+
+    TOR -. "Tailscale VPN<br/>direct + peer relay :40000" .-> WS
 ```
 
 ---

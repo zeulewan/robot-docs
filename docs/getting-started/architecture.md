@@ -9,23 +9,22 @@ Two modes: **simulation** (Isaac Sim on workstation) and **real robot** (Unitree
 ## Simulation Mode
 
 ```mermaid
-flowchart LR
-    subgraph WS["WORKSTATION (RTX 3090)"]
-        subgraph SIM["Isaac Sim 5.1 (pip)<br/>conda env: isaaclab"]
-            G1S["Simulated G1 robot<br/>cameras, IMU, joints<br/>physics + rendering"]
-            BRIDGE["Bundled ROS 2 bridge<br/>publishes sensor topics<br/>receives commands"]
+flowchart TD
+    subgraph WS["Workstation — RTX 3090"]
+        direction LR
+        subgraph SIM["Isaac Sim 5.1"]
+            G1S["Simulated G1<br/>cameras, IMU, joints"]
+            BRIDGE["ROS 2 Bridge"]
         end
-        subgraph ROS["Isaac ROS Container<br/>noble-ros2_jazzy base"]
-            PERC["GPU Perception<br/>cuVSLAM, AprilTag<br/>nvblox"]
-            VIZ["Visualization<br/>foxglove-bridge :8765<br/>H.264 NVENC republisher<br/>ros2 CLI, rviz2, nav2"]
-            FDDS["FastDDS: UDP-only<br/>(no SHM)"]
+        subgraph ROS["Isaac ROS Container"]
+            PERC["GPU Perception<br/>cuVSLAM, AprilTag, nvblox"]
+            VIZ["Foxglove Bridge :8765<br/>H.264 NVENC republisher"]
         end
-        GPU["RTX 3090"]
     end
-    FOX["Foxglove Studio<br/>(browser / Mac)"]
+    FOX["Foxglove Studio<br/>(any browser)"]
 
-    BRIDGE -- "UDP DDS" --> FDDS
-    FDDS -- "UDP DDS" --> BRIDGE
+    BRIDGE -- "UDP DDS" --> ROS
+    ROS -- "UDP DDS" --> BRIDGE
     VIZ -- "WebSocket :8765" --> FOX
 ```
 
@@ -51,23 +50,23 @@ flowchart LR
 ## Real Robot Mode
 
 ```mermaid
-flowchart LR
-    subgraph G1["UNITREE G1 (Jetson Orin)"]
-        G1OS["Ubuntu 20.04 (ARM64)"]
-        G1SW["unitree_sdk2 (motor ctrl)<br/>unitree_ros2 (ROS bridge)<br/>CycloneDDS"]
-        SENS["Onboard sensors<br/>stereo cameras, IMU<br/>joint encoders, depth cameras"]
+flowchart TD
+    subgraph G1["Unitree G1 — Jetson Orin"]
+        direction LR
+        G1SW["unitree_sdk2 + unitree_ros2<br/>CycloneDDS"]
+        SENS["Onboard Sensors<br/>stereo cameras, IMU, depth"]
     end
-    subgraph WS["WORKSTATION (RTX 3090)"]
-        subgraph ROSC["Isaac ROS Container<br/>noble-ros2_jazzy base"]
-            PERC2["GPU Perception (offloaded)<br/>cuVSLAM, AprilTag, nvblox"]
-            VIZ2["Visualization<br/>foxglove-bridge :8765<br/>H.264 NVENC republisher<br/>ros2 CLI, rviz2, nav2"]
-            CDDS["CycloneDDS<br/>(matching G1)"]
+    subgraph WS["Workstation — RTX 3090"]
+        direction LR
+        subgraph ROSC["Isaac ROS Container"]
+            PERC2["GPU Perception<br/>cuVSLAM, AprilTag, nvblox"]
+            VIZ2["Foxglove Bridge :8765<br/>H.264 NVENC republisher"]
         end
     end
-    FOX2["Foxglove Studio<br/>(browser / Mac)"]
+    FOX2["Foxglove Studio<br/>(any browser)"]
 
-    G1SW -- "DDS over Ethernet<br/>192.168.123.x" --> CDDS
-    CDDS -- "DDS over Ethernet<br/>192.168.123.x" --> G1SW
+    G1SW -- "DDS over Ethernet<br/>192.168.123.x" --> ROSC
+    ROSC -- "DDS over Ethernet<br/>192.168.123.x" --> G1SW
     VIZ2 -- "WebSocket :8765" --> FOX2
 ```
 
