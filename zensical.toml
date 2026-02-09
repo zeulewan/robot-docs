@@ -2,9 +2,9 @@
 site_name = "Robot Docs"
 site_description = "Workstation setup documentation for robotics simulation and development with Isaac Sim, Isaac ROS, and Unitree G1."
 site_author = "Zeul"
-site_url = "https://zeulewan.github.io/robot-docs-zensical/"
-repo_url = "https://github.com/zeulewan/robot-docs-zensical"
-repo_name = "zeulewan/robot-docs-zensical"
+site_url = "https://zeulewan.github.io/robot-docs/"
+repo_url = "https://github.com/zeulewan/robot-docs"
+repo_name = "zeulewan/robot-docs"
 copyright = "&copy; 2026 Zeul Mordasiewicz"
 
 nav = [
@@ -102,7 +102,7 @@ generator = false
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
-link = "https://github.com/zeulewan/robot-docs-zensical"
+link = "https://github.com/zeulewan/robot-docs"
 
 [project.markdown_extensions.admonition]
 
