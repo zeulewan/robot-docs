@@ -7,40 +7,6 @@ repo_url = "https://github.com/zeulewan/robot-docs"
 repo_name = "zeulewan/robot-docs"
 copyright = "&copy; 2026 Zeul Mordasiewicz"
 
-nav = [
-  { "Home" = "index.md" },
-  { "Getting Started" = [
-    "getting-started/index.md",
-    "getting-started/architecture.md",
-  ]},
-  { "Guides" = [
-    "guides/index.md",
-    "guides/isaac-sim-setup.md",
-    "guides/isaac-ros-container.md",
-    "guides/gpu-and-display.md",
-    "guides/sunshine-streaming.md",
-    "guides/tailscale-setup.md",
-    "guides/nat-troubleshooting.md",
-  ]},
-  { "Reference" = [
-    "reference/index.md",
-    "reference/hardware.md",
-    "reference/network-topology.md",
-    "reference/current-setup.md",
-    "reference/isaac-ros-dockerfile.md",
-  ]},
-  { "Blog" = [
-    "blog/index.md",
-    "blog/2026-02-08-isaac-ros-full-image.md",
-    "blog/2026-02-07-ros2-bridge-and-headless-sim.md",
-    "blog/2026-02-06-ubuntu-upgrade-and-sunshine.md",
-  ]},
-  { "Project" = [
-    "project/index.md",
-    "project/progress.md",
-    "project/about.md",
-  ]},
-]
 
 [project.theme]
 language = "en"
