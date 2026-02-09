@@ -6,15 +6,20 @@ GPU-accelerated ROS 2 perception container for simulation mode. Built from a Doc
 
 The container is a self-contained ROS 2 environment with GPU access. It receives sensor data from Isaac Sim (running on the host) via DDS, runs GPU perception (SLAM, AprilTag, 3D mapping), and serves visualization over WebSocket.
 
-```
-Host (workstation)              Container (isaac-ros-dev)
-┌──────────────┐    UDP DDS    ┌──────────────────────────┐
-│  Isaac Sim   │ ◄──────────► │  GPU Perception          │
-│  (simulator) │               │  (apriltag, SLAM, nvblox)│
-└──────────────┘               │                          │
-                               │  Foxglove Bridge :8765   │──► Browser
-                               │  H.264 NVENC republisher │
-                               └──────────────────────────┘
+```mermaid
+flowchart LR
+    subgraph HOST["Host — Workstation"]
+        SIM["Isaac Sim<br/>(simulator)"]
+    end
+    subgraph CONTAINER["Container — isaac-ros-dev"]
+        PERC["GPU Perception<br/>AprilTag, SLAM, nvblox"]
+        FOX["Foxglove Bridge :8765<br/>H.264 NVENC republisher"]
+    end
+    BROWSER["Foxglove Studio<br/>(any browser)"]
+
+    SIM -- "UDP DDS" --> PERC
+    PERC -- "UDP DDS" --> SIM
+    FOX -- "WebSocket :8765" --> BROWSER
 ```
 
 The container uses `--network host` so it shares the host's network stack — DDS topics flow freely between Isaac Sim and the container without any port mapping.
@@ -87,15 +92,16 @@ After installing, `rm -rf /var/lib/apt/lists/*` deletes the apt package index ca
 
 ### FastDDS UDP-Only Transport
 
-**Problem:** FastDDS (the default ROS 2 transport) uses shared memory (SHM) for same-machine communication. SHM doesn't work across the host/container boundary. Symptoms: `ros2 topic list` shows topics from Isaac Sim, but `ros2 topic echo` shows no data.
+**The problem:** ROS 2 uses DDS as its transport layer. On this system, Isaac Sim (host) uses FastDDS, which defaults to shared memory (SHM) when it detects two processes on the same machine. But Docker containers have isolated `/dev/shm` — even with `--ipc host`, FastDDS's SHM implementation fails to map memory across the host/container boundary. The result: `ros2 topic list` works (discovery uses UDP) but `ros2 topic echo` shows nothing (data transfer tries SHM and silently fails).
 
-**Fix:** An XML config file at `/etc/fastdds_no_shm.xml` forces FastDDS to use UDP instead of SHM. The env var `FASTRTPS_DEFAULT_PROFILES_FILE` points FastDDS to this file.
+**The fix:** An XML config at `/etc/fastdds_no_shm.xml` disables SHM and forces all traffic over UDP. The environment variable `FASTRTPS_DEFAULT_PROFILES_FILE` tells FastDDS to load this config.
 
-This is set two ways:
+This env var is set in two places:
+
 - `/etc/profile.d/fastdds-fix.sh` — picked up by login shells (when you `docker exec bash`)
-- Explicitly in entrypoint scripts — because the container's startup system doesn't source profile.d
+- Explicitly in each entrypoint script — because the container's startup system sources scripts, not login shells, so profile.d doesn't apply
 
-Only needed in simulation mode (Isaac Sim on host talking to container). Real robot mode uses CycloneDDS over Ethernet instead.
+**Sim vs real:** This fix exists for simulation mode where Isaac Sim and the container share the same host. In real robot mode, the G1 uses CycloneDDS over Ethernet — a completely different DDS implementation on a different machine, so this config is irrelevant. However, forcing UDP is harmless in real mode too (UDP works fine over a network), so one image works for both scenarios without needing different configs.
 
 ### Entrypoint Scripts
 
