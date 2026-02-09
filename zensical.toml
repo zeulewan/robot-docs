@@ -14,6 +14,7 @@ nav = [
     "getting-started/architecture.md",
   ]},
   { "Guides" = [
+    "guides/index.md",
     "guides/isaac-sim-setup.md",
     "guides/isaac-ros-container.md",
     "guides/gpu-and-display.md",
@@ -22,6 +23,7 @@ nav = [
     "guides/nat-troubleshooting.md",
   ]},
   { "Reference" = [
+    "reference/index.md",
     "reference/hardware.md",
     "reference/network-topology.md",
     "reference/current-setup.md",
@@ -34,6 +36,7 @@ nav = [
     "blog/2026-02-06-ubuntu-upgrade-and-sunshine.md",
   ]},
   { "Project" = [
+    "project/index.md",
     "project/progress.md",
     "project/about.md",
   ]},
