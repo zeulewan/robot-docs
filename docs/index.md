@@ -1,5 +1,5 @@
 ---
-icon: material/robot
+icon: lucide/bot
 hide:
   - navigation
   - toc
