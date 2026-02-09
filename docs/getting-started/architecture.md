@@ -2,7 +2,7 @@
 
 Simulation and real G1 robot modes, data flow, and network topology.
 
-Two modes: **simulation** (Isaac Sim on workstation) and **real robot** (Unitree G1 with Jetson Orin). Both share the same Isaac ROS container on the workstation for GPU perception and visualization.
+Two modes: **simulation** (Isaac Sim on workstation) and **real robot** (Unitree G1 with Jetson Orin). The workstation is only used for simulation and training — the real G1 runs autonomously on its onboard Orin.
 
 ---
 
@@ -53,49 +53,44 @@ flowchart TD
 flowchart TD
     subgraph G1["Unitree G1 — Jetson Orin"]
         direction LR
-        G1SW["unitree_sdk2 + unitree_ros2<br/>CycloneDDS"]
         SENS["Onboard Sensors<br/>stereo cameras, IMU, depth"]
+        G1SW["unitree_sdk2 + unitree_ros2<br/>CycloneDDS"]
+        PERC["Onboard Perception<br/>cuVSLAM, AprilTag, nvblox"]
+        FOX["Foxglove Bridge :8765"]
     end
-    subgraph WS["Workstation — RTX 3090"]
-        direction LR
-        subgraph ROSC["Isaac ROS Container"]
-            PERC2["GPU Perception<br/>cuVSLAM, AprilTag, nvblox"]
-            VIZ2["Foxglove Bridge :8765<br/>H.264 NVENC republisher"]
-        end
-    end
-    FOX2["Foxglove Studio<br/>(any browser)"]
+    STUDIO["Foxglove Studio<br/>(any browser)"]
 
-    G1SW -- "DDS over Ethernet<br/>192.168.123.x" --> ROSC
-    ROSC -- "DDS over Ethernet<br/>192.168.123.x" --> G1SW
-    VIZ2 -- "WebSocket :8765" --> FOX2
+    SENS --> PERC
+    PERC --> G1SW
+    FOX -- "WebSocket :8765" --> STUDIO
 ```
 
 ### Data Flow (Real)
 
-1. G1's Orin publishes camera, IMU, joint state topics via CycloneDDS
-2. Workstation's Isaac ROS container receives topics over DDS (Ethernet)
-3. GPU perception runs on RTX 3090 (offloaded from Orin for heavy tasks)
-4. Results published back to G1 over DDS (SLAM pose, detections, maps)
-5. foxglove-bridge + H.264 republisher provide remote visualization
-6. Foxglove Studio connects from browser
+1. G1's Orin runs everything onboard — no workstation involved
+2. Onboard sensors publish camera, IMU, joint state topics via CycloneDDS
+3. Perception runs on Orin's GPU (cuVSLAM, AprilTag, nvblox)
+4. Trained RL policies (from Isaac Lab) control locomotion and manipulation
+5. foxglove-bridge on the Orin provides remote visualization
+6. Foxglove Studio connects from any browser on the network
 
 ### G1 Network Topology
 
 | Device | IP | Role |
 |---|---|---|
-| Development PC (workstation) | 192.168.123.99 | Isaac ROS container, visualization |
+| Development PC (workstation) | 192.168.123.99 | SSH, debugging, log collection (sim/training only) |
 | G1 internal RockChip | 192.168.123.161 | Low-level motor control |
-| G1 internal Orin | 192.168.123.164 | High-level control, sensors, ROS 2 |
+| G1 internal Orin | 192.168.123.164 | High-level control, sensors, perception, ROS 2 |
 
 ### G1 ROS 2 Topics
 
-| Topic | Type | Direction |
+| Topic | Type | Publisher |
 |---|---|---|
-| `/lowstate` | `unitree_hg::LowState` | G1 -> workstation |
-| `/lowcmd` | `unitree_hg::LowCmd` | workstation -> G1 |
-| `/api/sport/request` | High-level motion | workstation -> G1 |
-| Camera topics | `sensor_msgs/Image` | G1 -> workstation |
-| IMU topics | `sensor_msgs/Imu` | G1 -> workstation |
+| `/lowstate` | `unitree_hg::LowState` | Orin (joint state feedback) |
+| `/lowcmd` | `unitree_hg::LowCmd` | Orin (motor commands from RL policy) |
+| `/api/sport/request` | High-level motion | Orin (locomotion controller) |
+| Camera topics | `sensor_msgs/Image` | Orin (onboard stereo cameras) |
+| IMU topics | `sensor_msgs/Imu` | Orin (onboard IMU) |
 
 ### DDS Configuration
 
@@ -110,16 +105,16 @@ export CYCLONEDDS_URI='<CycloneDDS><Domain><General><Interfaces>
 
 `ros2_jazzy` base image ships with `rmw_cyclonedds_cpp` pre-installed.
 
-### Orin vs Workstation GPU Perception
+### Workstation vs Orin
 
-The G1's Orin can run Isaac ROS perception locally, but the RTX 3090 is far more powerful.
+The workstation (RTX 3090) is for simulation and training only. The real G1 runs autonomously on its Jetson Orin.
 
-| Workload | Location | Examples |
+| Task | Where | Notes |
 |---|---|---|
-| Heavy perception | Workstation (RTX 3090) | SLAM, nvblox, large model inference |
-| Latency-critical | Orin (final deployment) | Obstacle detection, emergency stop |
-
-During development, run everything on workstation.
+| Simulation | Workstation | Isaac Sim + Isaac ROS container |
+| RL Training | Workstation | Isaac Lab headless, GPU-accelerated |
+| Real robot operation | G1 Orin | Perception, control, all onboard |
+| Visualization | Any browser | Foxglove connects to whichever is running |
 
 ---
 

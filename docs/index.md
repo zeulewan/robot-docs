@@ -64,11 +64,3 @@ hide:
 </div>
 
 ---
-
-## Quick Links
-
-| | |
-|---|---|
-| **[Current Setup](reference/current-setup.md)** | Software versions snapshot (Feb 2026) |
-| **[Progress](project/progress.md)** | What's in progress and what's next |
-| **[Blog](blog/index.md)** | Development log and updates |

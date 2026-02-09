@@ -1,129 +1,116 @@
 # Isaac ROS Container
 
-GPU-accelerated ROS 2 perception container setup and troubleshooting.
+GPU-accelerated ROS 2 perception container for simulation mode. Built from a Dockerfile on top of NVIDIA's base image.
+
+## How It Works
+
+The container is a self-contained ROS 2 environment with GPU access. It receives sensor data from Isaac Sim (running on the host) via DDS, runs GPU perception (SLAM, AprilTag, 3D mapping), and serves visualization over WebSocket.
+
+```
+Host (workstation)              Container (isaac-ros-dev)
+┌──────────────┐    UDP DDS    ┌──────────────────────────┐
+│  Isaac Sim   │ ◄──────────► │  GPU Perception          │
+│  (simulator) │               │  (apriltag, SLAM, nvblox)│
+└──────────────┘               │                          │
+                               │  Foxglove Bridge :8765   │──► Browser
+                               │  H.264 NVENC republisher │
+                               └──────────────────────────┘
+```
+
+The container uses `--network host` so it shares the host's network stack — DDS topics flow freely between Isaac Sim and the container without any port mapping.
+
+---
 
 ## Quick Start
 
 ```bash
-# Start container (from committed image, NOT isaac-ros-cli)
-docker run -d --name isaac_ros_dev_container \
-  --runtime nvidia --network host --ipc host --privileged \
-  -e NVIDIA_VISIBLE_DEVICES=all \
-  -e NVIDIA_DRIVER_CAPABILITIES=all \
-  -v ~/workspaces/isaac_ros-dev:/workspaces/isaac_ros-dev \
-  --entrypoint /usr/local/bin/scripts/workspace-entrypoint.sh \
-  -e HOST_USER_UID=$(id -u) -e HOST_USER_GID=$(id -g) -e USERNAME=admin \
-  isaac-ros-apriltag:latest \
-  bash -c "sleep infinity"
+# Start container
+docker compose -f ~/workspaces/isaac_ros-dev/docker-compose.yml up -d
 
 # Attach a shell
 docker exec -it -u admin isaac_ros_dev_container bash
 
 # Stop
-docker stop isaac_ros_dev_container && docker rm isaac_ros_dev_container
+docker compose -f ~/workspaces/isaac_ros-dev/docker-compose.yml down
 ```
 
 ---
 
-## Do not use `isaac-ros activate`
+## What's in the Base Image
 
-!!! danger
-    `isaac-ros activate` deletes a stopped container and recreates from the base NVIDIA image, losing all customizations.
+NVIDIA provides a ~38.8 GB base image from NGC:
 
-Safe for attaching to an already running container (`docker exec bash`), but never use it to start one.
+```
+nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_<hash>-amd64
+```
+
+This includes:
+
+- **ROS 2 Jazzy** — full desktop install (50+ packages)
+- **TensorRT** — GPU-accelerated inference
+- **PyTorch** — deep learning framework
+- **nav2** — ROS 2 navigation stack
+- **rviz2** — 3D visualization
+- **foxglove-bridge** — WebSocket bridge for Foxglove Studio
+- **slam_toolbox** — SLAM algorithms
+- **OpenCV** — computer vision (custom NVIDIA build with CUDA)
+- **CUDA 13.0 dev tools** — compiler, libraries, headers
+- **VPI, CV-CUDA, Triton** — NVIDIA perception and inference libraries
+
+What's NOT in the base (we add these):
+
+- Isaac ROS perception packages (apriltag, cuVSLAM, nvblox)
+- H.264 NVENC video transport for Foxglove
+- ffmpeg with NVENC support
+- FastDDS configuration for host/container communication
 
 ---
 
-## Image
+## What the Dockerfile Adds
 
-| | |
+The Dockerfile (`~/workspaces/isaac_ros-dev/Dockerfile`) adds a thin layer on top of the base. The base image is never modified — Docker layers are immutable.
+
+### Packages
+
+Installed from NVIDIA's Isaac ROS apt repository (pre-built .deb packages, not compiled from source):
+
+| Package | What it does |
 |---|---|
-| **Current image** | `isaac-ros-apriltag:latest` (~19.8 GB, hand-built via `docker commit`) |
-| **New base (pulled)** | `nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_d3e84470d576702a380478a513fb3fc6-amd64` |
+| `ros-jazzy-isaac-ros-apriltag` | GPU-accelerated AprilTag detection and pose estimation |
+| `ros-jazzy-isaac-ros-visual-slam` | cuVSLAM — visual SLAM using stereo cameras on GPU |
+| `ros-jazzy-isaac-ros-nvblox` | GPU 3D reconstruction from depth cameras |
+| `ros-jazzy-foxglove-compressed-video-transport` | Encodes camera feeds as H.264 for Foxglove |
+| `ros-jazzy-ffmpeg-encoder-decoder` | ROS 2 wrapper around ffmpeg for NVENC encoding |
+| `ffmpeg` | CLI video tool (used by the encoder) |
 
-### Migration Plan
+After installing, `rm -rf /var/lib/apt/lists/*` deletes the apt package index cache (~50-100 MB) to keep the image smaller. Standard Docker practice.
 
-Switching to a reproducible Dockerfile. See [Dockerfile Plan](../reference/isaac-ros-dockerfile.md).
+### FastDDS UDP-Only Transport
 
-New base: full NVIDIA image (noble + ros2_jazzy layers) with ROS 2 Jazzy, TensorRT, PyTorch, nav2, rviz2, foxglove-bridge, slam_toolbox, OpenCV, and CUDA dev tools.
+**Problem:** FastDDS (the default ROS 2 transport) uses shared memory (SHM) for same-machine communication. SHM doesn't work across the host/container boundary. Symptoms: `ros2 topic list` shows topics from Isaac Sim, but `ros2 topic echo` shows no data.
 
-Custom additions on top (Dockerfile):
+**Fix:** An XML config file at `/etc/fastdds_no_shm.xml` forces FastDDS to use UDP instead of SHM. The env var `FASTRTPS_DEFAULT_PROFILES_FILE` points FastDDS to this file.
 
-| Package | Purpose |
+This is set two ways:
+- `/etc/profile.d/fastdds-fix.sh` — picked up by login shells (when you `docker exec bash`)
+- Explicitly in entrypoint scripts — because the container's startup system doesn't source profile.d
+
+Only needed in simulation mode (Isaac Sim on host talking to container). Real robot mode uses CycloneDDS over Ethernet instead.
+
+### Entrypoint Scripts
+
+The NVIDIA base image has a startup system: when the container boots, it runs every `.sh` script in `/usr/local/bin/scripts/entrypoint_additions/` in alphabetical order. The `50-` and `60-` prefixes control execution order.
+
+| Script | What it does |
 |---|---|
-| `ros-jazzy-isaac-ros-apriltag` | GPU AprilTag |
-| `ros-jazzy-isaac-ros-visual-slam` | cuVSLAM |
-| `ros-jazzy-isaac-ros-nvblox` | GPU 3D reconstruction |
-| `ros-jazzy-foxglove-compressed-video-transport` | H.264 NVENC for Foxglove |
-| `ros-jazzy-ffmpeg-encoder-decoder` + `ffmpeg` | NVENC encoding |
-| FastDDS no-SHM XML | `/etc/fastdds_no_shm.xml` |
-| Entrypoint scripts | foxglove-bridge + H.264 republisher auto-start |
+| `50-foxglove-bridge.sh` | Starts foxglove-bridge on port 8765 (WebSocket for Foxglove Studio) |
+| `60-h264-republisher.sh` | Starts H.264 NVENC republisher (encodes raw camera topics for remote viewing) |
 
-Not needed in container:
+Both scripts must explicitly set `FASTRTPS_DEFAULT_PROFILES_FILE` because entrypoint scripts are `source`d, not run as login shells.
 
-- Unitree SDK/packages -- runs on G1's Jetson Orin, not workstation
-- System ROS 2 on host -- conflicts with Isaac Sim's Python 3.11
+### Admin User
 
----
-
-## Installed Packages (on top of base)
-
-```
-ros-jazzy-isaac-ros-apriltag                   # GPU AprilTag detection
-ros-jazzy-foxglove-bridge                      # WebSocket bridge (port 8765)
-ros-jazzy-foxglove-compressed-video-transport   # H.264 NVENC video for Foxglove
-ros-jazzy-ffmpeg-encoder-decoder               # ffmpeg with NVENC
-ffmpeg                                         # CLI tool
-```
-
----
-
-## Custom Configs Baked Into Image
-
-### 1. FastDDS UDP-only transport XML
-
-Path: `/tmp/fastdds_no_shm.xml` (Dockerfile moves to `/etc/fastdds_no_shm.xml`)
-
-Fixes SHM transport breakage between Isaac Sim (host) and container. Without it, topics are discoverable but data doesn't flow.
-
-```xml
-<?xml version="1.0" encoding="UTF-8" ?>
-<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
-    <profiles>
-        <transport_descriptors>
-            <transport_descriptor>
-                <transport_id>udp_transport</transport_id>
-                <type>UDPv4</type>
-            </transport_descriptor>
-        </transport_descriptors>
-        <participant profile_name="default_participant" is_default_profile="true">
-            <rtps>
-                <userTransports>
-                    <transport_id>udp_transport</transport_id>
-                </userTransports>
-                <useBuiltinTransports>false</useBuiltinTransports>
-            </rtps>
-        </participant>
-    </profiles>
-</dds>
-```
-
-### 2. `FASTRTPS_DEFAULT_PROFILES_FILE` env var
-
-Set in `/etc/profile.d/fastdds-fix.sh` -- login shells pick it up automatically.
-
-### 3. Foxglove-bridge auto-start
-
-Path: `/usr/local/bin/scripts/entrypoint_additions/50-foxglove-bridge.sh`
-
-Auto-starts foxglove-bridge on port 8765 at container launch.
-
-```bash
-#!/bin/bash
-export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml
-source /opt/ros/jazzy/setup.bash
-ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 &
-```
+A non-root `admin` user with passwordless sudo. Used when attaching to the container (`docker exec -it -u admin`).
 
 ---
 
@@ -134,46 +121,71 @@ ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 &
 | | |
 |---|---|
 | **Port** | 8765 (WebSocket) |
-| **Connect from Mac** | `ws://100.101.214.44:8765` (Tailscale) or `ws://workstation:8765` |
-| **Auto-starts** | Via entrypoint addition when container uses workspace-entrypoint |
+| **Connect** | `ws://workstation:8765` or `ws://100.101.214.44:8765` (Tailscale) |
+| **Auto-starts** | Yes, via entrypoint script |
+
+Opens a WebSocket that Foxglove Studio connects to. Exposes all ROS 2 topics in real-time — camera feeds, SLAM maps, detections, joint states.
 
 ### H.264 NVENC Republisher
 
-Start manually after container is up:
+| | |
+|---|---|
+| **Subscribes to** | `/front_stereo_camera/left/image_rect_color` (raw) |
+| **Publishes** | `/front_stereo_camera/left/compressed_video` (H.264) |
+| **Auto-starts** | Yes, via entrypoint script |
 
-```bash
-docker exec -d isaac_ros_dev_container bash -c \
-  "export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml && \
-   source /opt/ros/jazzy/setup.bash && \
-   ros2 run image_transport republish raw foxglove --ros-args \
-     -r in:=/front_stereo_camera/left/image_rect_color \
-     -r out/foxglove:=/front_stereo_camera/left/compressed_video \
-     -p out.foxglove.encoder:=h264_nvenc \
-     -p out.foxglove.gop_size:=10 \
-     -p out.foxglove.bit_rate:=5000000 \
-     -p out.foxglove.qmax:=10 \
-     -p 'out.foxglove.encoder_av_options:=forced-idr:1,preset:p1,tune:ll'"
-```
+Encodes raw camera images using the GPU's hardware H.264 encoder (NVENC). Without this, streaming raw images over the network to Foxglove is too slow.
 
-- Subscribes to raw `/front_stereo_camera/left/image_rect_color`
-- Publishes H.264 NVENC encoded to `/front_stereo_camera/left/compressed_video`
-- H.265 does NOT work with Foxglove browser (can't decode keyframes)
-- NVENC requires `gop_size` > 1
+!!! note
+    H.265 does NOT work with Foxglove (browser can't decode keyframes). Use H.264 only.
 
 ---
 
-## Host Wrappers
+## Files
+
+All in `~/workspaces/isaac_ros-dev/`:
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Builds the image on top of NVIDIA base |
+| `docker-compose.yml` | Launches the container with correct flags |
+| `fastdds_no_shm.xml` | UDP-only DDS transport config |
+| `50-foxglove-bridge.sh` | Foxglove auto-start entrypoint |
+| `60-h264-republisher.sh` | H.264 republisher auto-start entrypoint |
+
+### Rebuilding the Image
+
+```bash
+cd ~/workspaces/isaac_ros-dev
+docker build -t isaac-ros-dev:latest .
+```
+
+The base image (38.8 GB) is cached — only the custom layer (~0.8 GB) rebuilds. Takes ~30 seconds.
+
+---
+
+## Host Wrapper
 
 ### `~/bin/ros2`
 
-Runs `ros2` inside the container with FastDDS fix:
+Runs `ros2` commands inside the container from the host terminal:
 
 ```bash
 docker exec isaac_ros_dev_container bash -c \
-  "export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml && \
+  "export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
    source /opt/ros/jazzy/setup.bash && \
    ros2 $*"
 ```
+
+---
+
+## What's NOT in the Container
+
+| Not included | Why |
+|---|---|
+| Unitree SDK / unitree_ros2 | Runs on the G1's Jetson Orin, not the workstation |
+| System ROS 2 on host | Conflicts with Isaac Sim's bundled Python 3.11 rclpy |
+| CycloneDDS config | Only needed for real robot mode (Orin handles this) |
 
 ---
 
@@ -181,55 +193,26 @@ docker exec isaac_ros_dev_container bash -c \
 
 ### Topics visible but no data flowing
 
-FastDDS XML file or env var is missing. Recreate:
-
-```bash
-docker exec isaac_ros_dev_container bash -c 'cat > /tmp/fastdds_no_shm.xml << "XML"
-<?xml version="1.0" encoding="UTF-8" ?>
-<dds xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
-    <profiles>
-        <transport_descriptors>
-            <transport_descriptor>
-                <transport_id>udp_transport</transport_id>
-                <type>UDPv4</type>
-            </transport_descriptor>
-        </transport_descriptors>
-        <participant profile_name="default_participant" is_default_profile="true">
-            <rtps>
-                <userTransports>
-                    <transport_id>udp_transport</transport_id>
-                </userTransports>
-                <useBuiltinTransports>false</useBuiltinTransports>
-            </rtps>
-        </participant>
-    </profiles>
-</dds>
-XML'
-```
-
-### Foxglove says "Check that WebSocket server is reachable"
-
-foxglove-bridge isn't running. Start it:
-
-```bash
-docker exec -d isaac_ros_dev_container bash -c \
-  "export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml && \
-   source /opt/ros/jazzy/setup.bash && \
-   ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765"
-```
-
-### Foxglove connects but no data
-
-foxglove-bridge started without FastDDS fix. Kill and restart:
+FastDDS SHM issue. Check that the XML config exists and the env var is set:
 
 ```bash
 docker exec isaac_ros_dev_container bash -c \
-  "pkill -f foxglove_bridge; sleep 1; \
-   export FASTRTPS_DEFAULT_PROFILES_FILE=/tmp/fastdds_no_shm.xml && \
+  "cat /etc/fastdds_no_shm.xml && echo '---' && echo \$FASTRTPS_DEFAULT_PROFILES_FILE"
+```
+
+If missing, the Dockerfile needs rebuilding — the config is baked into the image.
+
+### Foxglove says "Check that WebSocket server is reachable"
+
+foxglove-bridge isn't running. Check and restart:
+
+```bash
+docker exec isaac_ros_dev_container bash -c \
+  "export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
    source /opt/ros/jazzy/setup.bash && \
    ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 &"
 ```
 
 ### Container missing packages after restart
 
-`isaac-ros activate` recreated from base image. Use `docker run` from `isaac-ros-apriltag:latest` instead.
+If you used `isaac-ros activate` to start the container, it recreated from the base image (losing customizations). Always use `docker compose up -d` instead.
