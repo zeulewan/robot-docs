@@ -1,18 +1,73 @@
 ---
-title: Robot Docs
-description: Workstation setup documentation for robotics simulation and development with Isaac Sim, Isaac ROS, and Unitree G1.
+icon: lucide/bot
+hide:
+  - navigation
+  - toc
 ---
 
-# Robot Docs
+<h1 style="text-align: center;">Robot Docs</h1>
+<p style="text-align: center;">Robotics simulation and perception stack for the <strong>Unitree G1</strong> humanoid robot using <strong>Isaac Sim</strong>, <strong>Isaac ROS</strong>, and a custom workstation.</p>
 
-Robotics simulation and perception stack for the **Unitree G1** humanoid robot using **Isaac Sim**, **Isaac ROS**, and a custom workstation.
+---
 
-[Getting Started](getting-started/index.md) | [Current Progress](project/progress.md)
+<div class="grid cards" markdown>
 
-## Sections
+-   :material-rocket-launch:{ .lg .middle } **Getting Started**
 
-- **[Architecture](getting-started/architecture.md)** -- Data flow diagrams for simulation and real G1 robot modes.
-- **[Isaac Sim](guides/isaac-sim-setup.md)** -- Isaac Sim 5.1 and Isaac Lab 2.3.2 setup, ROS 2 bridge.
-- **[Isaac ROS](guides/isaac-ros-container.md)** -- GPU-accelerated perception: AprilTag, cuVSLAM, nvblox.
-- **[Hardware](reference/hardware.md)** -- Hardware specs, GPU, and system info.
-- **[Networking](reference/network-topology.md)** -- Tailscale VPN, topology, NAT troubleshooting.
+    ---
+
+    What everything is, how it connects, and where to go next
+
+    [:octicons-arrow-right-24: Quick Start](getting-started/index.md)
+
+-   :material-graph:{ .lg .middle } **Architecture**
+
+    ---
+
+    System diagrams for simulation and real G1 robot modes
+
+    [:octicons-arrow-right-24: Data Flow](getting-started/architecture.md)
+
+-   :material-cube-outline:{ .lg .middle } **Isaac Sim**
+
+    ---
+
+    Isaac Sim 5.1 and Isaac Lab setup, ROS 2 bridge, Foxglove
+
+    [:octicons-arrow-right-24: Setup Guide](guides/isaac-sim-setup.md)
+
+-   :material-docker:{ .lg .middle } **Isaac ROS**
+
+    ---
+
+    GPU-accelerated perception container: AprilTag, cuVSLAM, nvblox
+
+    [:octicons-arrow-right-24: Container Guide](guides/isaac-ros-container.md)
+
+-   :material-monitor:{ .lg .middle } **Workstation**
+
+    ---
+
+    GPU config, X11 display, Sunshine streaming
+
+    [:octicons-arrow-right-24: GPU & Display](guides/gpu-and-display.md)
+
+-   :material-lan:{ .lg .middle } **Networking**
+
+    ---
+
+    Tailscale VPN, network topology, NAT troubleshooting
+
+    [:octicons-arrow-right-24: Topology](reference/network-topology.md)
+
+</div>
+
+---
+
+## Quick Links
+
+| | |
+|---|---|
+| **[Current Setup](reference/current-setup.md)** | Software versions snapshot (Feb 2026) |
+| **[Progress](project/progress.md)** | What's in progress and what's next |
+| **[Blog](blog/index.md)** | Development log and updates |
