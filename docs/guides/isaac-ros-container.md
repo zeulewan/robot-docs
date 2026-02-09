@@ -100,9 +100,13 @@ After installing, `rm -rf /var/lib/apt/lists/*` deletes the apt package index ca
 
 ### FastDDS UDP-Only Transport
 
-**The problem:** ROS 2 uses DDS as its transport layer. On this system, Isaac Sim (host) uses FastDDS, which defaults to shared memory (SHM) when it detects two processes on the same machine. But Docker containers have isolated `/dev/shm` — even with `--ipc host`, FastDDS's SHM implementation fails to map memory across the host/container boundary. The result: `ros2 topic list` works (discovery uses UDP) but `ros2 topic echo` shows nothing (data transfer tries SHM and silently fails).
+!!! bug "FastDDS SHM Transport Failure"
 
-**The fix:** An XML config at `/etc/fastdds_no_shm.xml` disables SHM and forces all traffic over UDP. The environment variable `FASTRTPS_DEFAULT_PROFILES_FILE` tells FastDDS to load this config.
+    **The problem:** ROS 2 uses DDS as its transport layer. On this system, Isaac Sim (host) uses FastDDS, which defaults to shared memory (SHM) when it detects two processes on the same machine. But Docker containers have isolated `/dev/shm` — even with `--ipc host`, FastDDS's SHM implementation fails to map memory across the host/container boundary. The result: `ros2 topic list` works (discovery uses UDP) but `ros2 topic echo` shows nothing (data transfer tries SHM and silently fails).
+
+!!! success "Fix: Force UDP Transport"
+
+    An XML config at `/etc/fastdds_no_shm.xml` disables SHM and forces all traffic over UDP. The environment variable `FASTRTPS_DEFAULT_PROFILES_FILE` tells FastDDS to load this config.
 
 This env var is set in two places:
 
@@ -220,28 +224,28 @@ The docker-compose approach at `~/workspaces/isaac_ros-dev/` gives full control 
 
 ## Troubleshooting
 
-### Topics visible but no data flowing
+??? bug "Topics visible but no data flowing"
 
-FastDDS SHM issue. Check that the XML config exists and the env var is set:
+    FastDDS SHM issue. Check that the XML config exists and the env var is set:
 
-```bash
-docker exec isaac_ros_dev_container bash -c \
-  "cat /etc/fastdds_no_shm.xml && echo '---' && echo \$FASTRTPS_DEFAULT_PROFILES_FILE"
-```
+    ```bash
+    docker exec isaac_ros_dev_container bash -c \
+      "cat /etc/fastdds_no_shm.xml && echo '---' && echo \$FASTRTPS_DEFAULT_PROFILES_FILE"
+    ```
 
-If missing, the Dockerfile needs rebuilding — the config is baked into the image.
+    If missing, the Dockerfile needs rebuilding — the config is baked into the image.
 
-### Foxglove says "Check that WebSocket server is reachable"
+??? bug "Foxglove says \"Check that WebSocket server is reachable\""
 
-foxglove-bridge isn't running. Check and restart:
+    foxglove-bridge isn't running. Check and restart:
 
-```bash
-docker exec isaac_ros_dev_container bash -c \
-  "export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
-   source /opt/ros/jazzy/setup.bash && \
-   ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 &"
-```
+    ```bash
+    docker exec isaac_ros_dev_container bash -c \
+      "export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
+       source /opt/ros/jazzy/setup.bash && \
+       ros2 launch foxglove_bridge foxglove_bridge_launch.xml port:=8765 &"
+    ```
 
-### Container missing packages after restart
+??? bug "Container missing packages after restart"
 
-This happens when a container is recreated from the stock NVIDIA base image instead of the custom `isaac-ros-dev:latest` image. A common cause was `isaac-ros activate` (from the `isaac-ros-cli` package), which silently recreates containers from base without custom layers. That tool has been removed — see [Why Not isaac-ros-cli?](#why-not-isaac-ros-cli) above. Always use `docker compose up -d` to manage the container.
+    This happens when a container is recreated from the stock NVIDIA base image instead of the custom `isaac-ros-dev:latest` image. A common cause was `isaac-ros activate` (from the `isaac-ros-cli` package), which silently recreates containers from base without custom layers. That tool has been removed — see [Why Not isaac-ros-cli?](#why-not-isaac-ros-cli) above. Always use `docker compose up -d` to manage the container.

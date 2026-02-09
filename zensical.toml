@@ -27,6 +27,7 @@ features = [
     "navigation.sections",
     "navigation.tabs",
     "navigation.top",
+    "navigation.tracking",
     # Table of contents
     "toc.follow",
     # Header

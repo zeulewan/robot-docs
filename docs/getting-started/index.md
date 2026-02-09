@@ -78,7 +78,9 @@ In simulation mode, Isaac Sim replaces the real robot. In real robot mode, the G
 | **SSH** | Terminal only | `ssh workstation` (via Tailscale) |
 | **Foxglove** | View sensor data from any browser | `ws://workstation:8765` |
 
-All remote access works over [Tailscale](../guides/tailscale-setup.md) (mesh VPN) -- no need to be on the same network.
+!!! tip "Remote Access"
+
+    All remote access works over [Tailscale](../guides/tailscale-setup.md) (mesh VPN) -- no need to be on the same network.
 
 ## Where to go next
 

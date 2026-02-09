@@ -55,6 +55,15 @@ Do not set `--relay-server-static-endpoints` -- Bell PPPoE IP is dynamic. STUN +
 
 ### Connection priority (automatic)
 
+```mermaid
+flowchart TD
+    A["Client connects"] --> B{"Direct UDP<br/>hole-punch?"}
+    B -- "Yes" --> C["Direct connection<br/>~15ms"]
+    B -- "No" --> D{"Peer relay<br/>available?"}
+    D -- "Yes" --> E["Peer relay<br/>~15-45ms"]
+    D -- "No" --> F["DERP relay<br/>~14ms, throttled"]
+```
+
 | Priority | Type | Latency |
 |---|---|---|
 | 1 | Direct (UDP hole-punch) | Fastest |

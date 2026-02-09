@@ -21,15 +21,17 @@ NVIDIA GPU configuration and X11 virtual display setup for headless rendering wi
 
 The stock service at `/usr/lib/systemd/system/nvidia-persistenced.service` has `--no-persistence-mode` which defeats the purpose. Override removes that flag.
 
-### Known Issue: 30fps after idle
+!!! warning "Persistence Mode Required"
 
-- **Symptom**: Sunshine drops to 30fps after not streaming for a while
-- **Root cause**: Without persistence mode, GPU drops to P8 (low power) when idle, throttling NVENC encoder
-- **Fix applied**:
-  1. Enabled persistence mode (`nvidia-smi -pm 1`)
-  2. Created systemd override to persist across reboots
-  3. Disabled DPMS in xorg.conf and via `xset -dpms`
-- If it recurs: check `nvidia-smi` for P-state (should not be P8) and persistence mode status
+    ### Known Issue: 30fps after idle
+
+    - **Symptom**: Sunshine drops to 30fps after not streaming for a while
+    - **Root cause**: Without persistence mode, GPU drops to P8 (low power) when idle, throttling NVENC encoder
+    - **Fix applied**:
+      1. Enabled persistence mode (`nvidia-smi -pm 1`)
+      2. Created systemd override to persist across reboots
+      3. Disabled DPMS in xorg.conf and via `xset -dpms`
+    - If it recurs: check `nvidia-smi` for P-state (should not be P8) and persistence mode status
 
 ---
 

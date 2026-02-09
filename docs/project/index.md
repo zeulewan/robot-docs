@@ -2,7 +2,22 @@
 
 Project status, decisions, and meta-documentation.
 
-| Page | What it covers |
-|---|---|
-| [Progress](progress.md) | Current milestones and what's being worked on |
-| [About](about.md) | How this site is built, why Zensical |
+<div class="grid cards" markdown>
+
+-   :material-chart-timeline:{ .lg .middle } **Progress**
+
+    ---
+
+    Current milestones and what's being worked on
+
+    [:octicons-arrow-right-24: Read more](progress.md)
+
+-   :material-information:{ .lg .middle } **About**
+
+    ---
+
+    How this site is built, why Zensical
+
+    [:octicons-arrow-right-24: Read more](about.md)
+
+</div>

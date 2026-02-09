@@ -59,7 +59,9 @@ Editable packages: `isaaclab` 0.54.2, `isaaclab_assets` 0.2.4, `isaaclab_tasks` 
 
 ## ROS 2
 
-**No system ROS 2 on host.** Previous `ros-jazzy-desktop` (295 packages) removed Feb 2026 -- conflicted with Isaac Sim's bundled Python 3.11 rclpy.
+!!! warning "No System ROS 2"
+
+    **No system ROS 2 on host.** Previous `ros-jazzy-desktop` (295 packages) removed Feb 2026 -- conflicted with Isaac Sim's bundled Python 3.11 rclpy.
 
 | Component | Where |
 |-----------|-------|

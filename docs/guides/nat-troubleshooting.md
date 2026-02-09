@@ -120,80 +120,82 @@ ssh workstation "curl -s ifconfig.me"  # Should differ from UniFi WAN IP if CGNA
 
 ## Known Issues and Fixes
 
-### No direct connection from Toronto UniFi to Kingston
+??? bug "No direct connection from Toronto UniFi to Kingston"
 
-- **Root cause**: UniFi's endpoint-dependent NAT filtering drops hole-punch packets
-- **Fix**: Enable UPnP + NAT-PMP on UniFi Default network (Settings -> Networks -> Default -> UPnP)
-- **Must restart Tailscale** after enabling UPnP so it re-probes port mappings
-  - Mac: `tailscale down && tailscale up`
-  - Linux (over SSH): `sudo systemctl restart tailscaled` (safe -- doesn't break SSH)
+    - **Root cause**: UniFi's endpoint-dependent NAT filtering drops hole-punch packets
+    - **Fix**: Enable UPnP + NAT-PMP on UniFi Default network (Settings -> Networks -> Default -> UPnP)
+    - **Must restart Tailscale** after enabling UPnP so it re-probes port mappings
+      - Mac: `tailscale down && tailscale up`
+      - Linux (over SSH): `sudo systemctl restart tailscaled` (safe -- doesn't break SSH)
 
-### Tagged devices can't be untagged
+??? bug "Tagged devices can't be untagged"
 
-- Tailscale error: "tagged nodes cannot be untagged without reauth"
-- Workaround: Modify the ACL grants section instead of changing device tags
-- Full fix: `tailscale up --force-reauth` (will re-register the device)
+    - Tailscale error: "tagged nodes cannot be untagged without reauth"
+    - Workaround: Modify the ACL grants section instead of changing device tags
+    - Full fix: `tailscale up --force-reauth` (will re-register the device)
 
-### ICMP ping to Kingston public IP fails
+??? bug "ICMP ping to Kingston public IP fails"
 
-- Normal with CGNAT -- Bell doesn't forward ICMP through their NAT
-- Not a firewall issue on the workstation
+    - Normal with CGNAT -- Bell doesn't forward ICMP through their NAT
+    - Not a firewall issue on the workstation
 
-### Workstation PPPoE on 10G NIC causes stale endpoints
+??? bug "Workstation PPPoE on 10G NIC causes stale endpoints"
 
-- Config exists at `/etc/ppp/peers/dsl-provider` for `enp3s0.35` (VLAN 35)
-- PPPoE user: `<REDACTED>`
-- **Keep PPPoE off** -- when active, Tailscale advertises extra endpoints from the 10G NIC (different CGNAT IP, IPv6, PPPoE internal IP). Stale endpoints persist in the coordination server after PPPoE shuts down, breaking hole-punching.
-- When tested: got CGNAT IPv4 (10.130.54.202) and real IPv6 (<REDACTED>)
-- To clear stale endpoints: `sudo systemctl restart tailscaled` on workstation
+    - Config exists at `/etc/ppp/peers/dsl-provider` for `enp3s0.35` (VLAN 35)
+    - PPPoE user: `<REDACTED>`
+    - **Keep PPPoE off** -- when active, Tailscale advertises extra endpoints from the 10G NIC (different CGNAT IP, IPv6, PPPoE internal IP). Stale endpoints persist in the coordination server after PPPoE shuts down, breaking hole-punching.
+    - When tested: got CGNAT IPv4 (10.130.54.202) and real IPv6 (<REDACTED>)
+    - To clear stale endpoints: `sudo systemctl restart tailscaled` on workstation
 
-### No IPv6 on Toronto (Bell Fibe)
+??? bug "No IPv6 on Toronto (Bell Fibe)"
 
-- Bell Canada does NOT support IPv6 on residential Fibe Internet (DSL or FTTH)
-- Only wireless/mobility (cellular) has IPv6
-- DHCPv6 prefix delegation (/60 or /56) won't work -- no prefix delegated
-- Kingston 10G PPPoE (Virgin Mobile credentials) DID get IPv6 -- possibly different tier
-- Leave IPv6 disabled on Toronto UniFi
+    - Bell Canada does NOT support IPv6 on residential Fibe Internet (DSL or FTTH)
+    - Only wireless/mobility (cellular) has IPv6
+    - DHCPv6 prefix delegation (/60 or /56) won't work -- no prefix delegated
+    - Kingston 10G PPPoE (Virgin Mobile credentials) DID get IPv6 -- possibly different tier
+    - Leave IPv6 disabled on Toronto UniFi
 
-### Peer relay not engaging
+??? bug "Peer relay not engaging"
 
-Two common causes:
+    Two common causes:
 
-**1. Grants missing from ACL**
+    **1. Grants missing from ACL**
 
-- **Symptom**: `tailscale status --json` shows tsrelay with `Capabilities: []` and `CapMap: null`
-- **Root cause**: MCP `manage_acl` tool silently drops the `grants` field -- use the Tailscale API directly.
-- **Fix**: Update ACL via API with both grants:
-  1. `"app": {"tailscale.com/cap/relay": []}` -- enables relay capability
-  2. `"ip": ["*"]` -- allows IP access to the relay node
+    - **Symptom**: `tailscale status --json` shows tsrelay with `Capabilities: []` and `CapMap: null`
+    - **Root cause**: MCP `manage_acl` tool silently drops the `grants` field -- use the Tailscale API directly.
+    - **Fix**: Update ACL via API with both grants:
+      1. `"app": {"tailscale.com/cap/relay": []}` -- enables relay capability
+      2. `"ip": ["*"]` -- allows IP access to the relay node
 
-**2. Stale static endpoint on tsrelay**
+    **2. Stale static endpoint on tsrelay**
 
-- **Symptom**: `tailscale ping` shows DERP instead of peer-relay. tsrelay shows `Active: False`, `InEngine: False`, `LastHandshake: 0001-01-01` from client perspective.
-- **Root cause**: `--relay-server-static-endpoints` pointed to a stale Bell PPPoE IP. Clients try the dead address. Bell PPPoE IPs are dynamic.
-- **How it happened**: Systemd override (`/etc/systemd/system/tailscaled.service.d/relay.conf`) re-applied the stale IP on every tailscaled restart via `ExecStartPost`.
-- **Fix**: Clear the static endpoint and fix the systemd override:
-  ```bash
-  sudo tailscale set --relay-server-static-endpoints=''
-  # Then fix /etc/systemd/system/tailscaled.service.d/relay.conf to only set --relay-server-port=40000
-  sudo systemctl daemon-reload
-  ```
-- **Never use static endpoints** -- Bell PPPoE IP is dynamic. STUN + UPnP on Toronto UniFi discovers the correct public IP automatically.
-- After clearing, restart tailscaled to force re-advertisement: `sudo systemctl restart tailscaled`
+    - **Symptom**: `tailscale ping` shows DERP instead of peer-relay. tsrelay shows `Active: False`, `InEngine: False`, `LastHandshake: 0001-01-01` from client perspective.
+    - **Root cause**: `--relay-server-static-endpoints` pointed to a stale Bell PPPoE IP. Clients try the dead address. Bell PPPoE IPs are dynamic.
+    - **How it happened**: Systemd override (`/etc/systemd/system/tailscaled.service.d/relay.conf`) re-applied the stale IP on every tailscaled restart via `ExecStartPost`.
+    - **Fix**: Clear the static endpoint and fix the systemd override:
+      ```bash
+      sudo tailscale set --relay-server-static-endpoints=''
+      # Then fix /etc/systemd/system/tailscaled.service.d/relay.conf to only set --relay-server-port=40000
+      sudo systemctl daemon-reload
+      ```
+    - **Never use static endpoints** -- Bell PPPoE IP is dynamic. STUN + UPnP on Toronto UniFi discovers the correct public IP automatically.
+    - After clearing, restart tailscaled to force re-advertisement: `sudo systemctl restart tailscaled`
 
-**Verification**: `tailscale ping <host>` should show `via peer-relay(IP:PORT:vni:N)` instead of `via DERP(tor)`
+    **Verification**: `tailscale ping <host>` should show `via peer-relay(IP:PORT:vni:N)` instead of `via DERP(tor)`
 
-### Mobile hotspot has symmetric NAT (no direct connections)
+??? bug "Mobile hotspot has symmetric NAT (no direct connections)"
 
-- **Symptom**: `tailscale netcheck` shows `MappingVariesByDestIP: true` and `PortMapping: (none)` on phone hotspot
-- **Root cause**: Carrier CGNAT on mobile hotspots uses Endpoint-Dependent Mapping (symmetric NAT). No UPnP, so direct hole-punching is impossible when the remote side also has restrictive NAT.
-- **Result**: Direct connections fail to all peers. Peer relay still works (zmac to tsrelay via DERP or direct, then to workstation). DERP works as fallback.
-- **Tip**: Coffee shop Wi-Fi often has more permissive NAT than carrier hotspots -- test with `tailscale netcheck` and look for `MappingVariesByDestIP: false`
+    - **Symptom**: `tailscale netcheck` shows `MappingVariesByDestIP: true` and `PortMapping: (none)` on phone hotspot
+    - **Root cause**: Carrier CGNAT on mobile hotspots uses Endpoint-Dependent Mapping (symmetric NAT). No UPnP, so direct hole-punching is impossible when the remote side also has restrictive NAT.
+    - **Result**: Direct connections fail to all peers. Peer relay still works (zmac to tsrelay via DERP or direct, then to workstation). DERP works as fallback.
+    - **Tip**: Coffee shop Wi-Fi often has more permissive NAT than carrier hotspots -- test with `tailscale netcheck` and look for `MappingVariesByDestIP: false`
 
-### Never run `tailscale down` over a Tailscale SSH session
+!!! danger "Never run tailscale down over SSH"
 
-- `tailscale down` kills the connection immediately
-- Over a Tailscale SSH session, the shell dies before `tailscale up` can execute
-- `--accept-risk=lose-ssh` warns but doesn't prevent it
-- **Use `sudo systemctl restart tailscaled` instead** -- it restarts the daemon and auto-reconnects
-- Backup access: Teleport VPN to 192.168.2.239 if Tailscale is stuck down
+    ### Never run `tailscale down` over a Tailscale SSH session
+
+    - `tailscale down` kills the connection immediately
+    - Over a Tailscale SSH session, the shell dies before `tailscale up` can execute
+    - `--accept-risk=lose-ssh` warns but doesn't prevent it
+    - **Use `sudo systemctl restart tailscaled` instead** -- it restarts the daemon and auto-reconnects
+    - Backup access: Teleport VPN to 192.168.2.239 if Tailscale is stuck down
