@@ -3,3 +3,5 @@ site/
 __pycache__/
 *.pyc
 .cache/
+.astro/
+node_modules/
