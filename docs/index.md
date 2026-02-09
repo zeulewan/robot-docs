@@ -1,4 +1,5 @@
 ---
+title: Home
 icon: lucide/bot
 hide:
   - navigation
