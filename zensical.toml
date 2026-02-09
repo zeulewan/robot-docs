@@ -3,7 +3,9 @@ site_name = "Robot Docs"
 site_description = "Workstation setup documentation for robotics simulation and development with Isaac Sim, Isaac ROS, and Unitree G1."
 site_author = "Zeul"
 site_url = "https://zeulewan.github.io/robot-docs-zensical/"
-copyright = "Copyright &copy; 2026 Zeul"
+repo_url = "https://github.com/zeulewan/robot-docs-zensical"
+repo_name = "zeulewan/robot-docs-zensical"
+copyright = "&copy; 2026 Zeul Mordasiewicz"
 
 nav = [
   { "Home" = "index.md" },
@@ -36,32 +38,63 @@ nav = [
 [project.theme]
 language = "en"
 features = [
+    # Content
     "content.code.copy",
+    "content.code.annotate",
     "content.code.select",
+    "content.tabs.link",
+    # Navigation
     "navigation.footer",
-    "navigation.indexes",
     "navigation.instant",
     "navigation.instant.prefetch",
+    "navigation.instant.progress",
     "navigation.path",
+    "navigation.indexes",
+    "navigation.prune",
     "navigation.sections",
+    "navigation.tabs",
     "navigation.top",
-    "navigation.tracking",
+    # Table of contents
+    "toc.follow",
+    # Header
+    "header.autohide",
+    # Search
     "search.highlight",
+    "search.suggest",
+    "search.share",
 ]
 
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+# Palette toggle for automatic mode
 [[project.theme.palette]]
+media = "(prefers-color-scheme)"
+primary = "blue"
+accent = "blue"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+# Palette toggle for light mode
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
 scheme = "default"
-primary = "deep purple"
-accent = "deep purple"
+primary = "blue"
+accent = "blue"
 toggle.icon = "lucide/sun"
 toggle.name = "Switch to dark mode"
 
+# Palette toggle for dark mode
 [[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
 scheme = "slate"
-primary = "deep purple"
-accent = "deep purple"
+primary = "blue"
+accent = "blue"
 toggle.icon = "lucide/moon"
-toggle.name = "Switch to light mode"
+toggle.name = "Switch to system preference"
+
+[project.extra]
+generator = false
 
 [[project.extra.social]]
 icon = "fontawesome/brands/github"
