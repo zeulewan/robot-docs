@@ -7,23 +7,38 @@
 - [Quick Start](getting-started/index.md): Introduction to the system -- what everything is, how it connects, and where to go next.
 - [Architecture](getting-started/architecture.md): System architecture diagrams for simulation and real G1 robot modes, data flow, DDS config.
 
-## Guides
+## Simulation
 
-- [Isaac Sim Setup](guides/isaac-sim-setup.md): Isaac Sim 5.1 and Isaac Lab installation, ROS 2 bridge, Foxglove visualization, troubleshooting.
-- [Isaac ROS Container](guides/isaac-ros-container.md): GPU-accelerated ROS 2 perception container (AprilTag, cuVSLAM, nvblox), FastDDS config, foxglove-bridge.
-- [GPU & Display Config](guides/gpu-and-display.md): NVIDIA persistence mode, X11 virtual display, xorg.conf, EDID generator, DPMS settings.
-- [Sunshine Streaming](guides/sunshine-streaming.md): Sunshine game streaming server for remote desktop via Moonlight.
-- [Tailscale Setup](guides/tailscale-setup.md): Tailscale VPN ACL policy, peer relay setup, connection priority.
-- [NAT Troubleshooting](guides/nat-troubleshooting.md): NAT concepts (EIM/EDM, EIF/EDF), CGNAT, STUN, UPnP, troubleshooting commands.
+### Isaac Sim
 
-## Reference
+- [Isaac Sim Setup](simulation/isaac-sim/setup.md): Isaac Sim 5.1 and Isaac Lab installation, ROS 2 bridge, Foxglove visualization, troubleshooting.
 
-- [Hardware & Specs](reference/hardware.md): RTX 3090 workstation specs, NVIDIA driver, GPU requirements for Isaac Sim.
-- [Network Topology](reference/network-topology.md): Toronto/Kingston network layout, Tailscale devices, throughput benchmarks.
-- [Current Setup](reference/current-setup.md): Software versions snapshot (Feb 2026) -- Isaac Sim 5.1, Isaac Lab 2.3.2, Docker, CUDA 13.0.
-- [Isaac ROS Dockerfile](reference/isaac-ros-dockerfile.md): Reproducible Dockerfile plan for the Isaac ROS container.
+### Isaac ROS
+
+- [Isaac ROS Container](simulation/isaac-ros/container.md): GPU-accelerated ROS 2 perception container (AprilTag, cuVSLAM, nvblox), FastDDS config, foxglove-bridge.
+- [Isaac ROS Dockerfile](simulation/isaac-ros/dockerfile.md): Reproducible Dockerfile plan for the Isaac ROS container.
+
+## Infrastructure
+
+### Workstation
+
+- [GPU & Display Config](infrastructure/workstation/gpu-display.md): NVIDIA persistence mode, X11 virtual display, xorg.conf, EDID generator, DPMS settings.
+- [Sunshine Streaming](infrastructure/workstation/sunshine.md): Sunshine game streaming server for remote desktop via Moonlight.
+- [Hardware & Specs](infrastructure/workstation/hardware.md): RTX 3090 workstation specs, NVIDIA driver, GPU requirements for Isaac Sim.
+- [Current Setup](infrastructure/workstation/current-setup.md): Software versions snapshot (Feb 2026) -- Isaac Sim 5.1, Isaac Lab 2.3.2, Docker, CUDA 13.0.
+
+### Networking
+
+- [Tailscale Setup](infrastructure/networking/tailscale.md): Tailscale VPN ACL policy, peer relay setup, connection priority.
+- [NAT Troubleshooting](infrastructure/networking/nat.md): NAT concepts (EIM/EDM, EIF/EDF), CGNAT, STUN, UPnP, troubleshooting commands.
+- [Network Topology](infrastructure/networking/topology.md): Toronto/Kingston network layout, Tailscale devices, throughput benchmarks.
+
+### Commands
+
+- [Commands Reference](infrastructure/commands.md): Docker, ROS 2, Isaac Sim, tmux, and system commands.
 
 ## Project
 
 - [Progress](project/progress.md): Current work in progress and next steps.
 - [About](project/about.md): How this documentation site is built.
+- [Blog](project/blog/index.md): Development log and progress updates.

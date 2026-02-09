@@ -249,3 +249,13 @@ The docker-compose approach at `~/workspaces/isaac_ros-dev/` gives full control 
 ??? bug "Container missing packages after restart"
 
     This happens when a container is recreated from the stock NVIDIA base image instead of the custom `isaac-ros-dev:latest` image. A common cause was `isaac-ros activate` (from the `isaac-ros-cli` package), which silently recreates containers from base without custom layers. That tool has been removed — see [Why Not isaac-ros-cli?](#why-not-isaac-ros-cli) above. Always use `docker compose up -d` to manage the container.
+
+??? bug "Camera feed flickering between two views in Foxglove"
+
+    If the video stream appears to alternate between two slightly offset perspectives (like flipping between left and right stereo cameras), check for multiple Isaac Sim instances publishing to the same ROS 2 topics:
+
+    ```bash
+    ps aux | grep isaacsim
+    ```
+
+    Two instances will interleave frames on the same topic, causing the flickering. Kill the extra instance and leave only one running. This commonly happens when a headless instance was left running in a tmux session and a second GUI instance was launched separately.

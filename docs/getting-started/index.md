@@ -1,91 +1,141 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # Getting Started
 
-Start here if you're new to this system. Covers what everything is, how it fits together, and where to go next.
+Robotics simulation and perception stack for the **Unitree G1** humanoid robot using **NVIDIA Isaac Sim**, **Isaac ROS**, and an **RTX 3090 workstation**.
 
-Robotics simulation and perception stack for the **Unitree G1 humanoid robot**. Start here if ROS, Isaac Sim, or Docker are new to you.
+---
 
-## What this system does
-
-Develop software for a bipedal humanoid robot (Unitree G1) that walks, sees, and interacts with its environment. Two modes:
-
-| Mode | What's running | Where |
-|---|---|---|
-| **Simulation** | A virtual G1 in a physics simulator | Workstation (RTX 3090) |
-| **Real robot** | Physical G1 with cameras, IMU, motors | G1's onboard Jetson Orin (runs autonomously) |
-
-In simulation mode, the workstation runs both the simulator and perception. In real robot mode, the G1 runs everything onboard on its Jetson Orin -- the workstation is only used for simulation and training.
-
-## The key software
-
-### ROS 2 (Robot Operating System 2)
-
-Middleware framework for robotics. Programs ("nodes") communicate by publishing and subscribing to named data channels ("topics"). A camera node publishes image data on `/camera/image`, a SLAM node subscribes to it.
-
-- **Not an OS** -- a set of libraries and tools that run on Linux
-- **DDS** -- transport layer. Nodes discover each other automatically over the network, no central server
-- **Version:** Jazzy (latest LTS)
-
-### Isaac Sim
-
-NVIDIA's robot simulator. Renders a 3D world with accurate physics (contacts, gravity, friction) and simulates sensors (cameras, IMU, lidar). The simulated G1 publishes the same ROS 2 topics as the real robot -- downstream code doesn't know the difference.
-
-- Runs on workstation GPU (RTX 3090)
-- GUI mode needs a desktop session; headless mode available for training
-- Built-in ROS 2 bridge publishes sensor data
-
-### Isaac ROS
-
-GPU-accelerated ROS 2 packages from NVIDIA for robot perception:
-
-| Package | What it does |
-|---|---|
-| **cuVSLAM** | Visual SLAM -- builds a map and tracks the robot's position using cameras |
-| **AprilTag** | Detects fiducial markers in camera images |
-| **nvblox** | Builds a 3D occupancy map from depth cameras |
-
-Run inside a Docker container on the workstation in simulation mode. For the real G1, these same packages run onboard the Jetson Orin.
-
-### Docker
-
-All Isaac ROS packages run in a Docker container -- an isolated Linux environment with its own libraries. Avoids version conflicts with the host system. Full GPU access via `nvidia-container-toolkit`.
-
-### Foxglove
-
-Browser-based visualization tool. Connects to a WebSocket bridge (port 8765) in the Isaac ROS container to display camera feeds, 3D maps, robot state, and sensor data in real time. No install needed -- just open a browser.
-
-## How it all connects
+## System Overview
 
 ```mermaid
 flowchart LR
-    subgraph WS["Workstation"]
-        SIM["Isaac Sim<br/>Simulated G1 robot<br/>cameras, IMU, joints<br/>physics + rendering<br/>GPU"]
-        ROS["Isaac ROS Container<br/>SLAM, AprilTag<br/>nvblox, nav2<br/>Foxglove bridge :8765"]
+    subgraph WS["Workstation — RTX 3090"]
+        SIM["<b>Isaac Sim 5.1</b><br/>Simulated G1 robot"]
+        ROS["<b>Isaac ROS Container</b><br/>GPU perception (Docker)"]
+        SIM -- "ROS 2 (DDS)" --> ROS
+        ROS -- "ROS 2 (DDS)" --> SIM
     end
-    FOX["Foxglove Studio<br/>(any browser)"]
+    subgraph MAC["MacBook — Development"]
+        MOON["Moonlight<br/>Remote desktop"]
+        FOX["Foxglove Studio<br/>Sensor visualization"]
+    end
 
-    SIM -- "DDS" --> ROS
-    ROS -- "DDS" --> SIM
+    WS -- "Tailscale VPN" --> MAC
     ROS -- "WebSocket :8765" --> FOX
+    WS -- "Sunshine stream" --> MOON
 ```
 
-In simulation mode, Isaac Sim replaces the real robot. In real robot mode, the G1's Jetson Orin publishes the same ROS 2 topics over Ethernet instead.
+The workstation runs two main components:
 
-## Accessing the workstation
+- **Isaac Sim** — NVIDIA's robot simulator. Renders a 3D world with accurate physics and simulates the G1's sensors (cameras, IMU, lidar). Publishes the same ROS 2 topics as the real robot.
+- **Isaac ROS** — GPU-accelerated perception packages running in a Docker container. Receives sensor data from the simulator, runs SLAM, AprilTag detection, and 3D mapping on the GPU.
 
-| Method | Use case | Details |
+These communicate over **ROS 2** (DDS), and results are visualized remotely via **Foxglove Studio** in a browser.
+
+---
+
+## Simulation vs Real Robot
+
+```mermaid
+flowchart LR
+    subgraph SIM_MODE["Simulation Mode"]
+        direction TB
+        IS["Isaac Sim<br/>(workstation GPU)"]
+        IR["Isaac ROS<br/>(workstation Docker)"]
+        IS <-- "DDS" --> IR
+    end
+    subgraph REAL_MODE["Real Robot Mode"]
+        direction TB
+        G1["Unitree G1<br/>(Jetson Orin)"]
+        PERC["Onboard Perception<br/>(cuVSLAM, AprilTag)"]
+        G1 --> PERC
+    end
+
+    SIM_MODE -. "Same ROS 2 interface" .-> REAL_MODE
+```
+
+| | Simulation | Real Robot |
 |---|---|---|
-| **Moonlight** | Full desktop (best for Isaac Sim GUI) | Connect via Sunshine streaming server |
-| **SSH** | Terminal only | `ssh workstation` (via Tailscale) |
-| **Foxglove** | View sensor data from any browser | `ws://workstation:8765` |
+| **Runs on** | Workstation (RTX 3090) | G1's Jetson Orin |
+| **Sensor source** | Simulated in Isaac Sim | Physical cameras, IMU |
+| **Perception** | Isaac ROS container | Onboard Orin GPU |
+| **ROS 2 topics** | Identical interface | Identical interface |
 
-!!! tip "Remote Access"
+The simulated and real robots publish the same ROS 2 topics — perception code works without modification in both modes.
 
-    All remote access works over [Tailscale](../guides/tailscale-setup.md) (mesh VPN) -- no need to be on the same network.
+---
 
-## Where to go next
+## Software Stack
 
-1. **[Architecture](architecture.md)** -- detailed data flow diagrams for simulation and real robot modes
-2. **[Current Setup](../reference/current-setup.md)** -- exact software versions and configuration
-3. **[Isaac Sim](../guides/isaac-sim-setup.md)** -- launching the simulator, ROS 2 bridge, troubleshooting
-4. **[Isaac ROS](../guides/isaac-ros-container.md)** -- the Docker container, what's inside, how to use it
-5. **[Current Progress](../project/progress.md)** -- what's being worked on right now
+```mermaid
+block-beta
+    columns 3
+    block:sim:1
+        columns 1
+        A["Isaac Sim 5.1"]
+        B["Isaac Lab 2.3.2"]
+    end
+    block:perc:1
+        columns 1
+        C["Isaac ROS (Docker)"]
+        D["AprilTag · cuVSLAM · nvblox"]
+    end
+    block:infra:1
+        columns 1
+        E["Tailscale VPN"]
+        F["Sunshine + Moonlight"]
+    end
+
+    style sim fill:#1a73e8,color:#fff
+    style perc fill:#34a853,color:#fff
+    style infra fill:#ea4335,color:#fff
+```
+
+| Component | Purpose |
+|---|---|
+| **ROS 2 Jazzy** | Middleware — nodes publish/subscribe to topics over DDS |
+| **Isaac Sim** | Physics simulator with GPU rendering and sensor simulation |
+| **Isaac Lab** | Robot learning framework — trains RL policies on Isaac Sim |
+| **Isaac ROS** | GPU-accelerated perception (SLAM, AprilTag, nvblox) in Docker |
+| **Foxglove** | Browser-based visualization of all ROS 2 data |
+| **Tailscale** | Mesh VPN for remote access between Toronto and Kingston |
+| **Sunshine** | GPU-accelerated remote desktop streaming via Moonlight |
+
+---
+
+## Documentation Map
+
+Each major component has its own section with setup instructions, configuration details, and troubleshooting:
+
+<div class="grid cards" markdown>
+
+-   :material-cube-outline:{ .lg .middle } **[Simulation](../simulation/index.md)**
+
+    ---
+
+    Isaac Sim, Isaac ROS, ROS 2 bridge, GPU perception
+
+-   :material-server:{ .lg .middle } **[Infrastructure](../infrastructure/index.md)**
+
+    ---
+
+    Workstation, networking, streaming, and command reference
+
+-   :material-graph:{ .lg .middle } **[Architecture](architecture.md)**
+
+    ---
+
+    Detailed data flow diagrams for simulation and real robot modes
+
+-   :material-chart-timeline:{ .lg .middle } **[Project](../project/index.md)**
+
+    ---
+
+    Progress updates, blog posts, and about this site
+
+</div>

@@ -12,6 +12,14 @@ Project status, decisions, and meta-documentation.
 
     [:octicons-arrow-right-24: Read more](progress.md)
 
+-   :material-post:{ .lg .middle } **Blog**
+
+    ---
+
+    Development log and progress updates
+
+    [:octicons-arrow-right-24: Read more](blog/index.md)
+
 -   :material-information:{ .lg .middle } **About**
 
     ---

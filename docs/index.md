@@ -29,37 +29,21 @@ hide:
 
     [:octicons-arrow-right-24: Data Flow](getting-started/architecture.md)
 
--   :material-cube-outline:{ .lg .middle } **Isaac Sim**
+-   :material-cube-outline:{ .lg .middle } **Simulation**
 
     ---
 
-    Isaac Sim 5.1 and Isaac Lab setup, ROS 2 bridge, Foxglove
+    Isaac Sim, Isaac ROS, ROS 2 bridge, GPU perception
 
-    [:octicons-arrow-right-24: Setup Guide](guides/isaac-sim-setup.md)
+    [:octicons-arrow-right-24: Simulation](simulation/index.md)
 
--   :material-docker:{ .lg .middle } **Isaac ROS**
-
-    ---
-
-    GPU-accelerated perception container: AprilTag, cuVSLAM, nvblox
-
-    [:octicons-arrow-right-24: Container Guide](guides/isaac-ros-container.md)
-
--   :material-monitor:{ .lg .middle } **Workstation**
+-   :material-server:{ .lg .middle } **Infrastructure**
 
     ---
 
-    GPU config, X11 display, Sunshine streaming
+    Workstation, networking, streaming, and command reference
 
-    [:octicons-arrow-right-24: GPU & Display](guides/gpu-and-display.md)
-
--   :material-lan:{ .lg .middle } **Networking**
-
-    ---
-
-    Tailscale VPN, network topology, NAT troubleshooting
-
-    [:octicons-arrow-right-24: Topology](reference/network-topology.md)
+    [:octicons-arrow-right-24: Infrastructure](infrastructure/index.md)
 
 </div>
 
