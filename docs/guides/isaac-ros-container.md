@@ -27,9 +27,8 @@ docker stop isaac_ros_dev_container && docker rm isaac_ros_dev_container
 
 ## Do not use `isaac-ros activate`
 
-:::danger
-`isaac-ros activate` deletes a stopped container and recreates from the base NVIDIA image, losing all customizations.
-:::
+!!! danger
+    `isaac-ros activate` deletes a stopped container and recreates from the base NVIDIA image, losing all customizations.
 
 Safe for attaching to an already running container (`docker exec bash`), but never use it to start one.
 
@@ -44,7 +43,7 @@ Safe for attaching to an already running container (`docker exec bash`), but nev
 
 ### Migration Plan
 
-Switching to a reproducible Dockerfile. See [Dockerfile Plan](../isaac-ros/dockerfile-plan.md).
+Switching to a reproducible Dockerfile. See [Dockerfile Plan](../reference/isaac-ros-dockerfile.md).
 
 New base: full NVIDIA image (noble + ros2_jazzy layers) with ROS 2 Jazzy, TensorRT, PyTorch, nav2, rviz2, foxglove-bridge, slam_toolbox, OpenCV, and CUDA dev tools.
 

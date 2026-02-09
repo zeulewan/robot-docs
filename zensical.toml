@@ -9,29 +9,33 @@ copyright = "&copy; 2026 Zeul Mordasiewicz"
 
 nav = [
   { "Home" = "index.md" },
-  { "Overview" = [
-    "getting-started.md",
-    "current-setup.md",
-    "current-progress.md",
-    "architecture.md",
-    "about.md",
+  { "Getting Started" = [
+    "getting-started/index.md",
+    "getting-started/architecture.md",
   ]},
-  { "Isaac Sim" = [
-    "isaac-sim/index.md",
+  { "Guides" = [
+    "guides/isaac-sim-setup.md",
+    "guides/isaac-ros-container.md",
+    "guides/gpu-and-display.md",
+    "guides/sunshine-streaming.md",
+    "guides/tailscale-setup.md",
+    "guides/nat-troubleshooting.md",
   ]},
-  { "Isaac ROS" = [
-    "isaac-ros/index.md",
-    "isaac-ros/dockerfile-plan.md",
+  { "Reference" = [
+    "reference/hardware.md",
+    "reference/network-topology.md",
+    "reference/current-setup.md",
+    "reference/isaac-ros-dockerfile.md",
   ]},
-  { "Workstation" = [
-    "workstation/hardware.md",
-    "workstation/gpu-config.md",
-    "workstation/x11-display.md",
+  { "Blog" = [
+    "blog/index.md",
+    "blog/2026-02-08-isaac-ros-full-image.md",
+    "blog/2026-02-07-ros2-bridge-and-headless-sim.md",
+    "blog/2026-02-06-ubuntu-upgrade-and-sunshine.md",
   ]},
-  { "Networking" = [
-    "networking/topology.md",
-    "networking/tailscale.md",
-    "networking/nat.md",
+  { "Project" = [
+    "project/progress.md",
+    "project/about.md",
   ]},
 ]
 

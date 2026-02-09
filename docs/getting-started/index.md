@@ -78,12 +78,12 @@ In simulation mode, Isaac Sim replaces the real robot. In real robot mode, the G
 | **SSH** | Terminal only | `ssh workstation` (via Tailscale) |
 | **Foxglove** | View sensor data from any browser | `ws://workstation:8765` |
 
-All remote access works over [Tailscale](../networking/tailscale.md) (mesh VPN) -- no need to be on the same network.
+All remote access works over [Tailscale](../guides/tailscale-setup.md) (mesh VPN) -- no need to be on the same network.
 
 ## Where to go next
 
 1. **[Architecture](architecture.md)** -- detailed data flow diagrams for simulation and real robot modes
-2. **[Current Setup](current-setup.md)** -- exact software versions and configuration
-3. **[Isaac Sim](isaac-sim/index.md)** -- launching the simulator, ROS 2 bridge, troubleshooting
-4. **[Isaac ROS](isaac-ros/index.md)** -- the Docker container, what's inside, how to use it
-5. **[Current Progress](current-progress.md)** -- what's being worked on right now
+2. **[Current Setup](../reference/current-setup.md)** -- exact software versions and configuration
+3. **[Isaac Sim](../guides/isaac-sim-setup.md)** -- launching the simulator, ROS 2 bridge, troubleshooting
+4. **[Isaac ROS](../guides/isaac-ros-container.md)** -- the Docker container, what's inside, how to use it
+5. **[Current Progress](../project/progress.md)** -- what's being worked on right now

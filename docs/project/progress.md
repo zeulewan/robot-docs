@@ -11,7 +11,7 @@ Replacing hand-built `isaac_ros_dev_container` (19.8 GB, `docker commit`) with a
 
 - **Base image:** `nvcr.io/nvidia/isaac/ros:noble-ros2_jazzy_d3e84470d576702a380478a513fb3fc6-amd64` (pulled Feb 8, 2026)
 - **Custom additions:** Isaac ROS perception packages (AprilTag, cuVSLAM, nvblox), H.264 NVENC transport, FastDDS fix, entrypoint scripts
-- **Full plan:** [Dockerfile Plan](../isaac-ros/dockerfile-plan.md)
+- **Full plan:** [Dockerfile Plan](../reference/isaac-ros-dockerfile.md)
 
 ## Next Steps
 
