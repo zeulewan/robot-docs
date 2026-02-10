@@ -8,6 +8,11 @@ hide:
 
 Robotics simulation and perception stack for the **Unitree G1** humanoid robot using **NVIDIA Isaac Sim**, **Isaac ROS**, and an **RTX 3090 workstation**.
 
+<video controls autoplay muted loop style="width: 60%; border-radius: 8px; margin: 1em auto; display: block;">
+  <source src="../assets/demo.mp4" type="video/mp4">
+</video>
+<p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Driving the Carter robot through the warehouse with lidar visualization in Foxglove Studio</p>
+
 ---
 
 ## System Overview

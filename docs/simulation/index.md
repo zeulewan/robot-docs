@@ -2,6 +2,11 @@
 
 Isaac Sim and Isaac ROS — simulation, perception, and the ROS 2 bridge.
 
+<video controls autoplay muted loop style="width: 60%; border-radius: 8px; margin: 1em auto; display: block;">
+  <source src="../assets/demo.mp4" type="video/mp4">
+</video>
+<p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Driving the Carter robot through the warehouse with lidar visualization in Foxglove Studio</p>
+
 <div class="grid cards" markdown>
 
 -   :material-cube-outline:{ .lg .middle } **Isaac Sim**
