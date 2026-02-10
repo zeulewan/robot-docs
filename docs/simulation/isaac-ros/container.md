@@ -72,9 +72,11 @@ This includes:
 
 What's NOT in the base (we add these):
 
+- Standard ROS 2 apt repository (NVIDIA base only has their own repos)
 - Isaac ROS perception packages (apriltag, cuVSLAM, nvblox)
 - H.264 NVENC video transport for Foxglove
 - ffmpeg with NVENC support
+- Teleop packages (keyboard and joystick control)
 - FastDDS configuration for host/container communication
 
 ---
@@ -85,16 +87,18 @@ The Dockerfile (`~/workspaces/isaac_ros-dev/Dockerfile`) adds a thin layer on to
 
 ### Packages
 
-Installed from NVIDIA's Isaac ROS apt repository (pre-built .deb packages, not compiled from source):
+The NVIDIA base image only includes NVIDIA's own apt repos. The Dockerfile first adds the standard ROS 2 community repo (`packages.ros.org`) and removes a broken yarn repo from the base image, then installs packages from both sources:
 
-| Package | What it does |
-|---|---|
-| `ros-jazzy-isaac-ros-apriltag` | GPU-accelerated AprilTag detection and pose estimation |
-| `ros-jazzy-isaac-ros-visual-slam` | cuVSLAM — visual SLAM using stereo cameras on GPU |
-| `ros-jazzy-isaac-ros-nvblox` | GPU 3D reconstruction from depth cameras |
-| `ros-jazzy-foxglove-compressed-video-transport` | Encodes camera feeds as H.264 for Foxglove |
-| `ros-jazzy-ffmpeg-encoder-decoder` | ROS 2 wrapper around ffmpeg for NVENC encoding |
-| `ffmpeg` | CLI video tool (used by the encoder) |
+| Package | Source | What it does |
+|---|---|---|
+| `ros-jazzy-isaac-ros-apriltag` | NVIDIA | GPU-accelerated AprilTag detection and pose estimation |
+| `ros-jazzy-isaac-ros-visual-slam` | NVIDIA | cuVSLAM — visual SLAM using stereo cameras on GPU |
+| `ros-jazzy-isaac-ros-nvblox` | NVIDIA | GPU 3D reconstruction from depth cameras |
+| `ros-jazzy-foxglove-compressed-video-transport` | NVIDIA | Encodes camera feeds as H.264 for Foxglove |
+| `ros-jazzy-ffmpeg-encoder-decoder` | NVIDIA | ROS 2 wrapper around ffmpeg for NVENC encoding |
+| `ros-jazzy-teleop-twist-keyboard` | NVIDIA | Keyboard-based robot control — publishes `Twist` to `/cmd_vel` |
+| `ros-jazzy-teleop-twist-joy` | ROS 2 | Converts `Joy` messages to `Twist` — for Foxglove joystick control |
+| `ffmpeg` | Ubuntu | CLI video tool (used by the encoder) |
 
 After installing, `rm -rf /var/lib/apt/lists/*` deletes the apt package index cache (~50-100 MB) to keep the image smaller. Standard Docker practice.
 
@@ -123,8 +127,9 @@ The NVIDIA base image has a startup system: when the container boots, it runs ev
 |---|---|
 | `50-foxglove-bridge.sh` | Starts foxglove-bridge on port 8765 (WebSocket for Foxglove Studio) |
 | `60-h264-republisher.sh` | Starts H.264 NVENC republisher (encodes raw camera topics for remote viewing) |
+| `70-teleop-twist-joy.sh` | Starts `teleop_node` — converts `/joy` to `/cmd_vel` for Foxglove joystick control |
 
-Both scripts must explicitly set `FASTRTPS_DEFAULT_PROFILES_FILE` because entrypoint scripts are `source`d, not run as login shells.
+All scripts must explicitly set `FASTRTPS_DEFAULT_PROFILES_FILE` because entrypoint scripts are `source`d, not run as login shells.
 
 ### Admin User
 
@@ -157,6 +162,18 @@ Encodes raw camera images using the GPU's hardware H.264 encoder (NVENC). Withou
 !!! note
     H.265 does NOT work with Foxglove (browser can't decode keyframes). Use H.264 only.
 
+### Teleop Twist Joy
+
+| | |
+|---|---|
+| **Subscribes to** | `/joy` (`sensor_msgs/Joy`) |
+| **Publishes** | `/cmd_vel` (`geometry_msgs/Twist`) |
+| **Auto-starts** | Yes, via entrypoint script |
+
+Converts joystick input to velocity commands. Axis 1 (vertical) maps to `linear.x` (forward/back), axis 0 (horizontal) maps to `angular.z` (turn). Deadman switch is disabled — input goes straight to `/cmd_vel`.
+
+Used with the [foxglove-joystick](https://github.com/joshnewans/foxglove-joystick) extension in Foxglove Studio. Set the extension to **Keyboard mode** and publish to `/joy`.
+
 ---
 
 ## Files
@@ -170,6 +187,7 @@ All in `~/workspaces/isaac_ros-dev/`:
 | `fastdds_no_shm.xml` | UDP-only DDS transport config |
 | `50-foxglove-bridge.sh` | Foxglove auto-start entrypoint |
 | `60-h264-republisher.sh` | H.264 republisher auto-start entrypoint |
+| `70-teleop-twist-joy.sh` | Teleop Joy → Twist auto-start entrypoint |
 
 ### Rebuilding the Image
 
@@ -193,6 +211,29 @@ docker exec isaac_ros_dev_container bash -c \
   "export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
    source /opt/ros/jazzy/setup.bash && \
    ros2 $*"
+```
+
+---
+
+## Teleop (Keyboard Control)
+
+Drive the robot from a terminal using `teleop_twist_keyboard`. It publishes `geometry_msgs/Twist` to `/cmd_vel` and sends zero velocity when you release keys.
+
+```bash
+# In a tmux session
+docker exec -it isaac_ros_dev_container bash -c \
+  "source /opt/ros/jazzy/setup.bash && \
+   export RMW_IMPLEMENTATION=rmw_fastrtps_cpp && \
+   export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml && \
+   ros2 run teleop_twist_keyboard teleop_twist_keyboard"
+```
+
+Controls:
+
+```
+   u    i    o        i = forward       k = stop
+   j    k    l        , = backward      q/z = speed up/down
+   m    ,    .        j/l = turn        w/x = turn speed up/down
 ```
 
 ---

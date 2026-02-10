@@ -99,6 +99,85 @@ ros2 run image_transport republish raw foxglove --ros-args \
 
 ---
 
+## ROS 2 Topics (Carter Warehouse Scene)
+
+The headless sample scene (`carter_warehouse_apriltags_worker.usd`) publishes these topics:
+
+### Sensors
+
+| Topic | Type | Description |
+|---|---|---|
+| `/front_stereo_camera/left/image_rect_color` | `sensor_msgs/Image` | Left stereo camera (rectified) |
+| `/front_stereo_camera/right/image_rect_color` | `sensor_msgs/Image` | Right stereo camera (rectified) |
+| `/front_stereo_camera/left/camera_info` | `sensor_msgs/CameraInfo` | Left camera calibration |
+| `/front_stereo_camera/right/camera_info` | `sensor_msgs/CameraInfo` | Right camera calibration |
+| `/front_3d_lidar/lidar_points` | `sensor_msgs/PointCloud2` | 3D lidar point cloud |
+| `/chassis/imu` | `sensor_msgs/Imu` | Chassis IMU |
+| `/front_stereo_imu/imu` | `sensor_msgs/Imu` | Front stereo camera IMU |
+| `/back_stereo_imu/imu` | `sensor_msgs/Imu` | Back stereo camera IMU |
+| `/left_stereo_imu/imu` | `sensor_msgs/Imu` | Left stereo camera IMU |
+| `/right_stereo_imu/imu` | `sensor_msgs/Imu` | Right stereo camera IMU |
+
+### Robot State
+
+| Topic | Type | Description |
+|---|---|---|
+| `/chassis/odom` | `nav_msgs/Odometry` | Robot position and velocity (ground truth from sim) |
+| `/tf` | `tf2_msgs/TFMessage` | Transform tree — spatial relationships between all frames |
+| `/clock` | `rosgraph_msgs/Clock` | Simulation time |
+
+### Control
+
+| Topic | Type | Description |
+|---|---|---|
+| `/cmd_vel` | `geometry_msgs/Twist` | Velocity commands (`linear.x` = forward/back, `angular.z` = turn) |
+
+### Added by Container
+
+| Topic | Type | Description |
+|---|---|---|
+| `/front_stereo_camera/left/compressed_video` | `foxglove_msgs/CompressedVideo` | H.264 NVENC compressed stream (from republisher) |
+
+!!! note "Rectified images"
+    "Rectified" means lens distortion is removed and stereo pairs are aligned so left/right pixels share the same row — ready for depth computation. In sim it's a formality (virtual cameras have no distortion), but the topic names match real camera pipelines.
+
+---
+
+## TF Tree (Carter Warehouse Scene)
+
+The Nova Carter robot has a large sensor suite. The transform tree shows how every frame relates to `base_link`:
+
+```
+odom                              ← world-fixed reference frame
+ └── base_link                    ← robot center (ground plane)
+      ├── nova_carter             ← robot body
+      │    ├── wheel_left
+      │    ├── wheel_right
+      │    └── caster_frame_base
+      │         ├── caster_swivel_left → caster_wheel_left
+      │         └── caster_swivel_right → caster_wheel_right
+      ├── chassis_imu
+      ├── front_3d_lidar
+      ├── front/back_2d_lidar
+      ├── front_stereo_camera     (left_optical, right_optical, imu)
+      ├── left_stereo_camera      (left_optical, right_optical, imu)
+      ├── right_stereo_camera     (left_optical, right_optical, imu)
+      ├── rear_stereo_camera      (left_optical, right_optical, imu)
+      ├── front/left/right/back_fisheye_camera_optical
+      ├── front/left/right/back_hawk (stereo pairs)
+      └── mount
+```
+
+Each transform is a 4x4 homogeneous matrix (rotation + translation). ROS uses the TF tree to convert points between frames — e.g., transforming a lidar point from the `front_3d_lidar` frame to `odom` (world coordinates).
+
+Generate the full tree as a PDF:
+
+```bash
+ros2 run tf2_tools view_frames
+```
+
+---
+
 ## Software Versions (February 2026)
 
 | Component | Version | Notes |

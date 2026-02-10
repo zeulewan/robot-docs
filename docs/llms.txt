@@ -12,11 +12,13 @@
 ### Isaac Sim
 
 - [Isaac Sim Setup](simulation/isaac-sim/setup.md): Isaac Sim 5.1 and Isaac Lab installation, ROS 2 bridge, Foxglove visualization, troubleshooting.
+- [ROS 2 Topics](simulation/isaac-sim/topics.md): All ROS 2 topics published by the Carter Warehouse scene -- sensors, robot state, control, TF tree, and container-added topics.
 
 ### Isaac ROS
 
 - [Isaac ROS Container](simulation/isaac-ros/container.md): GPU-accelerated ROS 2 perception container (AprilTag, cuVSLAM, nvblox), FastDDS config, foxglove-bridge.
-- [Isaac ROS Dockerfile](simulation/isaac-ros/dockerfile.md): Reproducible Dockerfile plan for the Isaac ROS container.
+- [ROS Nodes](simulation/isaac-ros/nodes.md): All ROS 2 nodes in the container -- auto-start services (foxglove-bridge, H.264 republisher, teleop_twist_joy) and on-demand nodes (cuVSLAM, AprilTag, teleop_twist_keyboard).
+- [Isaac ROS Dockerfile](simulation/isaac-ros/dockerfile.md): Dockerfile, docker-compose.yml, ROS 2 apt repo setup, build instructions.
 
 ## Infrastructure
 
@@ -42,3 +44,4 @@
 - [Progress](project/progress.md): Current work in progress and next steps.
 - [About](project/about.md): How this documentation site is built.
 - [Blog](project/blog/index.md): Development log and progress updates.
+  - [Teleop Control and Docs Restructure](project/blog/2026-02-09-teleop-and-docs-restructure.md): Browser teleop via Foxglove joystick, ROS2 schema fix, docs restructured to 4 tabs.
