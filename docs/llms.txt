@@ -17,7 +17,7 @@
 ### Isaac ROS
 
 - [Isaac ROS Container](simulation/isaac-ros/container.md): GPU-accelerated ROS 2 perception container (AprilTag, cuVSLAM, nvblox), FastDDS config, foxglove-bridge.
-- [ROS Nodes](simulation/isaac-ros/nodes.md): All ROS 2 nodes in the container -- auto-start services (foxglove-bridge, H.264 republisher, teleop_twist_joy) and on-demand nodes (cuVSLAM, AprilTag, teleop_twist_keyboard).
+- [ROS Nodes](simulation/isaac-ros/nodes/): All ROS 2 nodes in the container -- auto-start services (foxglove-bridge, H.264 republisher, teleop_twist_joy) and on-demand nodes (cuVSLAM, AprilTag, teleop_twist_keyboard, Nav2).
 - [Isaac ROS Dockerfile](simulation/isaac-ros/dockerfile.md): Dockerfile, docker-compose.yml, ROS 2 apt repo setup, build instructions.
 
 ## Infrastructure

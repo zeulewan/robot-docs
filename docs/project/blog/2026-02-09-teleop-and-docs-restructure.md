@@ -51,5 +51,5 @@ Created landing pages for Simulation and Infrastructure with grid cards linking 
 ## New Documentation Pages
 
 - **[ROS 2 Topics](../../simulation/isaac-sim/topics.md)** -- all topics published by the Carter Warehouse scene (sensors, robot state, control, TF, system)
-- **[ROS Nodes](../../simulation/isaac-ros/nodes.md)** -- all nodes in the Isaac ROS container (auto-start and on-demand) with data flow diagram
+- **[ROS Nodes](../../simulation/isaac-ros/nodes/)** -- all nodes in the Isaac ROS container (auto-start and on-demand) with data flow diagram
 - Updated the **[Dockerfile](../../simulation/isaac-ros/dockerfile.md)** page to match current state (ROS 2 repo, teleop packages, entrypoints)
