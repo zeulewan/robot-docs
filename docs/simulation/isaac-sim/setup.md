@@ -27,6 +27,55 @@ isaacsim isaacsim.exp.full.kit --/app/window/enabled=false --/app/livestream/ena
 
 ---
 
+## Headless Launch Script
+
+The `headless-sample-scene.sh` script launches Isaac Sim headless with the Carter warehouse scene, performance optimizations, OmniGraph topic remap (`/cmd_vel` -> `/cmd_vel_raw`), TF publisher disable, and camera culling.
+
+### Starting
+
+```bash
+nohup bash ~/Documents/isaac-sim-scripts/headless-sample-scene.sh \
+  > /tmp/isaac-sim-headless.log 2>&1 &
+```
+
+### Stopping
+
+!!! warning "Killing the bash script does NOT kill Isaac Sim"
+    The script uses a heredoc (`python3 - << 'PYEOF'`). Killing the bash wrapper orphans the python child, which keeps running and holding GPU memory. You must kill the python process directly.
+
+```bash
+# 1. Find the actual python process (NOT the bash wrapper)
+nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv,noheader
+
+# 2. Kill the python3 process by PID
+kill <python3_pid>
+
+# 3. Verify GPU memory is freed
+nvidia-smi --query-compute-apps=pid,name,used_memory --format=csv,noheader
+```
+
+If multiple orphan instances accumulated (each using ~3-5 GB VRAM), kill them all:
+
+```bash
+# Kill ALL Isaac Sim python processes at once
+nvidia-smi --query-compute-apps=pid,name --format=csv,noheader \
+  | grep python3 | cut -d',' -f1 | xargs kill
+```
+
+### Checking logs
+
+Python `print()` output does **not** go to `/tmp/isaac-sim-headless.log` — Kit intercepts stdout. Check the Kit log instead:
+
+```bash
+# Find the latest Kit log
+ls -t ~/miniconda3/envs/isaaclab/lib/python3.11/site-packages/isaacsim/kit/logs/Kit/Isaac-Sim\ Python/5.1/kit_*.log | head -1
+
+# Search for our custom tags
+grep "\[py stdout\]" <kit_log_path> | grep -E "\[CAM\]|\[CMD\]|\[TF\]|\[PHYS\]"
+```
+
+---
+
 ## Installation Methods
 
 ### Via pip (Current)
@@ -130,7 +179,8 @@ The headless sample scene (`carter_warehouse_apriltags_worker.usd`) publishes th
 
 | Topic | Type | Description |
 |---|---|---|
-| `/cmd_vel` | `geometry_msgs/Twist` | Velocity commands (`linear.x` = forward/back, `angular.z` = turn) |
+| `/cmd_vel` | `geometry_msgs/Twist` | Velocity commands from Nav2/teleop |
+| `/cmd_vel_raw` | `geometry_msgs/Twist` | Same as `/cmd_vel` (pass-through relay) — actual input to Isaac Sim's OmniGraph differential drive |
 
 ### Added by Container
 
