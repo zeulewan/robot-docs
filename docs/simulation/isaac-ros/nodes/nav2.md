@@ -19,7 +19,7 @@ flowchart LR
     BT --> PLAN["planner_server<br/>(SMAC Hybrid-A*)"]
     BT --> CTRL["controller_server<br/>(MPPI)"]
     BT --> BEH["behavior_server<br/>(spin, backup, wait)"]
-    PLAN --> GCOST["global_costmap<br/>(60x60m rolling)"]
+    PLAN --> GCOST["global_costmap<br/>(30x30m rolling)"]
     CTRL --> LCOST["local_costmap<br/>(16x16m)"]
     GCOST -- "VoxelLayer" --> LIDAR["/front_3d_lidar/<br/>lidar_points"]
     LCOST -- "VoxelLayer" --> LIDAR
@@ -36,7 +36,7 @@ Localization
 :   A static identity `map -> odom` transform combined with `odom_tf_bridge.py` (which broadcasts `odom -> base_link` from `/chassis/odom`) provides the TF chain. cuVSLAM can optionally replace the static transform but may drift over time.
 
 Planning
-:   SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 60x60m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
+:   SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 30x30m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
 
 Control
 :   MPPI controller generates smooth velocity commands toward the planned path. Configured for up to 2.0 m/s, though actual cruise speed is ~0.3 m/s in simulation due to 0.5x real-time factor (see [MPPI Speed Tuning](#mppi-speed-tuning)). Carter footprint is used for collision checking. `SimpleGoalChecker` with 0.5m tolerance so the robot actually stops at the goal.
@@ -146,7 +146,7 @@ ros2 topic pub /goal_pose geometry_msgs/msg/PoseStamped \
 Add these topics to the Foxglove 3D panel to see obstacle detection:
 
 - `/local_costmap/costmap` — 16x16m area around the robot
-- `/global_costmap/costmap` — 60x60m rolling window
+- `/global_costmap/costmap` — 30x30m rolling window
 - `/plan` — planned path to the goal
 
 ### Position tracking

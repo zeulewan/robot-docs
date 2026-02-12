@@ -44,4 +44,5 @@
 - [Progress](project/progress.md): Current work in progress and next steps.
 - [About](project/about.md): How this documentation site is built.
 - [Blog](project/blog/index.md): Development log and progress updates.
+  - [Nav2 Autonomous Navigation and MPPI Tuning](project/blog/2026-02-11-nav2-autonomous-navigation.md): Setting up Nav2 for autonomous navigation, MPPI speed tuning research, costmap configuration, and lessons learned.
   - [Teleop Control and Docs Restructure](project/blog/2026-02-09-teleop-and-docs-restructure.md): Browser teleop via Foxglove joystick, ROS2 schema fix, docs restructured to 4 tabs.
