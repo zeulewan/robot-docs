@@ -39,7 +39,7 @@ Planning
 :   SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 60x60m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
 
 Control
-:   MPPI controller (max 2.0 m/s) generates smooth velocity commands. Carter footprint is used for collision checking. `SimpleGoalChecker` with 0.5m tolerance so the robot actually stops at the goal.
+:   MPPI controller generates smooth velocity commands toward the planned path. Configured for up to 2.0 m/s, though actual cruise speed is ~0.3 m/s in simulation due to 0.5x real-time factor (see [MPPI Speed Tuning](#mppi-speed-tuning)). Carter footprint is used for collision checking. `SimpleGoalChecker` with 0.5m tolerance so the robot actually stops at the goal.
 
 cmd_vel relay
 :   Isaac Sim's differential drive OmniGraph node is remapped to subscribe to `/cmd_vel_raw` instead of `/cmd_vel` (via `headless-sample-scene.sh`). The `cmd_vel_relay.py` node bridges Nav2/teleop output on `/cmd_vel` to `/cmd_vel_raw`. This is a simple pass-through with no sign changes — `base_link` +X = physical forward.
@@ -169,42 +169,122 @@ Both `teleop_twist_joy_node` and Nav2 publish to `/cmd_vel`. The Foxglove joysti
 
 ## MPPI Speed Tuning
 
-The default MPPI parameters result in very slow speeds (~0.05 m/s despite a 2.0 m/s max). The table below shows the key parameters and their tuned values:
+Out of the box, MPPI defaults produce very slow movement (~0.05 m/s) despite a 2.0 m/s max velocity setting. This section explains how MPPI works, what each tuning knob does, and the specific bottlenecks discovered through iterative testing on the Carter robot.
 
-### Forward speed
+### How MPPI works
 
-| Parameter | Default | Tuned | Why |
+MPPI (Model Predictive Path Integral) is a sampling-based controller. Instead of computing a single optimal path, it tries thousands of random possibilities and picks the best one. Every control cycle it:
+
+1. **Samples** a batch of random trajectories (default 2000) by adding noise to the current velocity
+2. **Scores** each trajectory using a set of "critics" — scoring functions that penalize things like straying from the path, getting too close to obstacles, or going the wrong direction
+3. **Selects** the best trajectory using a temperature-weighted average — lower scores are better, and the `temperature` parameter controls how aggressively it favors the best-scoring trajectories
+
+```mermaid
+flowchart LR
+    VEL["Current velocity"] --> NOISE["Add random noise<br/>(2000 samples)"]
+    NOISE --> SIM["Simulate each<br/>trajectory forward<br/>(56 steps × 0.05s)"]
+    SIM --> SCORE["Score with critics<br/>(8 scoring functions)"]
+    SCORE --> AVG["Temperature-weighted<br/>average"]
+    AVG --> CMD["/cmd_vel"]
+    CMD --> VEL
+```
+
+The prediction horizon — how far into the future each trajectory looks — is `time_steps × model_dt`. With 56 steps at 0.05s each, that's **2.8 seconds ahead**. At the max speed of 2.0 m/s, that covers 5.6 meters of path.
+
+### Understanding the critics
+
+Each critic assigns a penalty score to a trajectory. Some critics evaluate **every step** of the trajectory (56 penalties added up), while others only look at the **endpoint** (one penalty). This distinction matters for speed — per-step critics accumulate higher penalties on faster trajectories simply because the robot covers more ground, even if the trajectory is perfectly safe.
+
+| Critic | What it does | Evaluation | Speed impact |
 |---|---|---|---|
-| `PathFollowCritic.cost_weight` | 5.0 | 50.0 | Primary force driving the robot forward along the path |
-| `prune_distance` | 1.7 | 8.0 | Must be >= `time_steps x model_dt x vx_max` (5.6m) for the optimizer to see enough path ahead |
-| Local costmap size | 6x6m | 16x16m | Must fit the full prediction horizon at max speed (5.6m) |
-| `PathAngleCritic` | enabled | removed | Penalizes heading deviations that naturally occur at higher speeds |
-| `GoalCritic.cost_weight` | 5.0 | 3.0 | Too high over-biases toward goal proximity instead of forward speed |
-| `vx_std` | 0.2 | 1.0 | Wider velocity sampling allows more high-speed trajectory candidates |
+| `ConstraintCritic` | Rejects trajectories exceeding velocity/acceleration limits | Per-step | Neutral (hard constraint) |
+| `CostCritic` | Penalizes trajectories passing through costmap obstacles | Per-step | **Slows** — faster = more cells traversed = higher accumulated cost |
+| `GoalCritic` | Rewards getting closer to the goal position | Endpoint | Neutral |
+| `GoalAngleCritic` | Rewards facing the goal at close range | Endpoint | Neutral |
+| `PathAlignCritic` | Penalizes deviation from the planned path | Per-step (mean-normalized) | **Neutral** — uses mean normalization, not sum |
+| `PathFollowCritic` | Rewards reaching further along the path | Endpoint | **Speeds up** — the main forward-driving force |
+| `PathAngleCritic` | Penalizes heading away from the path direction | Per-step (early-exit) | Minimal — exits early once heading is aligned |
+| `PreferForwardCritic` | Penalizes reverse motion | Per-step | Minimal at low weight |
 
-### Obstacle avoidance
+`PathFollowCritic` is the most important critic for speed. It only looks at the furthest point reached along the path — faster trajectories reach further and score better. Its `cost_weight` of 50.0 is intentionally high to dominate the per-step critics that slow things down.
 
-| Parameter | Default | Tuned | Why |
+### Key speed bottlenecks
+
+These are the specific issues discovered through iterative tuning, in order of impact:
+
+#### 1. temperature (the #1 bottleneck)
+
+`temperature` controls how selective the weighted average is when combining the 2000 sampled trajectories. A low temperature exponentially down-weights any trajectory that costs even slightly more than the current best.
+
+The problem: at `temperature: 0.1`, once the optimizer converges on ~0.4 m/s, it can't escape. Any faster trajectory incurs slightly higher per-step critic costs, so it gets exponentially suppressed in the weighted average. The optimizer is trapped in a local speed minimum.
+
+| Value | Behavior |
+|---|---|
+| 0.1 | Too greedy — trapped at ~0.4 m/s, can't explore faster solutions |
+| **0.3** | **Default — allows proper exploration while still favoring good trajectories** |
+| 1.0+ | Too permissive — erratic, includes many bad trajectories in the average |
+
+#### 2. Costmap, prune distance, and horizon consistency
+
+Three settings must be mathematically consistent or the controller physically cannot command high speeds:
+
+```
+prediction_horizon = time_steps × model_dt = 56 × 0.05 = 2.8 seconds
+max_projection     = vx_max × horizon      = 2.0 × 2.8  = 5.6 meters
+```
+
+- **`prune_distance`** must be >= max_projection (5.6m). If the controller only sees 3.5m of path, it can't plan trajectories that go further. Set to **8.0m** for margin.
+- **Local costmap** must be >= 2 × max_projection (11.2m). Trajectories that leave the costmap boundary get rejected. Set to **16×16m**.
+- **`PathFollowCritic.cost_weight`** must be high enough (50.0) to make reaching further along the path the dominant objective.
+
+#### 3. vx_std (velocity sampling noise)
+
+`vx_std` controls how much random noise is added to the current velocity when generating sample trajectories. It must scale with `vx_max`:
+
+| Value | With vx_max=2.0 | Result |
+|---|---|---|
+| 0.2 | 95% of samples within ±0.4 m/s of current speed | Too narrow — takes many cycles to explore faster |
+| **0.5** | **95% of samples within ±1.0 m/s** | **Good balance of exploration and stability** |
+| 0.8 | 95% of samples within ±1.6 m/s | Too wide — some samples go fast-forward, others fast-backward, and the weighted average cancels them to near-zero |
+
+#### 4. Compute budget (batch_size × iteration_count)
+
+MPPI must finish computing within one control cycle. At 0.5× real-time factor, CPU time is already stretched:
+
+| Setting | Control rate | Result |
+|---|---|---|
+| batch_size=3000, iteration_count=2 | ~12 Hz | Erratic — can't keep up, oscillating commands |
+| **batch_size=2000, iteration_count=1** | **~15-20 Hz** | **Stable — smooth trajectory tracking** |
+
+#### 5. model_dt vs controller_frequency
+
+MPPI checks at startup that `model_dt >= 1/controller_frequency`. If the controller runs faster than the simulation timestep, predictions are invalid.
+
+| controller_frequency | Period | model_dt | Result |
 |---|---|---|---|
-| `ObstaclesCritic.repulsion_weight` | 1.5 | 0.02 | Reduces unnecessary slowdown near inflated costmap regions |
-| `inflation_radius` | 0.6 | 0.4 | Tighter inflation allows passage through narrow warehouse aisles |
-| `cost_scaling_factor` | 10.0 | 2.0 | Gentler gradient so MPPI doesn't over-penalize trajectories near obstacles |
+| 10 Hz | 0.1s | 0.05s | **FATAL** — period (0.1s) > model_dt (0.05s), Nav2 refuses to start |
+| 20 Hz | 0.05s | 0.05s | Passes check (equal). Actually runs at ~15 Hz due to 0.5× RTF |
 
-### Direction and turning
+!!! warning "model_dt startup constraint"
+    `model_dt` must be >= `1/controller_frequency` or MPPI crashes on startup with: "Controller period more than model dt, set it equal to model dt." This is a hard check — there's no workaround.
 
-| Parameter | Default | Tuned | Why |
-|---|---|---|---|
-| `vx_min` | -1.0 | -0.3 | Allows limited reverse for tight maneuvering |
-| `PreferForwardCritic.cost_weight` | 5.0 | 50.0 | Strongly biases toward forward trajectories |
-| `reverse_penalty` (planner) | 2.0 | 10.0 | SMAC Hybrid-A* planner strongly penalizes reverse segments in paths |
-| `wz_std` | 0.4 | 1.2 | Wider angular velocity sampling for faster initial orientation toward goals |
-| `GoalAngleCritic.cost_weight` | 3.0 | 5.0 | Helps the robot orient toward the goal faster at close range |
-| `iteration_count` | 1 | 2 | Extra optimization pass improves trajectory quality |
-| `temperature` | 0.3 | 0.1 | Sharper selection of best trajectories |
+### Obstacle avoidance tuning
+
+Per-step critics like `CostCritic` accumulate higher penalties on faster trajectories because the robot passes through more costmap cells. Two settings reduce this effect:
+
+| Parameter | Value | Why |
+|---|---|---|
+| `CostCritic.cost_weight` | 0.5 | Low weight so obstacle cost doesn't dominate PathFollowCritic (50.0) |
+| `CostCritic.trajectory_point_step` | 4 | Evaluate every 4th step instead of every step — reduces accumulation by 75% |
+| `inflation_radius` (local) | 0.75 | Must be >= circumscribed radius (0.696m) for the planner |
+| `cost_scaling_factor` (local) | 10.0 | Steep falloff — costs drop to near-zero by ~0.5m from obstacle edges, so the robot isn't "always in cost-space" in narrow aisles |
 
 ### Results
 
-With these settings the robot drives forward toward goals at **~0.3 m/s peak** in sim time (sim runs at ~0.5x real-time on an RTX 3090 with headless rendering and performance optimizations).
+With these settings the robot navigates to goals at **~0.4 m/s peak commanded**, **~0.3 m/s peak odom**, with a cruise speed of **~0.15-0.20 m/s**. The simulation runs at 0.5× real-time on an RTX 3090 with headless rendering.
+
+!!! info "Why not faster?"
+    The main remaining bottleneck is the **WallRate sim-time mismatch**. Nav2's controller uses wall-clock time for its loop rate, but the sim runs at 0.5× real-time. A 20 Hz controller effectively runs at ~10 Hz in sim-time, causing prediction horizon mismatches. This is a [known Nav2 issue](https://github.com/ros-navigation/navigation2/issues/3303) with no fix available — the controller would need a SimRate option.
 
 !!! tip "Dynamic parameter tuning"
     Most MPPI parameters can be changed at runtime without restarting Nav2:
