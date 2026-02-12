@@ -33,13 +33,7 @@ Costmaps
 :   VoxelLayer converts 3D lidar point clouds into obstacle grids. No static map is needed; the costmaps build up from live sensor data as the robot moves. Points below 1.0m are filtered to ignore ground bumps. `track_unknown_space: false` on the global costmap so unscanned cells default to "free" rather than "unknown" (which blocks the planner).
 
 Localization
-:   Nav2 needs to know where the robot is in the world. In ROS 2, position is expressed as a chain of coordinate frame transforms (TF): `map -> odom -> base_link`. Each link answers a question:
-
-    - **`map -> odom`**: Where is the odometry origin in the world? On a real robot, a SLAM or localization system (like AMCL) continuously corrects this to account for odometry drift. Here, we use a **static identity transform** — it just says "the odom frame *is* the map frame, with no offset." This works because we don't need global localization (no pre-built map to localize against), and it means the robot's position in the map is whatever odometry says it is.
-    - **`odom -> base_link`**: Where is the robot relative to where it started? Isaac Sim publishes this as a topic (`/chassis/odom`) but not as a TF broadcast, so `odom_tf_bridge.py` converts the topic into a TF frame.
-    - **`base_link -> sensors`**: Where are the sensors on the robot? Isaac Sim publishes these automatically.
-
-    The net effect: the robot thinks its starting position is the map origin, and all positions are relative to that. This is fine for local navigation (drive to goals within the current area) but doesn't support re-localizing on a saved map. cuVSLAM can optionally replace the static `map -> odom` with a visual-odometry-corrected transform, but it tends to drift over long runs.
+:   Nav2 needs to know where the robot is in the world. In ROS 2, position is expressed as a chain of coordinate frame transforms (TF): `map -> odom -> base_link`. See [Localization and TF](#localization-and-tf) below for details.
 
 Planning
 :   SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 30x30m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
@@ -52,9 +46,24 @@ cmd_vel relay
 
 ---
 
-## TF Setup
+## Localization and TF
 
-Nav2 requires a complete `map -> odom -> base_link` TF chain. Isaac Sim publishes `base_link -> sensor_frames` but does **not** publish `odom -> base_link`. Two helper processes provide the missing transforms:
+Nav2 needs to know where the robot is in the world. In ROS 2, this is expressed as a chain of coordinate frame transforms (TF): `map -> odom -> base_link`. Each link answers a different question:
+
+**`map -> odom`** — Where is the odometry origin in the world?
+:   On a real robot, a SLAM or localization system (like AMCL) continuously corrects this transform to account for odometry drift. Here, we use a **static identity transform** — it says "the odom frame *is* the map frame, with no offset." This works because we don't need global localization (no pre-built map to localize against), and it means the robot's position in the map is whatever odometry says it is. cuVSLAM can optionally replace this with a visual-odometry-corrected transform, but it tends to drift over long runs.
+
+**`odom -> base_link`** — Where is the robot relative to where it started?
+:   Isaac Sim publishes this as a topic (`/chassis/odom`) but **not** as a TF broadcast. The `odom_tf_bridge.py` script reads the topic and converts it into a TF frame that Nav2 can use.
+
+**`base_link -> sensors`** — Where are the sensors on the robot?
+:   Isaac Sim publishes these automatically. No extra setup needed.
+
+The net effect: the robot treats its starting position as the map origin, and all navigation goals are relative to that. This is fine for local navigation (driving to goals within the current area) but doesn't support re-localizing on a saved map.
+
+### TF helper scripts
+
+Isaac Sim publishes `base_link -> sensor_frames` but does **not** publish `odom -> base_link`. Two helper processes provide the missing transforms:
 
 ```bash
 # 1. odom->base_link TF bridge (converts /chassis/odom topic to TF)
