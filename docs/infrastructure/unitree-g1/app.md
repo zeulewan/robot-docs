@@ -13,7 +13,7 @@ The Unitree Explore app is used to control the G1, switch modes, view video, and
 
 ### Bluetooth (stock, working)
 
-The app pairs via Bluetooth to the locomotion computer (192.168.123.161). This works out of the box with no network setup. Bluetooth is used for initial pairing and basic communication.
+The app pairs via BLE to the locomotion computer (RK3588 at 192.168.123.161). The robot doesn't advertise Bluetooth constantly. You need to tap "Add Robot" in the app to trigger pairing mode, then it shows up. Works out of the box with no network setup.
 
 ### Built-in Wi-Fi AP (stock, working)
 
