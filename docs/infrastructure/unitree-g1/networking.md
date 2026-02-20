@@ -45,13 +45,13 @@ School Wi-Fi (10.17.x.x)
 
 ## Locomotion Computer Wi-Fi (built-in)
 
-The locomotion computer has two Wi-Fi interfaces:
+The RK3588 locomotion computer has two Wi-Fi interfaces:
 
-- **wlan1 (AP mode):** Broadcasts SSID "UnitreeG1" at 192.168.12.1. This is the stock hotspot for the Unitree Explore app. iPad/phone connects here for app control.
-- **wlan0 (STA/client mode):** For connecting the robot to external Wi-Fi (internet). The app's Bluetooth provisioning flow is supposed to configure this, but it currently shows "Internet Disconnected".
+- **wlan1 (AP mode):** Broadcasts a hotspot (configurable SSID, likely "UnitreeG1" or "G1-XXXXXX") at 192.168.12.1. This is the default connection for the Unitree Explore app. iPad/phone connects here directly — no router needed.
+- **wlan0 (STA/client mode):** For connecting the robot to external Wi-Fi (internet access, OTA updates). The app's Bluetooth provisioning flow sends WiFi credentials to this interface, but it currently fails ("Internet Disconnected"). May require Unitree cloud registration.
 
 !!! note
-    The AP network (192.168.12.0/24) and the wired network (192.168.123.0/24) are **separate subnets** with no routing between them by default. The app communicates with the locomotion computer directly on 192.168.12.x.
+    The AP network (192.168.12.0/24) and the wired network (192.168.123.0/24) are **separate subnets** with no routing between them by default. The app communicates with the locomotion computer directly on 192.168.12.x in AP mode. In WiFi/STA mode, the app discovers the robot via **multicast using the serial number**.
 
 ## Jetson Wi-Fi Hotspot (optional, does not persist after reboot)
 
@@ -145,9 +145,9 @@ Traffic path: iPad -> Jetson (bridge/forward) -> Mac (pfctl NAT) -> school Wi-Fi
 | Issue | Details |
 |-------|---------|
 | SSH banner timeout (FIXED) | Jetson sshd hangs 60-90s on reverse DNS lookup. Fixed by adding `UseDNS no` to `/etc/ssh/sshd_config`. Persists across reboots. |
-| WG827 router password | Unknown. LuCI web UI at http://192.168.123.1 shows Indro Robotics branding. Password-only login. Common defaults rejected. Contact Indro or use OpenWrt failsafe mode. |
+| WG827 router password (RESOLVED) | LuCI web UI at http://192.168.123.1 — Username: `root`, Password: `indr0.com` (zero, not letter O). SSH on port 22 with same credentials. |
 | WG827 is optional | The WG827 is an add-on by Indro Robotics. The G1 has an internal switch connecting neck ports to all internal computers. Direct connection to neck port 4/5 works without the WG827. |
-| Wi-Fi provisioning | App's Bluetooth flow tries to configure locomotion computer's wlan0 (STA/client mode) to connect to external Wi-Fi. Currently fails, shows "Internet Disconnected". |
+| Wi-Fi provisioning | App sends WiFi credentials to RK3588's wlan0 via Bluetooth. Currently fails ("Internet Disconnected"). May require Unitree cloud registration. STA-L (local) mode via WG827 router is an untested workaround. |
 | Video feed (WebRTC) | webrtc_bridge, webrtc_signal_server, and webrtc_multicast_responder services are all abnormal on the locomotion computer. Video streaming does not work. |
 | Abnormal services | ai_sport, motion_switcher, ros_bridge, lidar_driver, dex3 services all showing abnormal in app. May be related to Jetson or lidar connectivity. |
 | Two separate subnets | Wired (192.168.123.0/24) and Wi-Fi AP (192.168.12.0/24) are not routed. App works on 192.168.12.x, development SSH works on 192.168.123.x. |
