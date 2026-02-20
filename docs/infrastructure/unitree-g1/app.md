@@ -9,24 +9,46 @@ The Unitree Explore app is used to control the G1, switch modes, view video, and
 - **Wi-Fi:** Connects to the locomotion computer's integrated WiFi 6 AP (wlan1, SSID "UnitreeG1", 192.168.12.0/24)
 - **Control protocol:** WebRTC via `webrtc_bridge` module on the locomotion computer. BLE is used for initial pairing and WiFi provisioning, then all ongoing control/video uses WiFi + WebRTC.
 
-## Connection Methods
+## Connection Modes
 
-### Bluetooth (stock, working)
+The app supports three connection modes. The mode is selected during initial binding via the Unitree Explore app.
 
-The app pairs via BLE to the locomotion computer (RK3588 at 192.168.123.161). The robot doesn't advertise Bluetooth constantly. You need to tap "Add Robot" in the app to trigger pairing mode, then it shows up. Works out of the box with no network setup.
+### AP Mode — Direct Connection (default, working)
 
-### Built-in Wi-Fi AP (stock, working)
+The RK3588 locomotion computer broadcasts a Wi-Fi hotspot on **wlan1**:
 
-The locomotion computer broadcasts a Wi-Fi AP on **wlan1**:
+- **SSID:** Configurable during initial binding (likely defaults to "UnitreeG1" or "G1-XXXXXX")
+- **Subnet:** 192.168.12.0/24, gateway 192.168.12.1
+- **No router or internet required**
 
-- **SSID:** UnitreeG1
-- **IP:** 192.168.12.1 (separate subnet from the wired 192.168.123.0/24 network)
+iPad/phone connects directly to this hotspot. The app communicates with the locomotion computer at 192.168.12.1 via WebRTC. This is the default out-of-box experience.
 
-Connect your iPad/phone to this network for app control. No password appears to be required (or use the default if prompted).
+### WiFi/STA Mode — Shared Network (provisioning broken)
 
-### Wi-Fi Client Provisioning (stock, broken)
+In this mode, the app uses **Bluetooth** to send WiFi credentials (SSID + password) to the RK3588, which then joins that external WiFi network as a client on **wlan0** (STA mode). The iPad also connects to the same WiFi network, and they communicate over the shared LAN.
 
-The app's Bluetooth provisioning flow tries to connect the locomotion computer's **wlan0** (STA/client mode) to an external Wi-Fi network for internet access. This currently fails, showing "Internet Disconnected" in the Machine Inspection screen.
+The app discovers the robot via **multicast using the robot's serial number** (not mDNS). This mode may also require Unitree cloud registration — some Go2 users report WiFi mode gets stuck at "register to cloud."
+
+**Currently broken** on our G1 — the Bluetooth provisioning flow fails, showing "Internet Disconnected" in Machine Inspection. Unknown whether this is a firmware bug or a cloud registration issue.
+
+#### STA Sub-modes
+
+The WebRTC connection protocol supports two STA variants:
+
+- **STA-L (Local):** Robot and iPad on the same LAN. Discovery via multicast by serial number or direct IP.
+- **STA-T (Tunnel):** Remote connection through Unitree's TURN server using cloud account credentials.
+
+### WG827 Router Workaround (untested)
+
+Since the RK3588 is already on 192.168.123.0/24 via its wired eth0, connecting the iPad to the WG827 router's WiFi (same subnet) should allow the app to reach the robot in STA-L mode — bypassing both the broken WiFi provisioning and the slow Jetson hotspot. Full Gigabit wired backhaul to the RK3588.
+
+### Jetson WiFi Hotspot Workaround (working, slow)
+
+We set up a hostapd AP on the Jetson ("UnitreeG1-Dev") bridged to 192.168.123.0/24. The iPad connects to this and can reach the locomotion computer at .161 on the same subnet. Basic control (walking, mode switching) works, but bandwidth is too low for video — the Jetson's Realtek WiFi is 2.4GHz 802.11n only. See [Networking](networking.md#jetson-wi-fi-hotspot-optional-does-not-persist-after-reboot) for setup.
+
+### Bluetooth (pairing only)
+
+BLE connects to the RK3588's integrated Bluetooth 5.2. The robot doesn't advertise constantly — tap "Add Robot" in the app to trigger pairing mode. Bluetooth is used for initial device binding and WiFi provisioning, not for ongoing control. All ongoing control/video uses WiFi + WebRTC.
 
 ## Service Status
 
