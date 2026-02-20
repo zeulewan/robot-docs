@@ -20,7 +20,7 @@ Unitree G1 EDU humanoid robot with Jetson Orin NX development computer.
 | Locomotion Computer (RK3588) | 192.168.123.161 (eth0) | Rockchip RK3588 (8-core ARM, 8GB RAM, 32GB eMMC). Runs Unitree locomotion controller, WebRTC bridge, network manager, and all proprietary Unitree services. Has integrated WiFi 6 (wlan0 STA + wlan1 AP at 192.168.12.1, SSID "UnitreeG1") and Bluetooth 5.2 (for app pairing). Not open to user (no SSH). |
 | Development Computer (Jetson Orin NX) | 192.168.123.164 | User development PC. Ubuntu 20.04, aarch64. |
 | Livox Mid-360 Lidar | 192.168.123.20 | 3D LIDAR for mapping and obstacle detection |
-| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides WiFi (6 SMA antenna ports) and optional 4G/5G (M.2/SIM slots). Web UI (LuCI) with Indro Robotics branding. Password unknown. |
+| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides WiFi (SSID: UnitreeG1-Router) and optional 4G/5G. SSH/LuCI: root / indr0.com |
 
 All boards are connected via an **internal L2 switch** inside the G1 on the 192.168.123.0/24 subnet. Neck ports 4/5 connect directly to this internal switch. The WG827 router is an add-on plugged into the same switch, not the core network bridge.
 
@@ -37,20 +37,27 @@ All boards are connected via an **internal L2 switch** inside the G1 on the 192.
 
 ### ZBT WG827 Router (Shenzhen Zhibotong)
 
-**Model ZBT WG827**, physically velcroed to the robot's back, plugged into the G1's internal switch. Added by Indro Robotics. Made by Shenzhen Zhibotong Electronics. At 192.168.123.1 (SSH open, credentials unknown).
+**Model ZBT WG827**, physically velcroed to the robot's back, plugged into the G1's internal switch. Added by Indro Robotics. Made by Shenzhen Zhibotong Electronics.
 
 - **Chipset:** MT7621DA (dual core, 880MHz)
-- **WiFi:** 2.4GHz 802.11n, up to 300Mbps
-- **Ports:** 1 WAN + 4 LAN (all Gigabit 10/100/1000)
-- **6 SMA antenna ports** (detachable high-gain antennas available)
-- **Software:** OpenWrt / ZBT OS (web UI, likely LuCI)
+- **WiFi:** 2.4GHz 802.11bgn (MT7603E), 6 SMA antenna ports (2.4GHz)
+- **Ports:** 1 WAN + 4 LAN (all Gigabit)
+- **Software:** OpenWrt 21.02-SNAPSHOT (GoldenOrb), hostname `InDro_Robotics`
 - **M.2 slot + SIM card slot** (for optional 4G/5G module)
 - **RAM:** 128MB, Flash: 16MB
 
-The WG827 is **not required** for basic connectivity. The G1 has an internal L2 switch that connects the neck ports (4/5) directly to the Jetson, locomotion computer, and lidar. The WG827 is an add-on for WiFi and optional cellular, plugged into the same internal switch.
+The WG827 is **not required** for basic ethernet connectivity. The G1 has an internal L2 switch connecting neck ports (4/5) directly to all internal computers. The WG827 is an add-on for WiFi, plugged into the same switch.
 
 !!! success "Credentials"
     Web UI (LuCI) at `http://192.168.123.1` — Username: `root`, Password: `indr0.com` (zero, not letter O). SSH also open on port 22 with same credentials.
+
+**WiFi AP:**
+
+- **SSID:** `UnitreeG1-Router`, **Password:** `Temp1234`, Channel 11 (2.4GHz), WPA2
+- AP (`wlan0`) is bridged to `br-lan` - clients join 192.168.123.0/24, same subnet as Jetson and locomotion computer
+
+!!! warning "wwan2 STA interface"
+    The router ships with a secondary STA client (`wwan2`) trying to connect to "Hotspot Manager Interface". This shares the same radio and prevents the AP from coming up (interface stays `NO-CARRIER`). It has been disabled. Do not re-enable it.
 
 ## Electrical Interface (back of neck)
 
