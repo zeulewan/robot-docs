@@ -29,63 +29,39 @@ flowchart LR
 
 ### How the stack fits together
 
-Costmaps
-:   VoxelLayer converts 3D lidar point clouds into obstacle grids. No static map is needed; the costmaps build up from live sensor data as the robot moves. Points below 1.0m are filtered to ignore ground bumps. `track_unknown_space: false` on the global costmap so unscanned cells default to "free" rather than "unknown" (which blocks the planner).
+#### Costmaps
 
-Localization
-:   Nav2 needs to know where the robot is in the world. In ROS 2, position is expressed as a chain of coordinate frame transforms (TF): `map -> odom -> base_link`. See [Localization and TF](#localization-and-tf) below for details.
+VoxelLayer converts 3D lidar point clouds into obstacle grids. No static map is needed; the costmaps build up from live sensor data as the robot moves. Points below 1.0m are filtered to ignore ground bumps. `track_unknown_space: false` on the global costmap so unscanned cells default to "free" rather than "unknown" (which blocks the planner).
 
-Planning
-:   SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 30x30m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
+#### Localization and TF
 
-Control
-:   MPPI controller generates smooth velocity commands toward the planned path. Configured for up to 2.0 m/s, though actual cruise speed is ~0.3 m/s in simulation due to 0.5x real-time factor (see [MPPI Speed Tuning](#mppi-speed-tuning)). Carter footprint is used for collision checking. `SimpleGoalChecker` with 0.5m tolerance so the robot actually stops at the goal.
+Nav2 requires a `map -> odom -> base_link` TF chain. The `map -> odom` link is where localization happens — it corrects for odometry drift so the robot knows where it is on the map. Two options can provide it:
 
-cmd_vel relay
-:   Isaac Sim's differential drive OmniGraph node is remapped to subscribe to `/cmd_vel_raw` instead of `/cmd_vel` (via `headless-sample-scene.sh`). The `cmd_vel_relay.py` node bridges Nav2/teleop output on `/cmd_vel` to `/cmd_vel_raw`. This is a simple pass-through with no sign changes — `base_link` +X = physical forward.
+| | Static identity transform | [cuVSLAM](cuvslam.md) |
+|---|---|---|
+| **How** | Publishes a fixed zero-offset `map -> odom` | Uses stereo cameras to track visual features and estimate drift |
+| **Pros** | Simple, no drift, no extra GPU load | Corrects odometry drift over time |
+| **Cons** | Position drifts with odometry (no correction) | Can drift massively itself (observed 49m Z-drift, 29deg pitch after collisions) |
+| **When** | Local navigation without a saved map | Long-range navigation where cumulative odometry error matters |
 
----
+We use the **static identity transform** — the robot treats its starting position as the map origin, and all goals are relative to that. This is good enough for navigating within the warehouse.
 
-## Localization and TF
-
-Nav2 needs to know where the robot is in the world. In ROS 2, this is expressed as a chain of coordinate frame transforms (TF): `map -> odom -> base_link`. Each link answers a different question:
-
-**`map -> odom`** — Where is the odometry origin in the world?
-:   On a real robot, a SLAM or localization system (like AMCL) continuously corrects this transform to account for odometry drift. Here, we use a **static identity transform** — it says "the odom frame *is* the map frame, with no offset." This works because we don't need global localization (no pre-built map to localize against), and it means the robot's position in the map is whatever odometry says it is. cuVSLAM can optionally replace this with a visual-odometry-corrected transform, but it tends to drift over long runs.
-
-**`odom -> base_link`** — Where is the robot relative to where it started?
-:   Isaac Sim publishes this as a topic (`/chassis/odom`) but **not** as a TF broadcast. The `odom_tf_bridge.py` script reads the topic and converts it into a TF frame that Nav2 can use.
-
-**`base_link -> sensors`** — Where are the sensors on the robot?
-:   Isaac Sim publishes these automatically. No extra setup needed.
-
-The net effect: the robot treats its starting position as the map origin, and all navigation goals are relative to that. This is fine for local navigation (driving to goals within the current area) but doesn't support re-localizing on a saved map.
-
-### TF helper scripts
-
-Isaac Sim publishes `base_link -> sensor_frames` but does **not** publish `odom -> base_link`. Two helper processes provide the missing transforms:
-
-```bash
-# 1. odom->base_link TF bridge (converts /chassis/odom topic to TF)
-docker exec -d isaac_ros_dev_container bash -c '
-  export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml
-  export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  source /opt/ros/jazzy/setup.bash
-  python3 /workspaces/isaac_ros-dev/odom_tf_bridge.py'
-
-# 2. Static map->odom identity (use_sim_time required!)
-docker exec -d isaac_ros_dev_container bash -c '
-  export FASTRTPS_DEFAULT_PROFILES_FILE=/etc/fastdds_no_shm.xml
-  export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
-  source /opt/ros/jazzy/setup.bash
-  ros2 run tf2_ros static_transform_publisher 0 0 0 0 0 0 map odom \
-    --ros-args -p use_sim_time:=true'
-```
+The other two links are straightforward: `odom -> base_link` comes from `odom_tf_bridge.py` (converts the `/chassis/odom` topic into a TF broadcast, since Isaac Sim doesn't publish it as TF), and `base_link -> sensors` is published by Isaac Sim automatically.
 
 !!! warning "Sim time for static TF"
     The `static_transform_publisher` **must** use `use_sim_time:=true`. Without it, the TF timestamps are wall-clock time (~1.77 billion seconds) while Nav2 expects sim time (~6000 seconds), causing all TF lookups to fail silently.
 
-Alternatively, cuVSLAM can provide the `map -> odom` transform, but it may drift significantly over time.
+#### Planning
+
+SMAC Hybrid-A* planner with `allow_unknown: true` so it can plan through unexplored areas. The global costmap is a 30x30m rolling window centered on the robot. The custom behavior tree replans every 5 seconds (default is 1s) to give the robot time to accelerate and commit to a path.
+
+#### Control
+
+MPPI controller generates smooth velocity commands toward the planned path. Configured for up to 2.0 m/s, though actual cruise speed is ~0.3 m/s in simulation due to 0.5x real-time factor (see [MPPI Speed Tuning](#mppi-speed-tuning)). Carter footprint is used for collision checking. `SimpleGoalChecker` with 0.5m tolerance so the robot actually stops at the goal.
+
+#### cmd_vel relay
+
+Isaac Sim's differential drive OmniGraph node is remapped to subscribe to `/cmd_vel_raw` instead of `/cmd_vel` (via `headless-sample-scene.sh`). The `cmd_vel_relay.py` node bridges Nav2/teleop output on `/cmd_vel` to `/cmd_vel_raw`. This is a simple pass-through with no sign changes — `base_link` +X = physical forward.
 
 ---
 

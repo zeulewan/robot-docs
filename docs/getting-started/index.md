@@ -137,6 +137,12 @@ Each major component has its own section with setup instructions, configuration 
 
     Detailed data flow diagrams for simulation and real robot modes
 
+-   :material-rocket-launch:{ .lg .middle } **[Demo Quick Reference](demo.md)**
+
+    ---
+
+    Step-by-step: launch Isaac Sim, start ROS, drive with keyboard
+
 -   :material-chart-timeline:{ .lg .middle } **[Project](../project/index.md)**
 
     ---
