@@ -49,8 +49,8 @@ All boards are connected via an **internal L2 switch** inside the G1 on the 192.
 
 The WG827 is **not required** for basic connectivity. The G1 has an internal L2 switch that connects the neck ports (4/5) directly to the Jetson, locomotion computer, and lidar. The WG827 is an add-on for WiFi and optional cellular, plugged into the same internal switch.
 
-!!! warning "Password unknown"
-    Web UI (LuCI) at `http://192.168.123.1` shows Indro Robotics branding. Password-only login (no username field, assumes root). Common defaults rejected. Options: contact Indro Robotics for credentials, or use OpenWrt failsafe mode (hold reset during boot, telnet to 192.168.1.1, does not wipe config).
+!!! success "Credentials"
+    Web UI (LuCI) at `http://192.168.123.1` — Username: `root`, Password: `indr0.com` (zero, not letter O). SSH also open on port 22 with same credentials.
 
 ## Electrical Interface (back of neck)
 

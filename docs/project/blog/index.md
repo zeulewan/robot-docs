@@ -4,6 +4,7 @@ Development log and progress updates.
 
 | Date | Post |
 |------|------|
+| 2026-02-18 | [Unitree G1 First Session — Hardware, Networking, and App Setup](2026-02-18-unitree-g1-first-session-networking.md) |
 | 2026-02-11 | [Nav2 Autonomous Navigation and MPPI Tuning](2026-02-11-nav2-autonomous-navigation.md) |
 | 2026-02-09 | [Teleop Control and Docs Restructure](2026-02-09-teleop-and-docs-restructure.md) |
 | 2026-02-08 | [Switching to Full NVIDIA Isaac ROS Image](2026-02-08-isaac-ros-full-image.md) |
