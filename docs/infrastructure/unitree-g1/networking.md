@@ -116,12 +116,12 @@ sudo dnsmasq --interface=br0 --bind-interfaces \
 - iPad gets IP in 192.168.123.200-250 range, same L2 subnet as the robot
 - Uses a different SSID than the locomotion computer's "UnitreeG1" to avoid confusion
 
-## Sharing Internet with G1 and iPad
+## Sharing Internet with G1
 
 ### On Mac (zmac)
 
 ```bash
-# Enable IP forwarding and NAT
+# Enable IP forwarding and NAT (en0 = WiFi with internet)
 sudo sysctl -w net.inet.ip.forwarding=1
 echo 'nat on en0 from 192.168.123.0/24 to any -> (en0)' | sudo pfctl -ef -
 ```
@@ -132,10 +132,23 @@ echo 'nat on en0 from 192.168.123.0/24 to any -> (en0)' | sudo pfctl -ef -
 # Set Mac as default gateway and configure DNS
 sudo ip route add default via 192.168.123.100
 sudo bash -c 'echo nameserver 8.8.8.8 > /etc/resolv.conf'
-sudo sysctl -w net.ipv4.ip_forward=1
 ```
 
-Traffic path: iPad -> Jetson (bridge/forward) -> Mac (pfctl NAT) -> school Wi-Fi
+### On WG827 Router (gives internet to all LAN devices + WiFi clients)
+
+```bash
+# SSH into router first
+ssh root@192.168.123.1  # password: indr0.com
+
+# Add default route via Mac
+ip route add default via 192.168.123.100
+echo 'nameserver 8.8.8.8' > /tmp/resolv.conf.auto
+```
+
+This gives internet to the WG827 itself and all WiFi clients connected to `UnitreeG1-Router`.
+
+!!! warning
+    Do NOT use the WG827's WAN port for internet sharing. OpenWrt blocks SSH on the WAN interface by default, making the router inaccessible. Use the LAN side (neck port) with pfctl NAT instead.
 
 !!! note
     macOS Internet Sharing GUI does not work for this setup. The config plist caches stale interface names. Use pfctl NAT directly instead.
