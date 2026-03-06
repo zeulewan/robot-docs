@@ -2,10 +2,20 @@
 
 Isaac Sim and Isaac ROS — simulation, perception, and the ROS 2 bridge.
 
-<video controls autoplay muted loop style="width: 60%; border-radius: 8px; margin: 1em auto; display: block;">
-  <source src="../assets/demo.mp4" type="video/mp4">
-</video>
-<p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Driving the Carter robot through the warehouse with lidar visualization in Foxglove Studio</p>
+<div style="display: flex; gap: 1em; justify-content: center; flex-wrap: wrap; margin: 1em auto;">
+  <div style="flex: 1; min-width: 300px; max-width: 48%;">
+    <video controls autoplay muted loop style="width: 100%; border-radius: 8px;">
+      <source src="../assets/demo.mp4" type="video/mp4">
+    </video>
+    <p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Carter robot warehouse demo with Foxglove Studio</p>
+  </div>
+  <div style="flex: 1; min-width: 300px; max-width: 48%;">
+    <video controls autoplay muted loop style="width: 100%; border-radius: 8px;">
+      <source src="../assets/g1-walking.mp4" type="video/mp4">
+    </video>
+    <p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Unitree G1 locomotion policy trained with RL in Isaac Lab</p>
+  </div>
+</div>
 
 <div class="grid cards" markdown>
 
