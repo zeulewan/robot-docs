@@ -20,6 +20,14 @@ Workstation configuration, networking, and command reference.
 
     [:octicons-arrow-right-24: Tailscale](networking/tailscale.md) · [:octicons-arrow-right-24: Topology](networking/topology.md)
 
+-   :material-robot:{ .lg .middle } **Unitree G1**
+
+    ---
+
+    G1 hardware, Jetson Wi-Fi hotspot, app connectivity, internet sharing
+
+    [:octicons-arrow-right-24: Hardware](unitree-g1/hardware.md) · [:octicons-arrow-right-24: Networking](unitree-g1/networking.md) · [:octicons-arrow-right-24: App](unitree-g1/app.md)
+
 -   :material-console:{ .lg .middle } **Commands**
 
     ---
