@@ -2,7 +2,7 @@
 
 Unitree repos and tools for simulating the G1 in Isaac Sim.
 
-**Guides:** [TensorBoard — Training Monitoring](tensorboard.md)
+**Guides:** [TensorBoard — Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
 
 ## Repo Overview
 
