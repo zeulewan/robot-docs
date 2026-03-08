@@ -4,7 +4,15 @@ What's currently in progress and what's next.
 
 ## In Progress
 
-(Nothing actively in progress.)
+### Sim-to-Real Deployment
+Trained G1-29DOF velocity policy (7200 epochs) is ready. Blocked on:
+
+1. Build `unitree_sdk2` C++ library on workstation
+2. Compile `g1_ctrl` deploy binary (`deploy/robots/g1_29dof/`)
+3. Point config at trained policy (`logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/`)
+4. Connect robot via ethernet and run `./g1_ctrl --network <eth>`
+
+See [Deploy Guide](../simulation/unitree/deploy.md).
 
 ## Next Steps
 
@@ -19,6 +27,7 @@ GitHub Actions workflow to scan commits for leaked credentials before they reach
 
 ## Completed
 
+- G1-29DOF locomotion policy trained with Isaac Lab — 7200 epochs, velocity policy exported to ONNX (Mar 2026)
 - Nav2 autonomous navigation with MPPI speed tuning (Feb 2026)
 - Nav2 auto-start on container boot via entrypoint script (Feb 2026)
 - Static map->odom TF, odom TF bridge, cmd_vel relay auto-start (Feb 2026)
