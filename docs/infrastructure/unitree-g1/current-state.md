@@ -66,23 +66,9 @@ Note: Writing Request_ type objects causes **segfaults** on CycloneDDS 0.10.2 (A
 
 **Router DHCP leases** only ever show the iPad. The locomotion board never requests a DHCP lease. The WiFi chip on the locomotion board may be hardware-broken or firmware-disabled.
 
-### 4. Jailbreak (SSH access to locomotion board)
+### 4. SSH Access to Locomotion Board
 
-**Both UniPWN and FreeBOT exploits fail - firmware 1.4.5 is patched.** Both use the same underlying BLE command injection vulnerability (CVE-2025-35027). The `system()` call in the WiFi configuration thread no longer executes injected commands.
-
-**Tested with:**
-- UniPWN v2.6 from Mac via bleak (BLE connection issues)
-- UniPWN v2.6 from Jetson via bleak (D-Bus/BlueZ could not connect to device)
-- UniPWN v2.6 from Jetson with sudo (connected, full exploit ran, no SSH enabled)
-- FreeBOT via app WiFi settings password injection (`curl -L 4jb.me|sh`)
-- Custom gatttool exploit from Jetson (full protocol works, injection payload delivered, but `system()` call appears patched)
-- Tried SSID injection and password injection
-- Tried AP mode (instruction 3, data=[1]) and STA mode (instruction 3, data=[2])
-
-**BLE protocol details:**
-- Handles: ffe1 notify at 0x000d (CCCD 0x000e), ffe2 write at 0x0012
-- AES key: `df98b715d5c6ed2b25817b6f2554124a`, IV: `2841ae97419c2973296a0d4bdfe19a4f`
-- All instructions 1-6 work and are ACK'd
+**No SSH access available.** Port 22 is closed on the locomotion board (192.168.123.161). No known method to enable it on firmware 1.4.5. See `.private/g1-exploit-notes.md` for details on attempts.
 
 ### 5. OTA Firmware Update
 
@@ -276,23 +262,6 @@ Scanned from both 192.168.123.x and 192.168.12.x interfaces:
 
 **Known SDK bug:** Writing `Request_` type objects with CycloneDDS 0.10.2 on ARM64 (Jetson) causes segfaults. The `binary` field (`sequence[uint8]`) serialization appears broken.
 
-## Files to Clean Up
-
-When done with robot work, remove these:
-
-**Mac:**
-- `/tmp/UniPwn/` (exploit tool + venv)
-- `/tmp/unitree_gatttool_exploit.py`
-- `/tmp/unitree_wifi_config.py`
-- `sudo rm /etc/sudoers.d/claude-nopasswd` (passwordless sudo)
-
-**Jetson:**
-- `/tmp/UniPwn/` (exploit tool, may be cleared by reboot)
-- `/tmp/unitree_wifi_config.py`
-- System-wide pip packages: `sudo pip3 uninstall bleak pycryptodomex typing-extensions async-timeout dbus-fast`
-- User pip packages: `pip3 uninstall --user bleak pycryptodomex typing-extensions async-timeout dbus-fast`
-- Disconnect Jetson from robot AP WiFi: `sudo nmcli con delete UnitreeG1`
-
 ## Router Config (must re-apply after each robot reboot)
 
 The WG827 router firewall blocks forwarding by default and loses its default route on reboot. Run these commands after each power cycle to give the locomotion board internet:
@@ -352,19 +321,6 @@ Attempted to create a fake "UnitreeG1_W" WiFi AP on the Jetson to proxy app traf
 **Result:** iPad connected to the fake AP and got internet through the Jetson -> Mac NAT chain. But the Unitree app never sent any traffic to 192.168.12.1. The app only contacted external servers (Unitree cloud, Apple, DNS). The DNAT rule had zero packet matches.
 
 **Conclusion:** The app does not blindly connect to 192.168.12.1. It either uses mDNS/Bonjour discovery or requires cloud server authentication before connecting to the robot locally. The MITM approach needs an mDNS responder or deeper understanding of the app protocol.
-
-## Exploit Timeline (CVE-2025-35027)
-
-| Date | Event |
-|------|-------|
-| June 2025 | Researchers first contacted Unitree about the vulnerability |
-| July 20, 2025 | Unitree acknowledged "G1 known vulnerabilities" |
-| September 5, 2025 | Android APK exploit shared with testers |
-| September 20, 2025 | UniPWN published on GitHub by Bin4ry/Andreas Makris |
-| September 26, 2025 | CVE-2025-35027 officially published |
-
-**Affected versions:** G1/H1 up to 1.4.4, Go2/B2 up to 1.1.8
-**Our firmware:** 1.4.5 (patched, one version above the last affected)
 
 ## Recommended Next Steps
 
