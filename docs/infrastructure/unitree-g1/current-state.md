@@ -17,9 +17,9 @@ Secondary goals:
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Wired SSH to Jetson | Working | USB ethernet adapter, static IP 192.168.123.100, `ssh unitree@192.168.123.164`, password `123` |
+| Wired SSH to Jetson | Working | USB ethernet adapter, static IP 192.168.123.100, `ssh unitree@192.168.123.164`, password `123` (note: Jetson IP varies per boot, was .13 previously, now .164) |
 | Wired ping to locomotion board | Working | 192.168.123.161, sub-ms latency |
-| DDS discovery over wired | Working | 18 DDS participants, 77 topics discovered from locomotion board |
+| DDS discovery over wired | Working | 18 DDS participants, 85 publications discovered from locomotion board (March 9 retest) |
 | DDS type matching | Working | Confirmed via CycloneDDS trace logs - type hashes match between SDK and firmware |
 | DDS reader/writer matching | Working | `reader_add_connection` and `proxy_writer_add_connection` succeed |
 | Multicast UDP packets | Working | Raw socket confirms packets arriving from 192.168.123.161 on 239.255.0.1:7401 |
@@ -98,6 +98,11 @@ The Unitree Explore app is **extremely flaky**:
 - When it does broadcast, the app sometimes cannot connect to the robot
 - WebRTC services on the locomotion board may be abnormal
 - The app is hardcoded to look for the robot at 192.168.12.1
+- App says "connected to access point" but then fails to connect to the robot itself
+- "Server inaccessible" errors frequent (catch-22: iPad on robot AP has no internet, but app needs cloud servers)
+- Successfully unbound the robot once (March 8), proving the app CAN talk to the robot briefly
+- Multiple retry sessions (March 8-9) with dozens of attempts, only sporadic brief connections
+- Tried connecting iPad via router WiFi (UnitreeRouter) for internet, then switching to G1 AP - did not help
 
 ### 7. Video feed (WebRTC)
 
@@ -334,10 +339,37 @@ The locomotion board runs ZeroTier and connects to Unitree root servers when it 
 
 This is a VPN overlay that gives Unitree remote access to the robot. Confirmed by ARP table entries on the router and pfctl state table on the Mac.
 
+## MITM AP Approach (March 9, tested)
+
+Attempted to create a fake "UnitreeG1_W" WiFi AP on the Jetson to proxy app traffic to the real robot over wired ethernet:
+
+1. Set up hostapd on Jetson wlan0 (2.4GHz, channel 6, WPA2, password "Temp1234")
+2. Configured Jetson as 192.168.12.1/24 (same as real robot AP IP)
+3. Set up iptables DNAT: all traffic to 192.168.12.1 on wlan0 -> 192.168.123.161 (real robot over wire)
+4. MASQUERADE on eth0 for return traffic, FORWARD rules both directions
+5. dnsmasq for DHCP on wlan0
+
+**Result:** iPad connected to the fake AP and got internet through the Jetson -> Mac NAT chain. But the Unitree app never sent any traffic to 192.168.12.1. The app only contacted external servers (Unitree cloud, Apple, DNS). The DNAT rule had zero packet matches.
+
+**Conclusion:** The app does not blindly connect to 192.168.12.1. It either uses mDNS/Bonjour discovery or requires cloud server authentication before connecting to the robot locally. The MITM approach needs an mDNS responder or deeper understanding of the app protocol.
+
+## Exploit Timeline (CVE-2025-35027)
+
+| Date | Event |
+|------|-------|
+| June 2025 | Researchers first contacted Unitree about the vulnerability |
+| July 20, 2025 | Unitree acknowledged "G1 known vulnerabilities" |
+| September 5, 2025 | Android APK exploit shared with testers |
+| September 20, 2025 | UniPWN published on GitHub by Bin4ry/Andreas Makris |
+| September 26, 2025 | CVE-2025-35027 officially published |
+
+**Affected versions:** G1/H1 up to 1.4.4, Go2/B2 up to 1.1.8
+**Our firmware:** 1.4.5 (patched, one version above the last affected)
+
 ## Recommended Next Steps
 
-1. **Contact Unitree support** - provide serial E21D6000P9GCAE, describe: WiFi STA broken, app connectivity flaky, DDS services running but not publishing data. Ask if they can push firmware update via ZeroTier while robot has internet through wired NAT setup.
+1. **Contact Unitree support** (highest priority) - provide serial E21D6000P9GCAE, describe: WiFi STA broken, app connectivity flaky, DDS services running but not publishing data. Ask if they can push firmware update or factory reset via ZeroTier while robot has internet through wired NAT setup. Draft Discord message prepared (see below).
 2. **Motherboard replacement** - TMU was already considering this. May be the fastest path to a working robot.
 3. **Get the app working** - the app is flaky but sometimes connects. If it connects reliably, try pairing the remote controller and activating the robot. Once active, DDS data should flow.
 4. **Try the Jetson upgrade web UI** - `http://192.168.123.164/#/` has a "Recover Last Version" button that runs `backup.zip` (231 MB). This only affects the Jetson, not the locomotion board.
-5. **Rockchip USB boot mode** (last resort) - open chassis, find RK3588 recovery button, flash firmware via rkdeveloptool. Requires firmware image from Unitree or TheRoboVerse community.
+5. **Rockchip USB boot mode** (last resort, voids warranty) - open chassis, find RK3588 recovery button, flash firmware via rkdeveloptool. Requires firmware image from Unitree or TheRoboVerse community. No factory reset button exists on the G1.
