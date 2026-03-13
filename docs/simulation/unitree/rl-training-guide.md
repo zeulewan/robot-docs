@@ -289,3 +289,31 @@ python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity --num_envs 20
 # Trained policy location
 ls logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/
 ```
+
+---
+
+## About `Unitree-G1-29dof-Velocity`
+
+This is a **Gymnasium task ID** -- a registered name that maps to the full environment configuration. It was created by Unitree and ships inside `unitree_rl_lab`.
+
+When you pass `--task Unitree-G1-29dof-Velocity`, it looks up this registration:
+
+```python
+# source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/__init__.py
+gym.register(
+    id="Unitree-G1-29dof-Velocity",
+    kwargs={
+        "env_cfg_entry_point":    "velocity_env_cfg:RobotEnvCfg",
+        "rsl_rl_cfg_entry_point": "rsl_rl_ppo_cfg:BasePPORunnerCfg",
+    },
+)
+```
+
+The two files it points to are where the actual configuration lives:
+
+| File | What it controls |
+|------|-----------------|
+| `tasks/locomotion/robots/g1/29dof/velocity_env_cfg.py` | Robot, terrain, observations, reward weights |
+| `tasks/locomotion/agents/rsl_rl_ppo_cfg.py` | Learning rate, batch size, network size, iterations |
+
+To make the robot do something different, modify `velocity_env_cfg.py`. `train.py` itself is just a launcher -- you do not edit it.
