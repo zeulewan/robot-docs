@@ -267,19 +267,24 @@ Until this is fixed, the policy will produce diverging actions and the robot wil
 ## Quick Reference
 
 ```bash
-# Activate environment
 conda activate isaaclab
-
-# Train (headless, fast)
 cd ~/GIT/unitree_rl_lab
+
+# Start a new training run
 python scripts/rsl_rl/train.py --headless --task Unitree-G1-29dof-Velocity
 
-# Monitor
-tensorboard --logdir logs/rsl_rl/ --host 0.0.0.0
-# then open http://workstation:6006
+# Resume a training run
+python scripts/rsl_rl/train.py --headless --task Unitree-G1-29dof-Velocity \
+  --resume --load_run 2026-03-06_14-30-46
 
-# Play back with GUI
-python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity
+# Stop training
+Ctrl+C
+
+# Monitor training (open http://workstation:6006)
+tensorboard --logdir logs/rsl_rl/ --host 0.0.0.0
+
+# Play back with 20 robots visible
+python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity --num_envs 20
 
 # Trained policy location
 ls logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/
