@@ -4,6 +4,7 @@ Development log and progress updates.
 
 | Date | Post |
 |------|------|
+| 2026-03-13 | [G1 Locomotion: Training an RL Policy and Running It in Simulation](2026-03-13-g1-rl-locomotion-training-and-simulation.md) |
 | 2026-02-18 | [Unitree G1 First Session — Hardware, Networking, and App Setup](2026-02-18-unitree-g1-first-session-networking.md) |
 | 2026-02-11 | [Nav2 Autonomous Navigation and MPPI Tuning](2026-02-11-nav2-autonomous-navigation.md) |
 | 2026-02-09 | [Teleop Control and Docs Restructure](2026-02-09-teleop-and-docs-restructure.md) |
