@@ -239,28 +239,66 @@ The `policy.onnx` file is what gets deployed. It is a portable format that runs 
 
 ## Step 7: Deploy in unitree_sim_isaaclab
 
-Copy the trained ONNX to the simulation environment:
+Copy the trained JIT policy to the simulation environment:
 
 ```bash
-cp ~/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/policy.onnx \
-   ~/GIT/unitree_sim_isaaclab/assets/model/our_policy.onnx
+cp ~/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/policy.pt \
+   ~/GIT/unitree_sim_isaaclab/assets/model/our_policy.pt
 ```
 
-The simulation environment uses a custom action provider at:
+### Launch the simulation
 
+The custom task `Isaac-Locomotion-G129-Warehouse` loads the exact same robot config as training (URDF, actuator stiffness/damping, joint defaults) inside a warehouse scene.
+
+```bash
+conda activate isaaclab
+cd ~/GIT/unitree_sim_isaaclab
+python sim_main.py --device cuda:0 --enable_cameras \
+  --task Isaac-Locomotion-G129-Warehouse \
+  --action_source custom_rl \
+  --model_path assets/model/our_policy.pt \
+  --robot_type g129 \
+  --camera_include front_camera \
+  --enable_wholebody_dds
 ```
-~/GIT/unitree_sim_isaaclab/action_provider/action_provider_custom_rl.py
+
+### Control the robot with keyboard
+
+In a separate terminal:
+
+```bash
+conda activate isaaclab
+cd ~/GIT/unitree_sim_isaaclab
+python send_commands_keyboard.py
 ```
 
-This provider loads the ONNX model, reads robot state from the scene each step, runs inference, and sends joint targets back to the simulator.
+Controls (the terminal with the keyboard script must have focus):
 
----
+| Key | Action |
+|-----|--------|
+| W/S | Forward / Backward |
+| A/D | Strafe left / right |
+| Z/X | Turn left / right |
+| C | Crouch |
+| Q | Quit |
 
-## Known Issue: Stale Observations
+### How it works
 
-The custom action provider currently has a bug where `joint_pos_rel` returns identical values on every timestep. The scene data is not being refreshed before the observation vector is read. The fix is to call `scene.update()` before reading robot state in the provider's main loop. This is the same pattern used by the working wholebody provider.
+The v2 action provider (`action_provider_custom_rl_v2.py`) uses Isaac Lab's own `ObservationManager` and `ActionManager` to construct observations and apply actions. This guarantees identical behavior to training -- no manual observation construction, no action scaling bugs, no joint ordering issues.
 
-Until this is fixed, the policy will produce diverging actions and the robot will fall immediately in `unitree_sim_isaaclab`. Playback in `unitree_rl_lab` (using `play.py`) works correctly.
+The provider reads velocity commands from DDS (keyboard or Nav2), overrides the env's command manager, then runs the standard Isaac Lab pipeline: compute observations, run the policy, process and apply actions, step physics.
+
+### Alternative: Quick demo without DDS
+
+For a quick demo without DDS or keyboard control (robot follows random velocity commands):
+
+```bash
+conda activate isaaclab
+cd ~/GIT/unitree_rl_lab
+python scripts/rsl_rl/play_warehouse.py --num_envs 1
+```
+
+This uses Isaac Lab's built-in `env.step()` loop with the training config and a warehouse terrain.
 
 ---
 
@@ -286,8 +324,23 @@ tensorboard --logdir logs/rsl_rl/ --host 0.0.0.0
 # Play back with 20 robots visible
 python scripts/rsl_rl/play.py --task Unitree-G1-29dof-Velocity --num_envs 20
 
+# Play in warehouse (quick demo, random velocity commands)
+python scripts/rsl_rl/play_warehouse.py --num_envs 1
+
 # Trained policy location
 ls logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/
+
+# Deploy in unitree_sim_isaaclab with DDS keyboard control
+cd ~/GIT/unitree_sim_isaaclab
+python sim_main.py --device cuda:0 --enable_cameras \
+  --task Isaac-Locomotion-G129-Warehouse \
+  --action_source custom_rl \
+  --model_path assets/model/our_policy.pt \
+  --robot_type g129 --camera_include front_camera \
+  --enable_wholebody_dds
+
+# Keyboard control (separate terminal)
+python send_commands_keyboard.py
 ```
 
 ---
