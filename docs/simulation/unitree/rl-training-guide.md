@@ -1,23 +1,25 @@
 # RL Training Guide — G1 Locomotion from Scratch
 
-Step-by-step reproduction guide for training the G1-29DOF locomotion policy and running it in simulation.
+Step-by-step reproduction guide for training the G1-29DOF locomotion policy and running it in simulation. For the larger repo/file-format map, see [Unitree Developer Workflow](developer-workflow.md).
 
 ---
 
 ## Repositories
 
-Three repos are needed. All live in `~/GIT/`.
+Three repos are needed for the workflow used here. All live in `~/GIT/`.
 
 | Repo | Purpose | Location |
 |------|---------|----------|
-| `unitree_rl_lab` | RL training framework (train, evaluate, export) | `~/GIT/unitree_rl_lab/` |
-| `unitree_ros` | URDF robot description files (meshes, joints, physics) | `~/GIT/unitree_ros/` |
-| `unitree_sim_isaaclab` | Full simulation environment for deployment testing | `~/GIT/unitree_sim_isaaclab/` |
+| `unitree_ros` | Robot model source files: URDFs and meshes | `~/GIT/unitree_ros/` |
+| `unitree_rl_lab` | Isaac Lab RL training framework: train, evaluate, export | `~/GIT/unitree_rl_lab/` |
+| `unitree_sim_isaaclab` | Rich Isaac Sim validation/control app with DDS, sensors, and warehouse scenes | `~/GIT/unitree_sim_isaaclab/` |
 
 ```mermaid
 graph TD
-    A[unitree_ros\nURDF files] -->|G1 joint model| B[unitree_rl_lab\nTraining]
-    B -->|policy.onnx| C[unitree_sim_isaaclab\nFull Simulation]
+    A[unitree_ros\ng1_29dof_rev_1_0.urdf] -->|plain G1 29DOF robot| B[unitree_rl_lab\nTraining]
+    A -->|URDF-to-USD conversion| U[canonical G1 29DOF USD]
+    B -->|policy.pt / policy.onnx| C[unitree_sim_isaaclab\nWarehouse validation]
+    U --> C
     D[Isaac Lab 2.3.2] --> B
     D --> C
     E[Isaac Sim 5.1] --> D
@@ -67,12 +69,18 @@ Set the path to the cloned `unitree_ros` directory:
 UNITREE_ROS_DIR = "/home/zeul/GIT/unitree_ros"
 ```
 
-Then in the same file, switch the G1 29DOF config to use URDF instead of USD. Find the `UNITREE_G1_29DOF_CFG` section and:
+Then in the same file, switch the G1 29DOF config to use URDF instead of USD. Find the `UNITREE_G1_29DOF_CFG` section and point it at:
+
+```text
+robots/g1_description/g1_29dof_rev_1_0.urdf
+```
+
+For our project, that specific file was chosen because it matches the `Unitree-G1-29dof-Velocity` task: plain G1 29DOF Rev 1.0, no dexterous hands, no base-fixed manipulation setup, and no locked-waist variant.
 
 - **Uncomment** `UnitreeUrdfFileCfg`
 - **Comment out** `UnitreeUsdFileCfg`
 
-This tells Isaac Lab to load the G1 from the URDF robot description instead of Unitree's pre-packaged USD scene file.
+This tells Isaac Lab to load the G1 from the URDF robot description instead of Unitree's pre-packaged USD scene file. Training directly on USD is possible, but only if the USD has the same robot interface the task expects: same joints, same names/order, same 29 action targets, same default pose, same actuator setup, and compatible physics settings.
 
 ---
 
@@ -237,7 +245,7 @@ The `policy.onnx` file is what gets deployed. It is a portable format that runs 
 
 ---
 
-## Step 7: Deploy in unitree_sim_isaaclab
+## Step 7: Validate in unitree_sim_isaaclab
 
 Copy the trained JIT policy to the simulation environment:
 
@@ -248,7 +256,13 @@ cp ~/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-4
 
 ### Launch the simulation
 
-The custom task `Isaac-Locomotion-G129-Warehouse` loads the exact same robot config as training (URDF, actuator stiffness/damping, joint defaults) inside a warehouse scene.
+The custom task `Isaac-Locomotion-G129-Warehouse` runs the trained locomotion policy inside the richer `unitree_sim_isaaclab` stack. It uses a plain G1 29DOF USD that was generated from the same `unitree_ros` URDF lineage as training:
+
+```text
+unitree_sim_isaaclab/assets/robots/g1-29dof-locomotion/g1_29dof_rev_1_0.usd
+```
+
+That USD is needed because Isaac Sim scenes, warehouse assets, cameras, and RTX lidar are USD-native. The USD must still match the training robot interface. A visually similar G1 USD is not enough if it is a dexterous-hand, base-fixed, whole-body manipulation, 23DOF, or locked-waist variant.
 
 ```bash
 conda activate isaaclab
@@ -302,6 +316,26 @@ This uses Isaac Lab's built-in `env.step()` loop with the training config and a 
 
 ---
 
+## Asset Parity Checklist
+
+Before moving a policy from `unitree_rl_lab` into `unitree_sim_isaaclab`, check:
+
+| Check | Expected for this policy |
+|---|---|
+| Robot variant | Plain G1 29DOF Rev 1.0 |
+| Source file | `unitree_ros/robots/g1_description/g1_29dof_rev_1_0.urdf` |
+| Policy output | 29 action targets |
+| Joint names/order | Same Isaac Lab action manager ordering as training |
+| Observation shape/history | Same `Unitree-G1-29dof-Velocity` config |
+| Default joint pose | Same standing pose as training |
+| Actuator config | Same stiffness, damping, effort limits, velocity limits, and armature |
+| Physics timing | Same decimation and timestep |
+| Collision/solver settings | Reviewed after URDF-to-USD conversion |
+
+Most of the early mapping trouble came from trying to bridge this boundary manually. The v2 provider fixed the high-risk part by using Isaac Lab managers instead of reimplementing observation construction and action application by hand.
+
+---
+
 ## Quick Reference
 
 ```bash
@@ -330,7 +364,7 @@ python scripts/rsl_rl/play_warehouse.py --num_envs 1
 # Trained policy location
 ls logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/exported/
 
-# Deploy in unitree_sim_isaaclab with DDS keyboard control
+# Validate in unitree_sim_isaaclab with DDS keyboard control
 cd ~/GIT/unitree_sim_isaaclab
 python sim_main.py --device cuda:0 --enable_cameras \
   --task Isaac-Locomotion-G129-Warehouse \

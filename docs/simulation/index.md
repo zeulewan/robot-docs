@@ -39,8 +39,8 @@ Isaac Sim and Isaac ROS — simulation, perception, and the ROS 2 bridge.
 
     ---
 
-    Unitree RL Lab, sim-to-real stack, URDF files, and G1 locomotion training
+    Unitree RL Lab, sim-to-real stack, URDF/USD workflow, and G1 locomotion training
 
-    [:octicons-arrow-right-24: Overview](unitree/)
+    [:octicons-arrow-right-24: Overview](unitree/) · [:octicons-arrow-right-24: Workflow](unitree/developer-workflow.md) · [:octicons-arrow-right-24: Training](unitree/rl-training-guide.md)
 
 </div>
