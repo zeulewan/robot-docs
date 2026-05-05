@@ -151,23 +151,30 @@ Includes ROS 2 Jazzy (50+ packages), TensorRT, PyTorch, nav2, rviz2, foxglove-br
 
 ## Unitree Software Stack (Reference)
 
-Runs on the G1, not the workstation.
+The Unitree repos have different jobs. Do not treat them as interchangeable.
 
 | Package | Location | Purpose |
 |---|---|---|
-| `unitree_sdk2` | G1 Orin | C++ SDK for motor control |
-| `unitree_sdk2_python` | G1 Orin | Python bindings via pybind11 |
-| `unitree_ros2` | G1 Orin | ROS 2 bridge (publishes topics) |
-| CycloneDDS 0.10.2+ | G1 Orin | DDS middleware |
+| `unitree_ros` | Workstation/source repo | URDFs, meshes, and robot descriptions. Old ROS/Gazebo flavored, but still useful as model source. |
+| `unitree_model` | Unitree model dataset | Preconverted USD assets for Isaac/Omniverse. GitHub repo is deprecated in favor of Hugging Face. |
+| `unitree_rl_lab` | Workstation | Isaac Lab RL training, playback, and policy export. |
+| `unitree_sim_isaaclab` | Workstation | Rich Isaac Sim validation/control app with DDS, sensors, task scenes, replay, and data generation. |
+| `unitree_mujoco` | Workstation or dev machine | Lightweight SDK2/MuJoCo simulator for sim-to-real controller validation. |
+| `unitree_sdk2` | G1 or direct-control dev machine | C++ SDK for real robot DDS/CycloneDDS communication and control. |
+| `unitree_sdk2_python` | G1 or direct-control dev machine | Python SDK2 bindings. |
+| `unitree_ros2` | G1 or direct-control dev machine | ROS 2 package layer using Unitree DDS messages and topics. |
+| CycloneDDS 0.10.2+ | G1 / Unitree control path | DDS middleware used by Unitree SDK2 and compatible with ROS 2 DDS concepts. |
 
 ### Simulation Equivalents
 
 | Real | Simulated |
 |---|---|
-| `unitree_ros2` on Orin | Isaac Sim's bundled ROS 2 bridge |
-| Physical sensors | Simulated cameras/IMU in Isaac Sim |
-| `unitree_sdk2` motor control | Isaac Sim physics engine |
-| G1 USD model | `unitree_sim_isaaclab` or Isaac Lab `g1.usd` |
+| Unitree DDS/CycloneDDS topics | `unitree_sim_isaaclab` DDS-style sim topics |
+| Physical sensors | Simulated cameras, IMU, and lidar in Isaac Sim |
+| `unitree_sdk2` or `unitree_ros2` controller | Isaac Sim physics plus action provider |
+| Physical G1 | Canonical G1 29DOF URDF/USD asset |
+
+For the full developer workflow, see [Unitree Developer Workflow](../simulation/unitree/developer-workflow.md).
 
 ### Key Repos
 
@@ -175,3 +182,10 @@ Runs on the G1, not the workstation.
 - [unitreerobotics/unitree_sdk2](https://github.com/unitreerobotics/unitree_sdk2)
 - [unitreerobotics/unitree_sim_isaaclab](https://github.com/unitreerobotics/unitree_sim_isaaclab)
 - [unitreerobotics/unitree_rl_lab](https://github.com/unitreerobotics/unitree_rl_lab)
+- [unitreerobotics/unitree_ros](https://github.com/unitreerobotics/unitree_ros)
+- [unitreerobotics/unitree_model](https://github.com/unitreerobotics/unitree_model)
+- [unitreerobotics/unitree_mujoco](https://github.com/unitreerobotics/unitree_mujoco)
+- [unitreerobotics/unitree_sdk2_python](https://github.com/unitreerobotics/unitree_sdk2_python)
+- [unitreerobotics/unitree_rl_mjlab](https://github.com/unitreerobotics/unitree_rl_mjlab)
+- [unitreerobotics/xr_teleoperate](https://github.com/unitreerobotics/xr_teleoperate)
+- [unitreerobotics/unitree_lerobot](https://github.com/unitreerobotics/unitree_lerobot)

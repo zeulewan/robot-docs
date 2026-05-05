@@ -20,6 +20,12 @@
 - [ROS Nodes](simulation/isaac-ros/nodes/): All ROS 2 nodes in the container -- auto-start services (foxglove-bridge, H.264 republisher, teleop_twist_joy) and on-demand nodes (cuVSLAM, AprilTag, teleop_twist_keyboard, Nav2).
 - [Isaac ROS Dockerfile](simulation/isaac-ros/dockerfile.md): Dockerfile, docker-compose.yml, ROS 2 apt repo setup, build instructions.
 
+### Unitree
+
+- [Unitree Developer Workflow](simulation/unitree/developer-workflow.md): Unitree repo role map, URDF/USD/MJCF explanation, canonical G1 asset workflow, training vs validation flow, DDS/MuJoCo/real-robot gates.
+- [Unitree Simulation Stack](simulation/unitree/index.md): Overview of Unitree repos used locally: `unitree_ros`, `unitree_rl_lab`, `unitree_sim_isaaclab`, SDK2/ROS2, MuJoCo, XR teleop, and LeRobot.
+- [RL Training Guide](simulation/unitree/rl-training-guide.md): Reproduction guide for G1 29DOF locomotion training, why `g1_29dof_rev_1_0.urdf` was used, policy export, warehouse validation, and asset parity checklist.
+
 ## Infrastructure
 
 ### Workstation

@@ -1,29 +1,36 @@
 # Unitree Simulation Stack
 
-Unitree repos and tools for simulating the G1 in Isaac Sim.
+Unitree repos and tools for simulating, training, validating, and eventually deploying G1 policies.
 
-**Guides:** [TensorBoard — Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
+**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
 
 ## Repo Overview
 
-| Repo | What it is | Location |
+| Repo | What it is | Main role in this project |
 |------|-----------|----------|
-| **unitree_rl_lab** | RL training framework for Unitree robots. Train locomotion policies, play them back in sim. Built on Isaac Lab. | `~/GIT/unitree_rl_lab/` |
-| **unitree_sim_isaaclab** | Unitree's full sim environment for teleoperation, data collection, and manipulation tasks. Uses DDS (same protocol as real robot). | `~/GIT/unitree_sim_isaaclab/` |
-| **unitree_ros** | URDF robot description files — meshes, joint definitions, physical properties for all Unitree robots. | `~/GIT/unitree_ros/` |
+| **unitree_ros** | Robot model source files: URDFs, meshes, Xacro files, and older ROS/Gazebo packages. | Source for the G1 29DOF URDF used in training. |
+| **unitree_model** | Preconverted Unitree 3D models, mainly USDs for Isaac/Omniverse. GitHub repo is deprecated in favor of Hugging Face. | Optional source for USD assets. Its README says the USDs come from URDF conversion. |
+| **unitree_rl_lab** | Isaac Lab RL training framework for Unitree robots. | Train/play/export the G1 29DOF locomotion policy. |
+| **unitree_sim_isaaclab** | Rich Isaac Lab/Isaac Sim application with DDS, sensors, teleop, replay, and task scenes. | Warehouse validation/control after training. |
+| **unitree_mujoco** | Lightweight MuJoCo simulator built on SDK2. | Sim-to-real validation gate before hardware. |
+| **unitree_sdk2 / unitree_sdk2_python** | Real robot C++/Python control SDKs over Unitree DDS/CycloneDDS. | Physical robot control path. |
+| **unitree_ros2** | ROS 2 message/package layer for Unitree DDS topics. | ROS 2 integration with real or simulated Unitree DDS topics. |
+| **xr_teleoperate / unitree_lerobot** | XR teleoperation and imitation-learning/data workflows. | Data collection and downstream learning for manipulation. |
 
 ### How they relate
 
 ```
-Isaac Sim 5.1 (the rendering/physics engine)
-  └── Isaac Lab 2.3.2 (the robotics RL framework)
-       ├── unitree_rl_lab (RL training — locomotion, velocity control)
-       └── unitree_sim_isaaclab (full sim — manipulation, teleoperation, DDS)
-
-unitree_ros (robot URDF files — used by both)
+unitree_ros or unitree_model
+  -> canonical G1 29DOF robot asset
+  -> unitree_rl_lab training
+  -> exported policy
+  -> unitree_sim_isaaclab warehouse validation/control
+  -> unitree_mujoco / SDK2 / ROS 2 real-robot gates
 ```
 
-Both Unitree repos are applications built on Isaac Lab. They share the same conda environment (`isaaclab`) and the same Isaac Sim installation.
+Isaac Sim is the simulator. Isaac Lab is the robot-learning framework built on top of Isaac Sim. `unitree_rl_lab` and `unitree_sim_isaaclab` are Unitree projects built on Isaac Lab, but they have different jobs: `unitree_rl_lab` is the cleaner locomotion training surface, while `unitree_sim_isaaclab` is the richer validation/control/data app.
+
+For the full repo-by-repo map, see [Developer Workflow](developer-workflow.md).
 
 ---
 
@@ -79,9 +86,11 @@ The policy converts a velocity command ("walk forward at 0.5 m/s") into the 29 j
 - Data collection and replay for imitation learning
 - Camera streaming (for vision-based policies)
 
-**Pre-trained models:** Downloaded via `fetch_assets.sh` from HuggingFace (~1.2 GB). Located at `assets/model/policy.onnx`.
+**Pre-trained models:** Downloaded via `fetch_assets.sh` from HuggingFace. These are Unitree-provided test assets, not our trained G1 policy.
 
 **When to use:** Full sim-to-real pipeline with DDS, manipulation, or teleoperation. For locomotion training only, use `unitree_rl_lab`.
+
+For our warehouse demo, `assets/model/our_policy.pt` was copied from the `unitree_rl_lab` training run, and the custom `Isaac-Locomotion-G129-Warehouse` task used a plain G1 29DOF USD generated from the same `unitree_ros` URDF used for training.
 
 ---
 
@@ -89,14 +98,14 @@ The policy converts a velocity command ("walk forward at 0.5 m/s") into the 29 j
 
 **Purpose:** URDF robot description files for all Unitree robots.
 
-A URDF describes a robot's physical structure — links, joints, meshes, and physical properties (mass, inertia). Isaac Sim reads the URDF to build the robot in simulation.
+A URDF describes a robot's physical structure: links, joints, meshes, and physical properties such as mass and inertia. Isaac Sim can import URDFs directly or convert them into USD assets.
 
 **G1 URDF variants available:**
 
 | File | DOF | Description |
 |------|-----|-------------|
 | `g1_23dof.urdf` | 23 | Base G1 without wrist joints |
-| `g1_29dof_rev_1_0.urdf` | 29 | Full G1 with wrist joints (recommended) |
+| `g1_29dof_rev_1_0.urdf` | 29 | Plain G1 29DOF Rev 1.0. This is the one used for our locomotion policy. |
 | `g1_29dof_with_hand_rev_1_0.urdf` | 29+ | G1 with Inspire dexterous hands |
 | `g1_29dof_lock_waist.urdf` | 29 | Waist locked (for arm-only tasks) |
 
@@ -126,7 +135,9 @@ Edit `unitree_rl_lab/source/unitree_rl_lab/unitree_rl_lab/assets/robots/unitree.
 UNITREE_ROS_DIR = "/home/zeul/GIT/unitree_ros"
 ```
 
-Switch the G1 29DOF config from USD to URDF spawner — uncomment `UnitreeUrdfFileCfg`, comment out `UnitreeUsdFileCfg`.
+Switch the G1 29DOF config from USD to URDF spawner: uncomment `UnitreeUrdfFileCfg`, comment out `UnitreeUsdFileCfg`, and point it at `robots/g1_description/g1_29dof_rev_1_0.urdf`.
+
+This is intentional for the current G1 29DOF velocity policy because `unitree_rl_lab` recommends URDF files for Isaac Sim 5.x and the selected URDF exactly matches the plain 29DOF task.
 
 ### Step 3: Install unitree_rl_lab
 
@@ -184,4 +195,6 @@ The networking layer under ROS 2. Normally invisible. Matters here because:
 | Contains | Robot structure only | Full scene with materials |
 | Standard in | Robotics | NVIDIA simulation |
 
-Isaac Sim supports both. We use URDF because Unitree provides their robots as URDF.
+Isaac Sim supports both. We used URDF for training because it matched the Unitree G1 29DOF velocity task cleanly. We used USD for the warehouse validation scene because Isaac Sim worlds, sensors, cameras, lidar, and scene assets are USD-native.
+
+The critical rule is asset/interface parity: same robot variant, same joint names/order, same action count, same default pose, same actuator setup, same observation shape, and compatible physics settings.
