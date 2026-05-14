@@ -124,12 +124,50 @@ ros2 param get /foxglove_bridge port
 
 ---
 
+## Remote Desktop
+
+Use `stream-desktop` to bring up the Moonlight desktop only when needed. It starts GDM/X11, waits for `DISPLAY=:0`, disables screen blanking, and then starts Sunshine.
+
+```bash
+# Start Moonlight desktop access
+stream-desktop start
+
+# Stop Sunshine and the X11 desktop
+stream-desktop stop
+
+# Restart the whole desktop streaming stack
+stream-desktop restart
+
+# Check GDM, X11, display, and Sunshine ports
+stream-desktop status
+
+# Recent Sunshine logs
+stream-desktop logs
+```
+
+Raw service checks:
+
+```bash
+systemctl is-active gdm
+systemctl --user is-active sunshine
+systemctl --user is-enabled sunshine
+```
+
+Sunshine autostart should remain disabled so the desktop stack stays off until explicitly started:
+
+```text
+disabled
+```
+
+---
+
 ## Isaac Sim
 
 ### Launching
 
 ```bash
-# GUI mode (from desktop session)
+# GUI mode (start remote desktop first if working through Moonlight)
+stream-desktop start
 conda activate isaaclab
 isaacsim
 
