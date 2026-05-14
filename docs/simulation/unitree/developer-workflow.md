@@ -22,7 +22,7 @@ What we actually did matches that shape, minus the MuJoCo and real-robot gates. 
 | Repository | What it is | Use it for |
 |---|---|---|
 | [`unitree_ros`](https://github.com/unitreerobotics/unitree_ros) | Broad robot-description source repo with URDFs, meshes, Xacro files, and older ROS/Gazebo packages. | Source robot geometry, joints, masses, inertias, and mesh references. For this project, this is where the G1 29DOF URDF came from. |
-| [`unitree_model`](https://github.com/unitreerobotics/unitree_model) | Preconverted Unitree robot model repo/dataset. GitHub repo is deprecated in favor of Hugging Face. | USD assets for Isaac/Omniverse workflows. Its README says the USDs are generated from URDF. |
+| [`unitree_model`](https://huggingface.co/datasets/unitreerobotics/unitree_model) | Preconverted Unitree robot model dataset on Hugging Face. The old GitHub `unitree_model` repo is deprecated in favor of Hugging Face. | Current official source for Unitree-provided USD assets for Isaac/Omniverse workflows. Its card says to visit `unitree_ros` for more robot-model information and describes URDF-to-USD conversion settings. |
 | [`unitree_sdk2`](https://github.com/unitreerobotics/unitree_sdk2) | Core C++ SDK for newer Unitree robots. | Real robot communication and control over Unitree's DDS/CycloneDDS stack. |
 | [`unitree_sdk2_python`](https://github.com/unitreerobotics/unitree_sdk2_python) | Python binding for SDK2. | Python DDS control clients, examples, and quick integration scripts. |
 | [`unitree_ros2`](https://github.com/unitreerobotics/unitree_ros2) | ROS 2 package and message layer for Unitree robots. | ROS 2 integration using the same DDS substrate as SDK2. Topics like low state, low command, sport mode state, wireless controller, and API request/response live here. |
@@ -45,6 +45,19 @@ What we actually did matches that shape, minus the MuJoCo and real-robot gates. 
 
 URDF and USD are not competitors in a simple "one is better" sense. URDF is a compact robot-description format. USD is Isaac/Omniverse's native scene/asset format. Isaac can use either, but USD is usually better for complete scenes, materials, cameras, lidar, and prebuilt simulation assets.
 
+## Which Source Is Truth?
+
+Use different "truth" sources for different layers:
+
+| Layer | Preferred source | Why |
+|---|---|---|
+| Robot mechanics and URDF description | `unitree_ros` on GitHub | Contains the URDFs, meshes, links, joints, inertias, limits, and mount frames. This is the source used for our G1 29DOF training run. |
+| Unitree-provided USD assets | `unitree_model` on Hugging Face | The old GitHub `unitree_model` repo says future updates are released on Hugging Face. Use HF for current preconverted USDs and USD sensor/physics layers. |
+| Task code, training code, DDS simulation app | GitHub repos such as `unitree_rl_lab` and `unitree_sim_isaaclab` | These are normal source-code repos, not large binary asset stores. |
+| Large robot datasets and model checkpoints | Unitree Hugging Face org | Hugging Face is where Unitree publishes embodied-AI datasets, UnifoLM models, and large downloadable assets. |
+
+For this project, the G1 locomotion training source of truth was still `unitree_ros/robots/g1_description/g1_29dof_rev_1_0.urdf`. Hugging Face does not replace that URDF source for the training run. Hugging Face does supersede the old `unitree_model` GitHub repo for Unitree's preconverted USD assets, so it should be checked when choosing or comparing Isaac/Omniverse robot USDs.
+
 ## Why We Used `unitree_ros`
 
 `unitree_rl_lab` explicitly supports two robot-description paths: USD assets from Unitree's model dataset, or URDF files from `unitree_ros`. Its README recommends the URDF path for Isaac Sim 5.x.
@@ -56,6 +69,64 @@ unitree_ros/robots/g1_description/g1_29dof_rev_1_0.urdf
 ```
 
 That file matched the training task `Unitree-G1-29dof-Velocity`: plain G1, 29 controllable DOFs, no dexterous hands, no base-fixed manipulation setup, and no locked-waist variant. The other G1 files are valid, but they describe different robots or task assumptions, such as 23DOF, hand-equipped, waist-locked, or manipulation-oriented variants.
+
+## Sensor Frames vs Active Sensors
+
+Treat the URDF as the source of truth for robot mechanics and mount frames, not as the source of truth for active Isaac sensors. The G1 URDF contains links such as `imu_in_torso`, `imu_in_pelvis`, and `d435_link`. Those are useful frames: they tell code where an IMU or camera would be mounted relative to the robot body. They do not automatically publish images, point clouds, or IMU messages inside Isaac Lab.
+
+In USD/Isaac Sim, a `prim` is a scene node addressed by a path, similar to a filesystem path. Examples:
+
+```text
+/World/envs/env_0/Robot/torso_link
+/World/envs/env_0/Robot/d435_link
+/World/envs/env_0/Robot/d435_link/front_cam
+```
+
+The first two paths can be passive robot/link prims. The last path can be an active camera prim if a task config creates one there.
+
+`unitree_sim_isaaclab` usually creates active cameras from task configs, not from the URDF alone. The reusable helpers live here:
+
+```text
+unitree_sim_isaaclab/tasks/common_config/camera_configs.py
+```
+
+A task uses those helpers by adding camera fields to its scene config:
+
+```python
+front_camera = CameraPresets.g1_front_camera()
+left_wrist_camera = CameraPresets.left_gripper_wrist_camera()
+right_wrist_camera = CameraPresets.right_gripper_wrist_camera()
+```
+
+`CameraPresets.g1_front_camera()` returns an Isaac Lab `CameraCfg` with a default prim path under `Robot/d435_link/front_cam`, a `PinholeCameraCfg` spawn config, image size, update period, and camera offset. When Isaac Lab builds the environment, it sees the `front_camera` field, spawns the camera prim in the USD stage, and registers the runtime sensor as `env.scene["front_camera"]`. Observation or bridge code then reads rendered data from `env.scene["front_camera"].data.output["rgb"]`.
+
+Those camera helpers only configure cameras. They do not configure IMU or lidar. In the warehouse locomotion task, the head camera was defined directly as `head_camera = CameraCfg(...)` in the task scene config instead of using the common preset helper. The RTX lidar used for the warehouse bridge was a separate USD/sensor addition, and the IMU stream was derived from robot simulation state rather than created by the camera helper.
+
+## SLAM and Visualization Split
+
+The RGB-D RTAB-Map test path deliberately separates SLAM inputs from operator visualization.
+
+RTAB-Map consumes raw RGB-D data:
+
+```text
+/head_camera/color/image_raw
+/head_camera/depth/image_raw
+/head_camera/color/camera_info
+```
+
+The operator should normally view the compressed preview and lightweight RTAB outputs:
+
+```text
+/head_camera/image/compressed
+/rtabmap/map
+/rtabmap/grid_prob_map
+/rtabmap/odom
+/rtabmap/mapPath
+```
+
+Do not use Foxglove-over-network as the default renderer for the full colored global point cloud. `/rtabmap/cloud_map` is an accumulated `PointCloud2`; in the warehouse test it measured about 12 MB per message. Foxglove must move that raw message over WebSocket, deserialize it in the browser, and render it in WebGL. Moonlight is different: the workstation renders the 3D view locally, then sends a compressed video stream. That is why Isaac Sim can look smooth over Moonlight while a browser-based colored RTAB cloud map stutters.
+
+Use Foxglove for driving, preview, commands, odometry, path, and 2D/occupancy-style map views. Use RViz2 or `rtabmap_viz` on the workstation, viewed through Moonlight, when the full colored 3D point cloud is needed. The current ROS container has RViz2 and `rtabmap_viz` installed, but Docker display wiring still needs to be added before GUI tools can launch directly from inside that container.
 
 ## Training vs Validation
 

@@ -2,14 +2,14 @@
 
 Unitree repos and tools for simulating, training, validating, and eventually deploying G1 policies.
 
-**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
+**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [Policy Experiments](policy-experiments/index.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
 
 ## Repo Overview
 
 | Repo | What it is | Main role in this project |
 |------|-----------|----------|
 | **unitree_ros** | Robot model source files: URDFs, meshes, Xacro files, and older ROS/Gazebo packages. | Source for the G1 29DOF URDF used in training. |
-| **unitree_model** | Preconverted Unitree 3D models, mainly USDs for Isaac/Omniverse. GitHub repo is deprecated in favor of Hugging Face. | Optional source for USD assets. Its README says the USDs come from URDF conversion. |
+| **unitree_model** | Preconverted Unitree 3D models, mainly USDs for Isaac/Omniverse. The current asset dataset is on Hugging Face; the old GitHub repo is deprecated. | Official source for Unitree-provided USD assets. Its card points back to `unitree_ros` for robot-model details and describes URDF conversion settings. |
 | **unitree_rl_lab** | Isaac Lab RL training framework for Unitree robots. | Train/play/export the G1 29DOF locomotion policy. |
 | **unitree_sim_isaaclab** | Rich Isaac Lab/Isaac Sim application with DDS, sensors, teleop, replay, and task scenes. | Warehouse validation/control after training. |
 | **unitree_mujoco** | Lightweight MuJoCo simulator built on SDK2. | Sim-to-real validation gate before hardware. |
@@ -20,7 +20,7 @@ Unitree repos and tools for simulating, training, validating, and eventually dep
 ### How they relate
 
 ```
-unitree_ros or unitree_model
+unitree_ros URDF/meshes or Hugging Face unitree_model USDs
   -> canonical G1 29DOF robot asset
   -> unitree_rl_lab training
   -> exported policy
@@ -29,6 +29,8 @@ unitree_ros or unitree_model
 ```
 
 Isaac Sim is the simulator. Isaac Lab is the robot-learning framework built on top of Isaac Sim. `unitree_rl_lab` and `unitree_sim_isaaclab` are Unitree projects built on Isaac Lab, but they have different jobs: `unitree_rl_lab` is the cleaner locomotion training surface, while `unitree_sim_isaaclab` is the richer validation/control/data app.
+
+For source-of-truth purposes, split the layers. `unitree_ros` remains the URDF/mechanics source used for our G1 29DOF training run. Hugging Face `unitree_model` is the current official place for Unitree's preconverted USD assets. GitHub remains the source for the actual code repos such as `unitree_rl_lab`, `unitree_sim_isaaclab`, SDK2, and ROS2.
 
 For the full repo-by-repo map, see [Developer Workflow](developer-workflow.md).
 
@@ -91,6 +93,17 @@ The policy converts a velocity command ("walk forward at 0.5 m/s") into the 29 j
 **When to use:** Full sim-to-real pipeline with DDS, manipulation, or teleoperation. For locomotion training only, use `unitree_rl_lab`.
 
 For our warehouse demo, `assets/model/our_policy.pt` was copied from the `unitree_rl_lab` training run, and the custom `Isaac-Locomotion-G129-Warehouse` task used a plain G1 29DOF USD generated from the same `unitree_ros` URDF used for training.
+
+**Current camera/SLAM workflow:** RTAB-Map consumes the raw RGB-D topics from the simulated head camera, while Foxglove should normally stay on the compressed preview and lightweight map/pose topics. The full colored RTAB point cloud (`/rtabmap/cloud_map`) is an accumulated `PointCloud2` and measured about 12 MB per message during testing, so it should be treated as an inspection/debug view, not the normal browser driving view. For the colored 3D map, use RViz2 or `rtabmap_viz` on the workstation and view it through Moonlight.
+
+Useful scripts in `unitree_sim_isaaclab`:
+
+```bash
+./scripts/restart_camera_stack.sh      # sim + camera + cmd_vel, no RTAB
+./scripts/start_rtabmap.sh             # start RGB-D RTAB-Map
+./scripts/stop_rtabmap.sh              # stop RTAB-Map
+./scripts/start_foxglove_light.sh 8765 # lightweight driving/overview bridge
+```
 
 ---
 
