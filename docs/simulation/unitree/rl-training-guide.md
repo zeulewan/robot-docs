@@ -14,6 +14,8 @@ Three repos are needed for the workflow used here. All live in `~/GIT/`.
 | `unitree_rl_lab` | Isaac Lab RL training framework: train, evaluate, export | `~/GIT/unitree_rl_lab/` |
 | `unitree_sim_isaaclab` | Rich Isaac Sim validation/control app with DDS, sensors, and warehouse scenes | `~/GIT/unitree_sim_isaaclab/` |
 
+For this training run, `unitree_ros` was the source of truth for the robot URDF. Unitree's Hugging Face `unitree_model` dataset is the current official source for Unitree's preconverted USD assets, but it does not replace the exact `g1_29dof_rev_1_0.urdf` file used to train this policy.
+
 ```mermaid
 graph TD
     A[unitree_ros\ng1_29dof_rev_1_0.urdf] -->|plain G1 29DOF robot| B[unitree_rl_lab\nTraining]
@@ -155,6 +157,29 @@ Open [http://workstation:6006](http://workstation:6006) in a browser. Key metric
 | `Episode_Termination/bad_orientation` | Decreasing toward 0 | Fall rate |
 | `Episode_Reward/track_lin_vel_xy` | Increasing | Velocity command accuracy |
 | `Episode_Length/mean` | Increasing toward max | Robots staying alive longer |
+
+---
+
+## Policy Observation Sources
+
+The G1 walking policy was trained from the observation terms in:
+
+```text
+~/GIT/unitree_rl_lab/source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/velocity_env_cfg.py
+```
+
+The actor policy observes `base_ang_vel`, `projected_gravity`, velocity commands, relative joint positions, relative joint velocities, and the previous action. With history length 5, those terms become the 480-value policy input expected by the exported network.
+
+`base_ang_vel` and `projected_gravity` are IMU-like signals, but they were not read from an active Isaac IMU sensor. Isaac Lab's observation functions read them from the simulated articulation state:
+
+| Observation | Isaac Lab source | Real-robot equivalent |
+|---|---|---|
+| `base_ang_vel` | `asset.data.root_ang_vel_b` | Gyro/body angular velocity from the robot IMU or state estimator |
+| `projected_gravity` | `asset.data.projected_gravity_b` | Gravity direction in the body frame, computed from the estimated base orientation |
+
+`projected_gravity` is computed by rotating the world gravity vector into the robot base frame using the simulated root orientation. In simulation this is ground-truth state with configured observation noise. On hardware, the same policy input should be produced from the real robot's IMU/state-estimator output, with the same axis convention, scaling, history, and update rate.
+
+The training scene also defines a `height_scanner` raycaster, but the height-scan observation is commented out in the G1 29DOF policy/critic config used here. Camera and lidar data were not part of this walking policy's training observations.
 
 ---
 
@@ -301,6 +326,119 @@ Controls (the terminal with the keyboard script must have focus):
 The v2 action provider (`action_provider_custom_rl_v2.py`) uses Isaac Lab's own `ObservationManager` and `ActionManager` to construct observations and apply actions. This guarantees identical behavior to training -- no manual observation construction, no action scaling bugs, no joint ordering issues.
 
 The provider reads velocity commands from DDS (keyboard or Nav2), overrides the env's command manager, then runs the standard Isaac Lab pipeline: compute observations, run the policy, process and apply actions, step physics.
+
+### Cameras and Other Sensors
+
+The locomotion policy does not consume camera, lidar, or IMU sensor objects. Those sensors are for validation, visualization, ROS bridging, SLAM, and downstream autonomy.
+
+In `unitree_sim_isaaclab`, active cameras are created by task scene configs with Isaac Lab `CameraCfg` objects. Unitree's reusable camera presets are in:
+
+```text
+~/GIT/unitree_sim_isaaclab/tasks/common_config/camera_configs.py
+```
+
+Manipulation tasks usually add cameras like this:
+
+```python
+front_camera = CameraPresets.g1_front_camera()
+left_wrist_camera = CameraPresets.left_gripper_wrist_camera()
+right_wrist_camera = CameraPresets.right_gripper_wrist_camera()
+```
+
+That does two things when the environment is constructed: it creates camera prims in the USD stage, and it registers runtime sensors under names such as `env.scene["front_camera"]`. Camera observation or bridge code then reads image tensors from `env.scene["front_camera"].data.output["rgb"]`.
+
+The warehouse locomotion task used the same Isaac Lab mechanism but defined its head camera directly in the scene config as `head_camera = CameraCfg(...)`. The camera is attached under the robot in the USD scene so it moves with the G1. The lidar path was handled separately as an RTX lidar prim/sensor, and the IMU bridge derived IMU-like values from robot simulation state rather than from the camera config.
+
+### RGB-D RTAB-Map Test Path
+
+For camera-based SLAM testing, the sim now has an optional raw RGB-D stream in addition to the existing compressed JPEG stream. The walking policy still does not use camera data; this path is only for SLAM/perception validation.
+
+The simulator flag is:
+
+```bash
+--camera_rgbd --camera_rgbd_name head_camera --camera_rgbd_port 55556
+```
+
+The RGB-D bridge lives in:
+
+```text
+~/workspaces/isaac_ros-dev/g1/scripts/rgbd_camera_bridge.py
+```
+
+It publishes:
+
+| Topic | Message | Notes |
+|---|---|---|
+| `/head_camera/color/image_raw` | `sensor_msgs/Image` | `rgb8`; raw RTAB-Map input, not the operator preview |
+| `/head_camera/depth/image_raw` | `sensor_msgs/Image` | `32FC1`, meters; raw RTAB-Map input, not the operator preview |
+| `/head_camera/color/camera_info` | `sensor_msgs/CameraInfo` | Pinhole intrinsics from the current `CameraCfg` |
+| `/head_camera/depth/camera_info` | `sensor_msgs/CameraInfo` | Same intrinsics as color |
+
+The compressed preview bridge publishes:
+
+| Topic | Message | Notes |
+|---|---|---|
+| `/head_camera/image/compressed` | `sensor_msgs/CompressedImage` | JPEG preview for Foxglove/Lichtblick and driving |
+
+Both the compressed image and camera info should use `head_camera_optical_frame`. A previous mismatch had the preview on `head_camera` and camera info on `head_camera_optical_frame`, which caused Foxglove warnings.
+
+RTAB-Map should consume the raw RGB-D topics in the background:
+
+```text
+/head_camera/color/image_raw
+/head_camera/depth/image_raw
+/head_camera/color/camera_info
+```
+
+Foxglove should normally display the compressed preview and lightweight map outputs:
+
+```text
+/head_camera/image/compressed
+/rtabmap/map
+/rtabmap/grid_prob_map
+/rtabmap/odom
+/rtabmap/mapPath
+/tf
+/tf_static
+```
+
+Do not keep the raw RGB/depth topics or the full colored global point cloud open in the browser while driving. The raw topics are RTAB inputs, and `/rtabmap/cloud_map` is an accumulated colored `PointCloud2` global map. In testing, `/rtabmap/cloud_map` measured roughly 12 MB per message and 13-18 MB/s when subscribed. That topic is much heavier than the compressed camera preview, which was roughly 0.6 MB/s. Sending the global point cloud through Foxglove over the network can make the browser camera panel drop to very low frame rates even when Isaac Sim over Moonlight is smooth.
+
+Use the helper scripts in `unitree_sim_isaaclab`:
+
+```bash
+cd ~/GIT/unitree_sim_isaaclab
+
+# Restart sim + camera + cmd_vel, without RTAB-Map.
+./scripts/restart_camera_stack.sh
+
+# Start RGB-D RTAB-Map against the running camera stack.
+./scripts/start_rtabmap.sh
+
+# Stop RTAB-Map while keeping the camera/driving stack alive.
+./scripts/stop_rtabmap.sh
+
+# Lightweight Foxglove bridge for driving and overview.
+./scripts/start_foxglove_light.sh 8765
+
+# Debug-only Foxglove bridge that exposes the colored global cloud map.
+./scripts/start_foxglove_cloud_map.sh 8765
+```
+
+`./scripts/restart_rtabmap.sh` now composes the camera stack plus `start_rtabmap.sh`.
+
+Current measured behavior after tuning:
+
+| Stream | Purpose | Approx observed rate/size |
+|---|---|---|
+| `/head_camera/image/compressed` | Operator preview | About 23 Hz, about 0.6 MB/s |
+| `/head_camera/color/image_raw` | RTAB RGB input | About 4 Hz after bridge skip/downsample settings |
+| `/head_camera/depth/image_raw` | RTAB depth input | About 4 Hz after bridge skip/downsample settings |
+| `/rtabmap/cloud_map` | Accumulated colored global point cloud | About 12 MB per message in the tested map |
+
+For heavy 3D map inspection, prefer RViz2 or `rtabmap_viz` running on the workstation and viewed through Moonlight. Moonlight streams the already-rendered desktop as compressed video. Foxglove streams raw ROS messages into the browser and then asks the browser to parse/render them, which is a poor fit for a large live `PointCloud2`. The ROS container currently has `rviz2` and `rtabmap_viz` installed, but GUI display forwarding from the container still needs to be wired before those tools can open directly from the container.
+
+The container image must include `ros-jazzy-rtabmap-ros`; the local `g1/Dockerfile` in `~/workspaces/isaac_ros-dev` was updated for that.
 
 ### Alternative: Quick demo without DDS
 
