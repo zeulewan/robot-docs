@@ -95,14 +95,14 @@ flowchart TD
 
 ---
 
-## Services Running
+## Services and On-Demand Desktop
 
 ### Workstation (Kingston)
 
-- Sunshine (game streaming server)
 - Tailscale
-- GDM: autologin enabled, Wayland disabled (X11 only for NVIDIA)
-- X11: headless with virtual display via xorg.conf MetaModes
+- Sunshine + Moonlight desktop: on demand via `stream-desktop`
+- GDM: autologin enabled, Wayland disabled (X11 only for NVIDIA), normally stopped until `stream-desktop start`
+- X11: headless virtual display via xorg.conf MetaModes, normally stopped until `stream-desktop start`
 
 ### tsrelay (Toronto)
 

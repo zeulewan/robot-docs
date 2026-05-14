@@ -8,7 +8,7 @@ Accurate snapshot of the workstation's Isaac Sim / ROS 2 / IsaacLab stack (Febru
 |-----------|-------|
 | **OS** | Ubuntu 24.04.3 LTS (upgraded from 22.04) |
 | **Kernel** | 6.8.0-100-generic |
-| **Desktop** | GNOME (X11 session on :0) |
+| **Desktop** | GNOME X11 on `:0`, started on demand with `stream-desktop` |
 | **Shell** | zsh + oh-my-zsh + powerlevel10k |
 | **GPU** | NVIDIA RTX 3090 (24 GB VRAM) |
 | **NVIDIA Driver** | 580.126.09 |
@@ -25,7 +25,7 @@ Accurate snapshot of the workstation's Isaac Sim / ROS 2 / IsaacLab stack (Febru
 | **Launch** | `conda activate isaaclab && isaacsim` |
 | **Extensions** | 95+ first-party (`isaacsim.*`), 40+ deprecated shims (`omni.isaac.*`), 80+ cached Kit extensions |
 | **ROS 2 Bridge** | Enabled (bundled Jazzy libs) |
-| **Streaming** | Sunshine + Moonlight (NvFBC + NVENC) |
+| **Streaming** | Sunshine + Moonlight, on demand (NvFBC + NVENC) |
 
 ### Key Isaac Sim Extensions
 
@@ -42,6 +42,7 @@ Accurate snapshot of the workstation's Isaac Sim / ROS 2 / IsaacLab stack (Febru
 - **Layout persistence:** Auto-save on shutdown, auto-restore on startup (hooks in `extension.py`)
 - **Launch wrapper:** `~/bin/isaacsim-ros` -- sets env vars for bundled ROS 2 bridge
 - **Dock shortcut:** `~/.local/share/applications/isaacsim-ros.desktop`
+- **Remote desktop wrapper:** `~/bin/stream-desktop` -- starts/stops GDM/X11 plus Sunshine for Moonlight
 - **`~/bin/ros2`** -- wrapper that runs `ros2` commands inside the Docker container with FastDDS UDP fix
 
 ## Isaac Lab 2.3.2
@@ -107,7 +108,7 @@ Applied automatically by `/etc/profile.d/fastdds-fix.sh` (login shells) and expl
 
 | Method | Details |
 |--------|---------|
-| **Sunshine + Moonlight** | NvFBC + NVENC, hardware streaming |
+| **Sunshine + Moonlight** | On-demand NvFBC + NVENC desktop streaming; start with `stream-desktop start`, stop with `stream-desktop stop` |
 | **Foxglove** | `ws://workstation:8765` (bridge runs in Isaac ROS container) |
 | **Tailscale** | `workstation.tailee9084.ts.net` / `100.101.214.44` |
 

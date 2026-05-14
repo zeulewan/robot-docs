@@ -7,7 +7,7 @@ NVIDIA GPU configuration and X11 virtual display setup for headless rendering wi
 - Isaac Sim uses Xlib/OpenGL directly, no Wayland support
 - XWayland has issues -- users switch to X11
 - Virtual display setup easier on X11
-- Sunshine/Moonlight works better with X11 for unattended access
+- Sunshine/Moonlight works better with X11 for GPU-accelerated remote desktop access
 
 ## NVIDIA Persistence Mode
 
@@ -36,6 +36,23 @@ The stock service at `/usr/lib/systemd/system/nvidia-persistenced.service` has `
 ---
 
 ## X11 / Display Configuration
+
+### On-Demand Lifecycle
+
+The GNOME X11 desktop is normally stopped. Start it only when Moonlight remote desktop access is needed:
+
+```bash
+# Start GDM/X11, disable screen blanking, then start Sunshine
+stream-desktop start
+
+# Stop Sunshine, then stop GDM/X11
+stream-desktop stop
+
+# Inspect desktop and Sunshine state
+stream-desktop status
+```
+
+`stream-desktop` waits for `DISPLAY=:0` before launching Sunshine so Sunshine can use NvFBC/NVENC instead of falling back to VAAPI.
 
 ### xorg.conf
 
@@ -174,6 +191,7 @@ sudo systemctl restart gdm
 | **Autologin** | Enabled (user: zeul) |
 | **Wayland** | Disabled (X11 only for NVIDIA KMS capture) |
 | **Config** | `/etc/gdm3/custom.conf` |
+| **Normal state** | Stopped until `stream-desktop start` |
 
 ---
 
@@ -225,6 +243,11 @@ sudo systemctl restart gdm
 ```bash
 # GPU status
 nvidia-smi
+
+# Start/stop on-demand remote desktop
+stream-desktop start
+stream-desktop stop
+stream-desktop status
 
 # Display config
 DISPLAY=:0 xrandr
