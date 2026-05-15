@@ -438,4 +438,37 @@ Recorded and emailed on May 15, 2026 from the straight-line bias run:
 
 After `model_15800.pt`, the live training run became unstable: `bad_orientation` reached `1.0` and the forward rewards collapsed. Training was stopped before a `model_15900.pt` checkpoint was saved. This suggests the straight-line penalties were directionally useful but too aggressive as a hard continuation from `model_15700.pt`; the next version should soften the centerline term, ramp it in gradually, or add it through a short curriculum rather than applying the full `-8.0` weight immediately.
 
+## Soft Straight-Line Continuation
+
+Added on May 15, 2026 after reviewing the `model_15800.pt` fixed-chase video. The robot/chair still veered left and the gait looked wonky, but the aggressive straight-line continuation became unstable after `model_15800.pt`. Commit `40be05c Soften wheelchair straight-line penalties` keeps the same reward structure but reduces the straightness pressure:
+
+| Reward | Aggressive | Soft |
+|---|---:|---:|
+| `wheelchair_lateral_velocity` | `-2.0` | `-1.0` |
+| `wheelchair_yaw_velocity` | `-1.0` | `-0.5` |
+| `wheelchair_forward_line` | `-8.0` | `-1.5` |
+
+An attempted resume from `model_15800.pt` still showed high bad-orientation terminations early, so it was stopped. The active longer run resumes instead from the cleaner `model_15700.pt` checkpoint produced by the four-wheel ground-bias run:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run 2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999 \
+  --checkpoint model_15700.pt \
+  --run_name dynamic_push_soft_straight_line_resume_15700 \
+  --max_iterations 3000
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_18-15-18_dynamic_push_soft_straight_line_resume_15700/`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_wheelchair_dynamic_push_soft_straight_line_resume_15700_20260515_181511.log`
+
+Startup loaded `model_15700.pt`, showed the soft weights active, and had `bad_orientation` at `0.0` on the first printed iteration.
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
