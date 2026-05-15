@@ -172,3 +172,55 @@ Recorded on May 15, 2026 as the first explicit hand-to-handle visual attachment 
 | Final logged displacement | `5.142 m` |
 
 This is still a playback-only stage-one demo. The script builds USD mesh prims from the locally downloaded Free3D OBJ, keeps that chair at the robot-relative handle offset, then draws world-level connector rods and endpoint markers between `left_wrist_yaw_link` / `right_wrist_yaw_link` and the chair handle target positions. That makes the intended attachment points visible in the video, but it is not yet a physical D6 constraint, contact model, or dynamic wheeled-chair training setup.
+
+## Dynamic Wheelchair Push Training
+
+Started on May 15, 2026 as the first actual physics version of the task:
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Dynamic-Push` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+| Reward helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/rewards.py` |
+| Wheelchair asset | `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair.urdf` |
+| Code commit | `ee130c0 Add dynamic wheelchair push training task` |
+| Output experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/` |
+| Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_push/2026-05-15_03-45-02_wheelchair_push_continue_model_7300/model_10000.pt` |
+
+This variant puts the passive wheelchair articulation into the training scene instead of using the playback prop. The chair starts in front of the robot, its handle links now have small collision boxes, and the reward stack uses the moving wheelchair body positions instead of fixed robot-frame target points.
+
+The policy observation and action shapes are still unchanged from the earlier walking and handle-grip runs: policy observation `(480,)`, critic observation `(495,)`, and action `(29,)`. That keeps the old checkpoint loadable. The wheelchair state is used for rewards and contact checks, but is not yet part of the policy observation.
+
+The new task adds reward terms for keeping both wrist-yaw links near the real chair handles, matching the wheelchair's forward velocity to the command, rewarding forward wheelchair progress, penalizing lateral drift, yaw spin, and chair tilt, rewarding contact on the two handles, and penalizing robot contact on the chair body and wheels.
+
+Smoke test command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --num_envs 1 \
+  --max_iterations 1 \
+  --run_name dynamic_wheelchair_smoke
+```
+
+The one-iteration smoke test completed after replacing broad PhysX contact filters with exact G1 body filters. The remaining expected warnings are that the wheelchair has passive joints with no actuators, plus noisy missing visual references for caster-yaw links that do not block training.
+
+Training command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run from_proxy_model_10000 \
+  --checkpoint model_10000.pt \
+  --run_name dynamic_push_from_proxy_10000 \
+  --max_iterations 5000
+```
+
+Training tmux:
+
+`unitree_g1_wheelchair_dynamic_push_train`
+
+This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
