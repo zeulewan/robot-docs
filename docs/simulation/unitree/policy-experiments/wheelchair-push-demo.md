@@ -273,4 +273,34 @@ TERM=xterm python scripts/rsl_rl/train.py \
   --max_iterations 4900
 ```
 
+## Model 11800 Hidden-Helper Dynamic Preview
+
+Recorded and emailed on May 15, 2026 after the hand-only contact fix had trained past `model_11800.pt`. Commit `955aac8 Hide wheelchair helper visuals` removed the URDF primitive wheel/caster/handle visuals from rendered output while keeping the collision geometry active for training.
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-dynamic-hidden-helpers-model-11800.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_14-28-41_dynamic_push_hand_only_resume_11700/model_11800.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_14-28-41_dynamic_push_hand_only_resume_11700/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-dynamic-hidden-helpers-model-11800.mp4` |
+| Command | dynamic play task, `10` envs, fixed `0.45 m/s` forward command from the play config, follow-best camera |
+
+After recording the preview, training was restarted from `model_11800.pt` with `--max_iterations 3200`, targeting the same final iteration `15000`:
+
+```bash
+source /home/zeul/miniconda3/etc/profile.d/conda.sh
+conda activate isaaclab
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run 2026-05-15_14-28-41_dynamic_push_hand_only_resume_11700 \
+  --checkpoint model_11800.pt \
+  --run_name dynamic_push_hidden_helpers_resume_11800 \
+  --max_iterations 3200
+```
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
