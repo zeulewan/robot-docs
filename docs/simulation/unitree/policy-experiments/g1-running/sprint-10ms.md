@@ -312,3 +312,9 @@ Watcher log:
 `logs/rsl_rl/unitree_g1_sprint10_bigterrain_watch_20260514_224208.log`
 
 The restart targets iteration `80700`. Initial log confirmed the active curriculum terms are now only `lin_vel_cmd_levels` and `lin_vel_cmd_stability`; `terrain_levels` is no longer active. Initial velocity curriculum remained at `6.0 m/s`.
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../../assets/g1-sprint-bigterrain-model-22800.mp4" type="video/mp4">
+</video>
+
+Playback from `model_22800.pt` after the big-terrain restart. The play task was forward-only for this capture, with lateral and yaw commands fixed to zero and forward command sampled from the `5.5-6.0 m/s` range. This is a qualitative progress clip; it is not a measured-speed validation run.
