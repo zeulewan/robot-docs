@@ -106,6 +106,8 @@ The committed URDF is the physics source of truth. It uses primitive collisions 
 Started on May 15, 2026:
 
 ```bash
+source /home/zeul/miniconda3/etc/profile.d/conda.sh
+conda activate isaaclab
 TERM=xterm python scripts/rsl_rl/train.py \
   --headless \
   --task Unitree-G1-29dof-Wheelchair-Push \
@@ -196,6 +198,8 @@ The new task adds reward terms for keeping both wrist-yaw links near the real ch
 Smoke test command:
 
 ```bash
+source /home/zeul/miniconda3/etc/profile.d/conda.sh
+conda activate isaaclab
 TERM=xterm python scripts/rsl_rl/train.py \
   --headless \
   --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
@@ -222,5 +226,15 @@ TERM=xterm python scripts/rsl_rl/train.py \
 Training tmux:
 
 `unitree_g1_wheelchair_dynamic_push_train`
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_13-10-58_dynamic_push_from_proxy_10000/`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_wheelchair_dynamic_push_from_proxy_10000_20260515_131051.log`
+
+The run loaded `model_10000.pt` and started at RSL-RL iteration `10000/15000`.
 
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
