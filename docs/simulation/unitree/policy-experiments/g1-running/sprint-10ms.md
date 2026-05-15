@@ -155,3 +155,37 @@ Observed status at pause:
 Playback looks usable enough to confirm the pipeline and high-speed curriculum are working, but the gait is not yet polished. The robot moves forward and stays upright in some rollouts, but the motion still needs reward/config tuning to look like a cleaner running gait. Likely next tuning areas are gait cadence, feet clearance, base-height/orientation penalties, action-rate/energy regularization, and command sampling during playback so videos report an exact commanded speed.
 
 Important caveat: the playback config samples commands from the play task ranges, so a video from this checkpoint should be described as a policy playback from a model trained to about the `7.2 m/s` curriculum point, not as a verified fixed-speed `7.2 m/s` or `10.0 m/s` run.
+
+## Gait Cleanup Variant
+
+Task ID:
+
+`Unitree-G1-29dof-Sprint-10ms-Gait`
+
+Config:
+
+`source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/sprint_10ms_env_cfg.py`
+
+Reason for the variant: the first sprint policy can move quickly, but the gait is stiff and unstable. The waist is not locked out of the action space, but the original reward setup strongly discourages waist motion and hip roll/yaw deviation. Combined with flat-orientation, base-height, action-rate, and energy penalties, the policy is biased toward a conservative upright shuffle instead of a cleaner running gait.
+
+Changes from `Unitree-G1-29dof-Sprint-10ms`:
+
+| Area | Sprint 10 m/s | Gait cleanup |
+|---|---:|---:|
+| Forward command lower limit | `0.0 m/s` | `2.0 m/s` |
+| Forward tracking weight | `2.0` | `2.25` |
+| Forward tracking std | `1.0` | `0.7` |
+| Waist deviation penalty | `-1.0` | `-0.20` |
+| Hip roll/yaw deviation penalty | `-1.0` | `-0.35` |
+| Gait weight | `0.50` | `0.35` |
+| Gait period | `0.45 s` | `0.38 s` |
+| Foot clearance target | `0.16 m` | `0.17 m` |
+| Action-rate penalty | `-0.02` | `-0.015` |
+| Energy penalty | `-1.0e-5` | `-8.0e-6` |
+| Flat-orientation penalty | `-3.0` | `-2.0` |
+| Base-height penalty | `-10.0` | `-6.0` |
+| Base-height target | `0.78 m` | `0.74 m` |
+
+The forward curriculum is now stability-gated with `stable_lin_vel_cmd_levels`. It only expands the maximum forward command when the tracking reward is high enough and the recent fall-like reset rate is low enough. The main stability signal is the fraction of environments whose latest episode ended from `bad_orientation` or `base_height`, with a default gate of `max_failure_rate=0.20`. The curriculum also logs `Curriculum/lin_vel_cmd_stability/failure_rate`, `track_ratio`, `episode_length_ratio`, and `range_max`.
+
+For this variant, the curriculum expands the upper forward speed only. It does not keep lowering the minimum command toward standing, because this experiment is specifically about a running gait rather than one policy covering both standing and sprinting.
