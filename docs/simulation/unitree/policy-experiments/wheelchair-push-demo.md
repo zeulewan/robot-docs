@@ -119,3 +119,20 @@ Early checkpoint:
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_push/2026-05-15_03-34-51_wheelchair_push_from_walk_7200/model_7300.pt`
 
 Early metrics around iteration `7305` were stable enough to keep training: mean episode length reached `1000`, `bad_orientation` was `0.0`, velocity-tracking reward was about `0.94`, and `hand_handle_position_l2` was down to about `0.0010`.
+
+## Model 7300 Preview
+
+Recorded on May 15, 2026 from the first handle-grip checkpoint:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-grip-model-7300.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_push/2026-05-15_03-34-51_wheelchair_push_from_walk_7200/model_7300.pt` |
+| Demo output | `logs/demos/wheelchair_grip_model_7300_20260515_034201/rl-video-step-50.mp4` |
+| Command | fixed `0.55 m/s` forward, zero lateral, zero yaw |
+| Final logged displacement | `5.063 m` |
+
+After recording the preview, training was resumed from `model_7300.pt` in tmux session `unitree_g1_wheelchair_push_train` with a target of about `model_12200.pt`.
