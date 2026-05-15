@@ -85,6 +85,22 @@ The current handle targets are expressed in the robot root frame:
 
 The trainable proxy still does not simulate a real rolling wheelchair constraint. It trains the robot to walk forward with its hands held at the handle locations. The next step is to connect this trained posture to a dynamic wheelchair asset or fixed/d6 hand-handle constraints so pushing force and chair motion are part of the physics.
 
+## Passive Manual Chair Asset
+
+On May 15, 2026, a manual wheelchair asset wrapper was added to `unitree_rl_lab`:
+
+| Item | Value |
+|---|---|
+| Code commit | `6f8ca0f Add passive manual wheelchair asset wrapper` |
+| URDF wrapper | `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair.urdf` |
+| Isaac Lab config | `source/unitree_rl_lab/unitree_rl_lab/assets/objects/wheelchair.py` |
+| Import script | `scripts/assets/import_free3d_active_wheelchair.py` |
+| Local visual mesh | `assets/objects/wheelchair/free3d_active_wheelchair/visual/active_wheelchair.obj` |
+
+The source visual model is the Free3D active manual wheelchair (`active-wheelchair-82422`). The archive was copied locally from the Mac and normalized to meters: about `0.91 m` long, `0.67 m` wide, and `0.94 m` tall. The detailed OBJ/MTL/textures are intentionally ignored by Git because the fork is public and the Free3D page lists the model as personal-use.
+
+The committed URDF is the physics source of truth. It uses primitive collisions for the chair body, passive rear wheel joints, passive front caster yaw/wheel joints, approximately `15.3 kg` total empty-chair mass, and fixed left/right handle frames near the push handles. The OBJ is visual-only.
+
 ## First Handle-Grip Run
 
 Started on May 15, 2026:
