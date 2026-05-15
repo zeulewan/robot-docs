@@ -172,9 +172,13 @@ Changes from `Unitree-G1-29dof-Sprint-10ms`:
 
 | Area | Sprint 10 m/s | Gait cleanup |
 |---|---:|---:|
-| Forward command lower limit | `0.0 m/s` | `2.0 m/s` |
+| Initial forward command | `lin_vel_x=(0.0, 10.0)` limit | `lin_vel_x=(5.5, 6.0)` |
+| Forward curriculum limit | `lin_vel_x=(0.0, 10.0)` | `lin_vel_x=(5.5, 10.0)` |
+| Lateral command | `lin_vel_y=(-0.10, 0.10)` limit | `lin_vel_y=(0.0, 0.0)` |
+| Yaw command | `ang_vel_z=(-0.15, 0.15)` limit | `ang_vel_z=(0.0, 0.0)` |
 | Forward tracking weight | `2.0` | `2.25` |
 | Forward tracking std | `1.0` | `0.7` |
+| Yaw tracking weight | `0.10` | `0.20` |
 | Waist deviation penalty | `-1.0` | `-0.20` |
 | Hip roll/yaw deviation penalty | `-1.0` | `-0.35` |
 | Gait weight | `0.50` | `0.35` |
@@ -188,7 +192,7 @@ Changes from `Unitree-G1-29dof-Sprint-10ms`:
 
 The forward curriculum is now stability-gated with `stable_lin_vel_cmd_levels`. It only expands the maximum forward command when the tracking reward is high enough and the recent fall-like reset rate is low enough. The main stability signal is the fraction of environments whose latest episode ended from `bad_orientation` or `base_height`, with a default gate of `max_failure_rate=0.20`. The curriculum also logs `Curriculum/lin_vel_cmd_stability/failure_rate`, `track_ratio`, `episode_length_ratio`, and `range_max`.
 
-For this variant, the curriculum expands the upper forward speed only. It does not keep lowering the minimum command toward standing, because this experiment is specifically about a running gait rather than one policy covering both standing and sprinting.
+For this variant, the curriculum expands the upper forward speed only. It does not keep lowering the minimum command toward standing, because this experiment is specifically about a forward sprint rather than one policy covering standing, walking, turning, and sprinting. Playback is also forward-only so evaluation videos do not mix in random lateral or yaw commands.
 
 ### Gait Cleanup Run From Model 20500
 
@@ -222,3 +226,38 @@ Watcher log:
 `logs/rsl_rl/unitree_g1_sprint10_gait_watch_20260514_212843.log`
 
 The run resumed from `model_20500.pt` and targets iteration `30500`. Initial logged curriculum range is `4.0 m/s`. The watcher is monitoring `Curriculum/lin_vel_cmd_levels` and will stop the tmux training session only after the curriculum reaches `10.0 m/s` and a matching checkpoint exists.
+
+### Straight-Sprint Restart From Model 22500
+
+After reviewing the first gait-cleanup playback, the task was tightened further so the policy only tries to sprint mostly forward. Lateral command and yaw command are both fixed to zero; the initial forward range starts at `5.5-6.0 m/s`, and only the forward maximum expands toward `10.0 m/s`.
+
+Restart checkpoint:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_21-28-49_sprint10_gait_from_20500/model_22500.pt`
+
+Launch command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Sprint-10ms-Gait \
+  --resume \
+  --load_run 2026-05-14_21-28-49_sprint10_gait_from_20500 \
+  --checkpoint model_22500.pt \
+  --run_name sprint10_forward_from_22500 \
+  --max_iterations 58000
+```
+
+The run writes to:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_22-33-20_sprint10_forward_from_22500/`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_sprint10_forward_from_22500_20260514_223314.log`
+
+Watcher log:
+
+`logs/rsl_rl/unitree_g1_sprint10_forward_watch_20260514_223314.log`
+
+The restart targets iteration `80500`, intentionally leaving a high iteration cap so the watcher stops the run based on curriculum completion instead of hitting the training iteration limit first. Initial log after restart showed `Curriculum/lin_vel_cmd_levels: 6.0000` with yaw command fixed at zero.
