@@ -320,4 +320,39 @@ Recorded and emailed on May 15, 2026 from the completed hidden-helper dynamic ru
 
 This is the completed `15000`-target run. It uses hand-only handle-contact rewards and hidden URDF helper visuals while keeping the collision geometry active for training.
 
+## Four-Wheel Ground Bias
+
+Added on May 15, 2026 after reviewing the `model_14999.pt` playback: the wheelchair front casters were lifting slightly while the robot pushed. Commit `2c5ca66 Add wheelchair four-wheel ground bias` changes both the asset and the reward stack:
+
+| Change | Purpose |
+|---|---|
+| Lowered the front caster collision joint offset from `-0.05 m` to `-0.085 m` | Makes the front caster collision centers sit at `0.075 m`, so the front caster radius reaches the flat ground at reset instead of floating about `3.5 cm` above it. |
+| Added `wheelchair_wheel_ground_height` reward term | Penalizes the four wheel/caster body centers drifting away from their nominal ground-contact heights. |
+| Kept the existing `wheelchair_tilt` penalty | Still discourages global chair roll/pitch, while the new term catches practical caster unloading directly. |
+
+The new reward uses the four wheelchair body names `left_rear_wheel`, `right_rear_wheel`, `left_front_caster`, and `right_front_caster`, with target body-center heights `[0.31, 0.31, 0.075, 0.075]` and a `1 cm` deadband. The smoke test successfully constructed the task and showed `wheelchair_wheel_ground_height` active in the reward table at weight `-50.0`.
+
+Refinement training was started from the completed checkpoint:
+
+```bash
+source /home/zeul/miniconda3/etc/profile.d/conda.sh
+conda activate isaaclab
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run 2026-05-15_14-38-37_dynamic_push_hidden_helpers_resume_11800 \
+  --checkpoint model_14999.pt \
+  --run_name dynamic_push_four_wheel_ground_resume_14999 \
+  --max_iterations 2000
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999/`
+
+Training tmux:
+
+`unitree_g1_wheelchair_dynamic_push_train`
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
