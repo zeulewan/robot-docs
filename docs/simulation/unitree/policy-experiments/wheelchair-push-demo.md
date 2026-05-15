@@ -303,4 +303,21 @@ TERM=xterm python scripts/rsl_rl/train.py \
   --max_iterations 3200
 ```
 
+## Model 14999 Final Dynamic Preview
+
+Recorded and emailed on May 15, 2026 from the completed hidden-helper dynamic run:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-dynamic-final-model-14999.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_14-38-37_dynamic_push_hidden_helpers_resume_11800/model_14999.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_14-38-37_dynamic_push_hidden_helpers_resume_11800/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-dynamic-final-model-14999.mp4` |
+| Command | dynamic play task, `10` envs, fixed `0.45 m/s` forward command from the play config, follow-best camera |
+
+This is the completed `15000`-target run. It uses hand-only handle-contact rewards and hidden URDF helper visuals while keeping the collision geometry active for training.
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
