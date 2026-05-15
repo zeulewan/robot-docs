@@ -373,4 +373,52 @@ Recorded and emailed on May 15, 2026 from the four-wheel ground-bias fine-tune:
 
 This clip is intended as a cleaner single-agent visual check after the front-caster and wheel-height reward changes. The policy is still trained with the same observation/action shapes as the walking warm start; the wheelchair state is shaping rewards, not entering the policy observation.
 
+## Straight-Line Bias
+
+Added on May 15, 2026 after the `model_15200.pt` forward-orbit preview showed the robot/chair veering left. The command was still forward-only, so the left turn was policy drift rather than an intentional yaw command or just the camera orbit.
+
+Commit `2ea2861 Add wheelchair straight-line bias` changes the dynamic reward stack in three ways:
+
+| Change | Old | New |
+|---|---:|---:|
+| `wheelchair_lateral_velocity` | `-0.5` | `-2.0` |
+| `wheelchair_yaw_velocity` | `-0.25` | `-1.0` |
+| `wheelchair_forward_line` | not present | `-8.0` |
+
+The new `wheelchair_forward_line` term penalizes wheelchair root lateral position away from the environment forward centerline, with a `5 cm` deadband. This complements the velocity penalties: lateral/yaw velocity discourages ongoing sideways and turning motion, while the forward-line term penalizes accumulated drift.
+
+Smoke test:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --num_envs 1 \
+  --max_iterations 1 \
+  --run_name straightness_bias_smoke
+```
+
+The smoke test showed `32` reward terms, including `wheelchair_forward_line` at weight `-8.0`.
+
+Straight-line fine-tune command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run 2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999 \
+  --checkpoint model_15700.pt \
+  --run_name dynamic_push_straight_line_resume_15700 \
+  --max_iterations 1300
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_18-04-58_dynamic_push_straight_line_resume_15700/`
+
+Training tmux:
+
+`unitree_g1_wheelchair_dynamic_push_train`
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
