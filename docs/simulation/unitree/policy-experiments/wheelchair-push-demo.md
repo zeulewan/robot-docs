@@ -153,9 +153,9 @@ Recorded on May 15, 2026 from the first handle-grip checkpoint:
 
 After recording the preview, training was resumed from `model_7300.pt` in tmux session `unitree_g1_wheelchair_push_train` with a target of about `model_12200.pt`.
 
-## Stage-One Hand-Handle Playback
+## Stage-One Free3D Hand-Handle Playback
 
-Recorded on May 15, 2026 as the first explicit hand-to-handle visual attachment demo:
+Recorded on May 15, 2026 as the first explicit hand-to-handle visual attachment demo using the downloaded Free3D wheelchair mesh:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
   <source src="../../../assets/g1-wheelchair-stage1-hand-connectors.mp4" type="video/mp4">
@@ -164,9 +164,11 @@ Recorded on May 15, 2026 as the first explicit hand-to-handle visual attachment 
 | Item | Value |
 |---|---|
 | Script | `scripts/rsl_rl/play_wheelchair_push.py` |
+| Visual mode | `--wheelchair-visual free3d` |
+| Visual mesh | `assets/objects/wheelchair/free3d_active_wheelchair/visual/active_wheelchair.obj` |
 | Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_push/2026-05-15_03-34-51_wheelchair_push_from_walk_7200/model_7300.pt` |
-| Demo output | `logs/demos/wheelchair_stage1_connectors_20260515_050246/rl-video-step-50.mp4` |
+| Demo output | `logs/demos/wheelchair_free3d_stage1_20260515_050941/rl-video-step-50.mp4` |
 | Command | fixed `0.55 m/s` forward, zero lateral, zero yaw |
-| Final logged displacement | `5.119 m` |
+| Final logged displacement | `5.142 m` |
 
-This is still a playback-only stage-one demo. The script keeps the procedural chair at the robot-relative handle offset, then draws world-level connector rods and endpoint markers between `left_wrist_yaw_link` / `right_wrist_yaw_link` and the chair handle target positions. That makes the intended attachment points visible in the video, but it is not yet a physical D6 constraint, contact model, or dynamic wheeled-chair training setup.
+This is still a playback-only stage-one demo. The script builds USD mesh prims from the locally downloaded Free3D OBJ, keeps that chair at the robot-relative handle offset, then draws world-level connector rods and endpoint markers between `left_wrist_yaw_link` / `right_wrist_yaw_link` and the chair handle target positions. That makes the intended attachment points visible in the video, but it is not yet a physical D6 constraint, contact model, or dynamic wheeled-chair training setup.
