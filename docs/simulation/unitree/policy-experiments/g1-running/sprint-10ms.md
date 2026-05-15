@@ -189,6 +189,10 @@ Changes from `Unitree-G1-29dof-Sprint-10ms`:
 | Flat-orientation penalty | `-3.0` | `-2.0` |
 | Base-height penalty | `-10.0` | `-6.0` |
 | Base-height target | `0.78 m` | `0.74 m` |
+| Terrain tile size | `20 m x 20 m` | `80 m x 80 m` |
+| Terrain origins | Terrain-origin curriculum | Grid-spaced origins |
+| Terrain-level curriculum | Enabled | Disabled |
+| Reset yaw | Random `-pi..pi` | `0.0` |
 
 The forward curriculum is now stability-gated with `stable_lin_vel_cmd_levels`. It only expands the maximum forward command when the tracking reward is high enough and the recent fall-like reset rate is low enough. The main stability signal is the fraction of environments whose latest episode ended from `bad_orientation` or `base_height`, with a default gate of `max_failure_rate=0.20`. The curriculum also logs `Curriculum/lin_vel_cmd_stability/failure_rate`, `track_ratio`, `episode_length_ratio`, and `range_max`.
 
@@ -261,3 +265,50 @@ Watcher log:
 `logs/rsl_rl/unitree_g1_sprint10_forward_watch_20260514_223314.log`
 
 The restart targets iteration `80500`, intentionally leaving a high iteration cap so the watcher stops the run based on curriculum completion instead of hitting the training iteration limit first. Initial log after restart showed `Curriculum/lin_vel_cmd_levels: 6.0000` with yaw command fixed at zero.
+
+### Big-Terrain Restart From Model 22700
+
+The straight-sprint run still showed terrain-edge artifacts during playback/training review. The terrain setup was changed again so the sprint branch uses larger flat generated tiles, grid-spaced environment origins, no terrain-level curriculum, and fixed reset yaw. This keeps the velocity curriculum active while removing terrain-origin movement as a failure source.
+
+Terrain changes:
+
+| Setting | Value |
+|---|---:|
+| Tile size | `80 m x 80 m` |
+| Terrain grid | `21 x 21` |
+| Terrain border | `80 m` |
+| Environment origin mode | Grid spacing, not terrain origins |
+| Environment spacing | `8 m` |
+| Terrain curriculum | Disabled |
+| Reset yaw | `0.0` |
+
+Restart checkpoint:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_22-33-20_sprint10_forward_from_22500/model_22700.pt`
+
+Launch command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Sprint-10ms-Gait \
+  --resume \
+  --load_run 2026-05-14_22-33-20_sprint10_forward_from_22500 \
+  --checkpoint model_22700.pt \
+  --run_name sprint10_bigterrain_from_22700 \
+  --max_iterations 58000
+```
+
+The run writes to:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_22-42-14_sprint10_bigterrain_from_22700/`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_sprint10_bigterrain_from_22700_20260514_224208.log`
+
+Watcher log:
+
+`logs/rsl_rl/unitree_g1_sprint10_bigterrain_watch_20260514_224208.log`
+
+The restart targets iteration `80700`. Initial log confirmed the active curriculum terms are now only `lin_vel_cmd_levels` and `lin_vel_cmd_stability`; `terrain_levels` is no longer active. Initial velocity curriculum remained at `6.0 m/s`.
