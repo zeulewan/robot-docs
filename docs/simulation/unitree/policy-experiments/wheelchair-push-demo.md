@@ -355,4 +355,22 @@ Training tmux:
 
 `unitree_g1_wheelchair_dynamic_push_train`
 
+## Model 15200 Forward-Orbit Preview
+
+Recorded and emailed on May 15, 2026 from the four-wheel ground-bias fine-tune:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-four-wheel-model-15200-forward-orbit.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999/model_15200.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-four-wheel-model-15200-forward-orbit.mp4` |
+| Playback code commit | `d00af46 Add orbiting video follow camera` |
+| Command | dynamic play task, `1` env, fixed `0.45 m/s` forward command, zero lateral/yaw command, follow camera with `25 deg` orbit |
+
+This clip is intended as a cleaner single-agent visual check after the front-caster and wheel-height reward changes. The policy is still trained with the same observation/action shapes as the walking warm start; the wheelchair state is shaping rewards, not entering the policy observation.
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
