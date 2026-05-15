@@ -471,4 +471,21 @@ Launch log:
 
 Startup loaded `model_15700.pt`, showed the soft weights active, and had `bad_orientation` at `0.0` on the first printed iteration.
 
+## Model 16000 Soft Straight-Line Preview
+
+Recorded and emailed on May 15, 2026 from the soft straight-line run:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-soft-straight-line-model-16000-fixed-chase.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_18-15-18_dynamic_push_soft_straight_line_resume_15700/model_16000.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_18-15-18_dynamic_push_soft_straight_line_resume_15700/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-soft-straight-line-model-16000-fixed-chase.mp4` |
+| Command | dynamic play task, `1` env, fixed `0.45 m/s` forward command, zero lateral/yaw command, fixed chase camera with no orbit |
+
+The soft straight-line run was stopped after this checkpoint because the live training metrics had `bad_orientation` near `1.0`, indicating the continuation was no longer improving the gait. The current best path is likely not simply "train longer" with the same reward stack; it needs a gentler curriculum or better wheelchair/handle observations so the policy can correct veering without losing walking stability.
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
