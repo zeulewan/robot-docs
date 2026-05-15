@@ -113,3 +113,9 @@ Training log:
 `logs/rsl_rl/unitree_g1_wheelchair_push_from_walk_7200_20260515_033445.log`
 
 Because this resumes from `model_7200.pt`, RSL-RL reports the run as iteration `7200` onward and the `--max_iterations 5000` target corresponds to about `model_12200.pt`.
+
+Early checkpoint:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_push/2026-05-15_03-34-51_wheelchair_push_from_walk_7200/model_7300.pt`
+
+Early metrics around iteration `7305` were stable enough to keep training: mean episode length reached `1000`, `bad_orientation` was `0.0`, velocity-tracking reward was about `0.94`, and `hand_handle_position_l2` was down to about `0.0010`.
