@@ -12,5 +12,6 @@ This folder tracks policy experiments separately from the base Unitree training 
 | [G1 sprint 10 m/s](g1-running/sprint-10ms.md) | `Unitree-G1-29dof-Sprint-10ms` | Paused at `model_20500.pt`; curriculum reached about `7.2 m/s`, gait needs tuning. |
 | [G1 sprint gait cleanup](g1-running/sprint-10ms.md#gait-cleanup-variant) | `Unitree-G1-29dof-Sprint-10ms-Gait` | New stability-gated sprint variant for improving the running gait. |
 | [G1 wheelchair push demo](wheelchair-push-demo.md) | `Unitree-G1-29dof-Velocity` | Visual demo using the walking policy with a kinematic wheelchair prop. |
+| [G1 wheelchair handle-grip training](wheelchair-push-demo.md#handle-grip-training-task) | `Unitree-G1-29dof-Wheelchair-Push` | Warm-started from the walking policy; trains forward walking while wrist-yaw links stay near wheelchair handle targets. |
 
 New policy experiments should get their own page or subfolder here. Every variant should record its task ID, config file, command, checkpoint lineage, TensorBoard behavior, and playback notes.
