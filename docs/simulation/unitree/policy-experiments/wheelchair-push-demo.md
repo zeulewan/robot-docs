@@ -195,6 +195,8 @@ The policy observation and action shapes are still unchanged from the earlier wa
 
 The new task adds reward terms for keeping both wrist-yaw links near the real chair handles, matching the wheelchair's forward velocity to the command, rewarding forward wheelchair progress, penalizing lateral drift, yaw spin, and chair tilt, rewarding contact on the two handles, and penalizing robot contact on the chair body and wheels.
 
+Correction added after the first dynamic preview: the original handle-contact reward accepted contact from any G1 body on the handle prims. Commit `a3d0222 Restrict wheelchair handle contact to hands` changes the setup so the left handle only rewards left end-effector contact (`left_wrist_yaw_link`, `left_rubber_hand`), the right handle only rewards right end-effector contact (`right_wrist_yaw_link`, `right_rubber_hand`), and all other robot body contact on either handle is included in the invalid-contact penalty.
+
 Smoke test command:
 
 ```bash
@@ -254,7 +256,9 @@ Recorded and emailed on May 15, 2026 after the first dynamic-task checkpoint:
 
 The preview shows the actual dynamic wheelchair asset in the scene, not the earlier kinematic prop. This checkpoint is still very early; the chair is moving, but the gait/contact behavior needs more training and likely reward cleanup.
 
-After recording the preview, training was restarted from `model_10100.pt` with `--max_iterations 4900`, targeting the same final iteration `15000`:
+After recording the preview, training was restarted from `model_10100.pt` with `--max_iterations 4900`, targeting the same final iteration `15000`. That restart was then paused because the handle-contact rule was too loose.
+
+After commit `a3d0222`, training was restarted again from `model_10100.pt` with hand-only handle contact:
 
 ```bash
 source /home/zeul/miniconda3/etc/profile.d/conda.sh
@@ -265,7 +269,7 @@ TERM=xterm python scripts/rsl_rl/train.py \
   --resume \
   --load_run 2026-05-15_13-10-58_dynamic_push_from_proxy_10000 \
   --checkpoint model_10100.pt \
-  --run_name dynamic_push_resume_10100 \
+  --run_name dynamic_push_hand_only_resume_10100 \
   --max_iterations 4900
 ```
 
