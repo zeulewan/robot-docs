@@ -301,7 +301,7 @@ TERM=xterm python scripts/rsl_rl/train.py \
 
 The run writes to:
 
-`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_22-42-14_sprint10_bigterrain_from_22700/`
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_22-42-15_sprint10_bigterrain_from_22700/`
 
 Launch log:
 
