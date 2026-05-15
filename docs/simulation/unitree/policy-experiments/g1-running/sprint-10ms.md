@@ -189,3 +189,36 @@ Changes from `Unitree-G1-29dof-Sprint-10ms`:
 The forward curriculum is now stability-gated with `stable_lin_vel_cmd_levels`. It only expands the maximum forward command when the tracking reward is high enough and the recent fall-like reset rate is low enough. The main stability signal is the fraction of environments whose latest episode ended from `bad_orientation` or `base_height`, with a default gate of `max_failure_rate=0.20`. The curriculum also logs `Curriculum/lin_vel_cmd_stability/failure_rate`, `track_ratio`, `episode_length_ratio`, and `range_max`.
 
 For this variant, the curriculum expands the upper forward speed only. It does not keep lowering the minimum command toward standing, because this experiment is specifically about a running gait rather than one policy covering both standing and sprinting.
+
+### Gait Cleanup Run From Model 20500
+
+Checkpoint staging:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/from_sprint_model_20500/model_20500.pt`
+
+Launch command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Sprint-10ms-Gait \
+  --resume \
+  --load_run from_sprint_model_20500 \
+  --checkpoint model_20500.pt \
+  --run_name sprint10_gait_from_20500 \
+  --max_iterations 10000
+```
+
+The run writes to:
+
+`logs/rsl_rl/unitree_g1_29dof_sprint_10ms_gait/2026-05-14_21-28-49_sprint10_gait_from_20500/`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_sprint10_gait_from_20500_20260514_212843.log`
+
+Watcher log:
+
+`logs/rsl_rl/unitree_g1_sprint10_gait_watch_20260514_212843.log`
+
+The run resumed from `model_20500.pt` and targets iteration `30500`. Initial logged curriculum range is `4.0 m/s`. The watcher is monitoring `Curriculum/lin_vel_cmd_levels` and will stop the tmux training session only after the curriculum reaches `10.0 m/s` and a matching checkpoint exists.
