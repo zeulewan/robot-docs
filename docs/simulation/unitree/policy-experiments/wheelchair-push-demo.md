@@ -237,4 +237,36 @@ Launch log:
 
 The run loaded `model_10000.pt` and started at RSL-RL iteration `10000/15000`.
 
+## Model 10100 Dynamic Preview
+
+Recorded and emailed on May 15, 2026 after the first dynamic-task checkpoint:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-dynamic-model-10100.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_13-10-58_dynamic_push_from_proxy_10000/model_10100.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_13-10-58_dynamic_push_from_proxy_10000/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-dynamic-model-10100.mp4` |
+| Command | dynamic play task, `10` envs, fixed `0.45 m/s` forward command from the play config, follow-best camera |
+
+The preview shows the actual dynamic wheelchair asset in the scene, not the earlier kinematic prop. This checkpoint is still very early; the chair is moving, but the gait/contact behavior needs more training and likely reward cleanup.
+
+After recording the preview, training was restarted from `model_10100.pt` with `--max_iterations 4900`, targeting the same final iteration `15000`:
+
+```bash
+source /home/zeul/miniconda3/etc/profile.d/conda.sh
+conda activate isaaclab
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push \
+  --resume \
+  --load_run 2026-05-15_13-10-58_dynamic_push_from_proxy_10000 \
+  --checkpoint model_10100.pt \
+  --run_name dynamic_push_resume_10100 \
+  --max_iterations 4900
+```
+
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
