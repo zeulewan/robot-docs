@@ -963,7 +963,22 @@ The lower rung added after that is a plain standing task:
 
 This task removes the wheelchair entirely, commands exactly zero base velocity, disables gait and foot-clearance rewards, freezes the arm action scale, keeps only low leg/waist action authority, and adds the same explicit fall penalty for `bad_orientation` and `base_height`. The cold checkpoint copy preserves the walking policy weights but lowers action noise to `0.02`.
 
-Initial status from the plain standing run was healthy: by `model_7250`, `bad_orientation = 0.0`, `base_height = 0.0`, `fall_termination = 0.0`, and episode length reached the full `10 s` horizon. This is now the first curriculum stage. The intended order is plain stand, wheelchair-observed stand, attached stand, then attached push.
+Initial status from the plain standing run was healthy: by `model_7250`, `bad_orientation = 0.0`, `base_height = 0.0`, `fall_termination = 0.0`, and episode length reached the full `10 s` horizon. The run was stopped at `model_8150.pt`; that checkpoint is a stabilizer only, not the wheelchair target policy.
+
+The first attempt to move `model_8150.pt` into `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed` still collapsed after a few PPO updates. The issue was not simply that the chair existed. That task also inherits the handle-arm reset pose from the push task while standing freezes arm actions, so the policy was asked to absorb a large arm-pose change and the wheelchair scene at the same time.
+
+The corrected second rung is `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed-Neutral`. It keeps the wheelchair articulation and wheelchair observations, restores the base G1 neutral arm reset pose, keeps arm actions frozen, and disables handle/contact shaping for this bridge stage. That makes it "standing with the wheelchair present" before the handle pose or spherical hand-handle attachment is reintroduced.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed-Neutral` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_observed_neutral/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_observed_neutral/2026-05-16_03-34-54_stand_observed_neutral_from_plain_stand_8150/` |
+| Warm start | expanded plain stand checkpoint `model_8150.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+| tmux | `unitree_g1_wheelchair_stand_neutral_train` |
+
+As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelchair-observed run reached full 500-step episodes with `bad_orientation = 0.0`, `base_height = 0.0`, and `fall_termination = 0.0` through the first several PPO updates. The intended order is now plain stand, wheelchair-observed neutral-arm stand, wheelchair-observed handle-pose stand, attached stand, then attached push.
 
 Plain standing launch:
 
@@ -979,27 +994,27 @@ python scripts/rsl_rl/train.py \
   --max_iterations 1500
 ```
 
-To move a plain standing checkpoint into the wheelchair-observed standing task, expand its first actor/critic input layers to the observed dimensions and keep the added observation columns zero-initialized:
+To move a plain standing checkpoint into the wheelchair-observed neutral standing task, expand its first actor/critic input layers to the observed dimensions and keep the added observation columns zero-initialized:
 
 ```bash
 python scripts/rsl_rl/expand_input_checkpoint.py \
   logs/rsl_rl/unitree_g1_29dof_stand/<stand-run>/model_<iter>.pt \
-  logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_observed/from_plain_stand_<iter>/model_<iter>.pt \
+  logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_observed_neutral/from_plain_stand_<iter>/model_<iter>.pt \
   --actor-input-dim 585 \
   --critic-input-dim 600
 ```
 
-Observed standing launch:
+Neutral observed standing launch:
 
 ```bash
 python scripts/rsl_rl/train.py \
   --headless \
-  --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed-Neutral \
   --resume \
   --load_run from_plain_stand_<iter> \
   --checkpoint model_<iter>.pt \
   --load_model_only \
-  --run_name stand_observed_from_plain_stand_<iter> \
+  --run_name stand_observed_neutral_from_plain_stand_<iter> \
   --max_iterations 1500
 ```
 
