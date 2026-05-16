@@ -839,3 +839,40 @@ TERM=xterm conda run -n isaaclab python scripts/rsl_rl/play.py \
   --video-camera-target-offset 0.5 0.0 0.9 \
   --video-camera-orbit-deg 720.0
 ```
+
+## Attached-Hands Variant
+
+On May 15, 2026, we started a new attached-hands version after seeing the left wrist bend sharply in the observed dynamic push run. The likely cause was that the policy was still learning to create handle contact through wrist/hand forces, so the wrist could become the easiest way to keep the chair moving.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Dynamic-Push-Attached` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+| Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_attached/2026-05-15_23-19-03_dynamic_push_attached_spherical_slow_from_19000` |
+| Warm start | `unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-36-27_dynamic_push_observed_wrist_alignment_resume_18300/model_19000.pt` |
+| tmux | `unitree_g1_wheelchair_attached_train` |
+
+Implementation notes:
+
+The first attempt used hard `UsdPhysics.FixedJoint` constraints between `left_rubber_hand`/`right_rubber_hand` and the wheelchair handle frames. That made a closed loop between both arms and the wheelchair and the policy fought the constraint; the run quickly produced huge value loss and exited. The safer version uses `UsdPhysics.SphericalJoint` instead. That keeps each hand anchor on its matching handle while allowing the wrist/hand orientation to rotate freely.
+
+For this attached variant, arm action scale is set to `0.0` for shoulder, elbow, and wrist joints while the leg/waist action scale stays at `0.25`. Robot joint reset velocities are set to zero, handle contact rewards are disabled because the hand-handle pair is collision-filtered, and `action_rate` is disabled for the transition run because the old observed policy was not trained with attached-hand constraints.
+
+The first full restart still had nearly every environment terminate on `bad_orientation`, so the command range was reduced to `0.05-0.25 m/s` for the next restart. This is meant to let the policy relearn balance with the wheelchair constraint before asking it to push faster.
+
+Current restart command:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Attached \
+  --resume \
+  --load_run warmstart_observed_19000 \
+  --checkpoint model_19000.pt \
+  --load_model_only \
+  --run_name dynamic_push_attached_spherical_slow_from_19000 \
+  --max_iterations 3000
+```
+
+Early status: the spherical-joint smoke test completed without the hard-joint numerical blow-up. The full slow-command run is active, but early iterations still show high `bad_orientation`, so this is not solved yet; the next checkpoint video should be judged mainly for whether the anchored hands stay on the handles and whether the robot starts recovering a stable walking gait.
