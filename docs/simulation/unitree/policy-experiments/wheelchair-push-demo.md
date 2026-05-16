@@ -315,6 +315,27 @@ This clip was produced with the repeatable sender script, which finds the latest
 
 The script accepts overrides through environment variables such as `RUN_DIR`, `CHECKPOINT`, `EMAIL_TO`, `SEND_EMAIL=0`, `VIDEO_LENGTH`, and `VIDEO_CAMERA_ORBIT_DEG`. It intentionally does not store local keyring passwords or OAuth details.
 
+## Model 18100 Rubber-Hand Two-Orbit Preview
+
+Recorded and emailed on May 15, 2026 from the same rubber-hand-only restart, using a `720` degree follow-camera orbit so the camera revolves around the policy twice:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-rubber-hands-model-18100-two-orbits.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-04-24_dynamic_push_observed_rubber_hands_resume_17600/model_18100.pt` |
+| Demo output | `logs/demos/wheelchair_latest_two_orbits_20260515_222542/model_18100_latest.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-rubber-hands-model-18100-two-orbits.mp4` |
+| Email message id | `19e2e9c865f76694` |
+
+Repeat command:
+
+```bash
+VIDEO_LENGTH=600 VIDEO_CAMERA_ORBIT_DEG=720 ./scripts/rsl_rl/send_latest_wheelchair_video.sh
+```
+
 Original dynamic-task smoke test command:
 
 ```bash
