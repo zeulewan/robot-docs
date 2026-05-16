@@ -946,6 +946,22 @@ An initial attempt warm-started from the latest attached-push checkpoint, `model
 
 The first observed-checkpoint attempt started with `bad_orientation` around `0.17`, then collapsed to about `0.99` after the first PPO update. The cause was optimizer shock: the objective changed from moving/pushing to zero-motion standing, while the action-rate reward produced very large penalties. The standing runner now disables that reward and uses a smaller PPO update.
 
+The attached constraint still proved too hard at reset. The next lower curriculum rung is `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed`: same wheelchair scene and same observed policy shape, but no spherical hand-handle joint yet. That stage should learn quiet zero-command standing with the arms held in the handle pose before reintroducing the physical attachment.
+
+Observed standing launch:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed \
+  --resume \
+  --load_run warmstart_observed_19000 \
+  --checkpoint model_19000.pt \
+  --load_model_only \
+  --run_name stand_observed_from_19000_conservative \
+  --max_iterations 1500
+```
+
 Planned launch shape:
 
 ```bash
