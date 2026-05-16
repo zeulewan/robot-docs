@@ -336,6 +336,48 @@ Repeat command:
 VIDEO_LENGTH=600 VIDEO_CAMERA_ORBIT_DEG=720 ./scripts/rsl_rl/send_latest_wheelchair_video.sh
 ```
 
+## Wrist Alignment Restart
+
+After reviewing the `model_18100` two-orbit video, the left wrist was visibly bending close to `90` degrees. That is likely a reward shortcut: the previous reward made `left_rubber_hand`/`right_rubber_hand` position and handle contact important, but did not directly penalize a rotated palm or wrist posture as long as the rubber-hand body reached the handle.
+
+Code commit `8f85452 Penalize wheelchair wrist bend` adds two terms to the dynamic wheelchair task:
+
+| Reward term | Purpose |
+|---|---|
+| `hand_handle_axis_alignment` | Penalizes the selected rubber-hand body axis being perpendicular to the wheelchair handle frame axis. |
+| `wrist_joint_deviation` | Penalizes wrist roll, pitch, and yaw deviation from the configured handle-grip default pose. |
+
+Smoke test:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --num_envs 1 \
+  --max_iterations 1 \
+  --run_name wrist_orientation_smoke
+```
+
+The smoke test resolved the observed task and showed `34` active reward terms, including the new `hand_handle_axis_alignment` and `wrist_joint_deviation` metrics. The policy observation remains `(585,)`, critic observation remains `(600,)`, and action shape remains `(29,)`, so the previous checkpoint can still warm-start the policy.
+
+Training was restarted from `model_18300.pt` with a fresh optimizer state:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --resume \
+  --load_run 2026-05-15_22-04-24_dynamic_push_observed_rubber_hands_resume_17600 \
+  --checkpoint model_18300.pt \
+  --load_model_only \
+  --run_name dynamic_push_observed_wrist_alignment_resume_18300 \
+  --max_iterations 2400
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-36-27_dynamic_push_observed_wrist_alignment_resume_18300/`
+
 Original dynamic-task smoke test command:
 
 ```bash
