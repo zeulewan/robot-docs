@@ -1063,6 +1063,21 @@ All three relaxed diagnostics were stopped. The two-hand run from the reach-arm 
 
 The takeaway is that this is not just an arm-freezing mistake or an overly tight reward stack. Freeing the arms and relaxing the rewards did not recover standing, and the stable neutral wheelchair checkpoint also collapses once the hard hand-handle attachment is added. The next fix should target the attachment mechanics themselves: inspect the spherical USD joint frames, avoid reset preload, consider creating or enabling the hand-handle constraint after the robot has reached the handles, or replace the hard startup joint with a softer staged constraint.
 
+Passive ragdoll diagnostic recorded on May 16, 2026:
+
+<video controls preload="metadata" style="max-width: 100%;">
+  <source src="../../../assets/g1-wheelchair-relaxed-attached-ragdoll-startup.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Video | `logs/demos/unitree-wheelchair-relaxed-stand-attached-ragdoll_20260516_122238/model_9650_ragdoll_startup.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-relaxed-attached-ragdoll-startup.mp4` |
+| Playback commit | `de2b8b1 Add diagnostic ragdoll playback flags` |
+| Diagnostic flags | `--zero-actions --ragdoll-robot --disable-fall-terminations` |
+
+This playback uses the same relaxed attached scene, but does not use the policy. The robot is made passive by zeroing joint stiffness and damping, actions are zeroed, and the fall/base-height terminations are disabled so the clip shows the raw startup physics instead of immediately resetting.
+
 Plain standing launch:
 
 ```bash
