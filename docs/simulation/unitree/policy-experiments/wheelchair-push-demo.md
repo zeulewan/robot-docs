@@ -1024,13 +1024,14 @@ The active replacement is `Unitree-G1-29dof-Stand-Reach-Arms`. It uses the same 
 | Task ID | `Unitree-G1-29dof-Stand-Reach-Arms` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/` |
 | Active run | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/` |
+| First saved checkpoint | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/model_8200.pt` |
 | Warm start | plain standing checkpoint `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/model_8150.pt` |
 | Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/from_plain_stand_8150/model_8150.pt` |
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
 | Code commit | `4a29cc5 Add partial arm reach standing bridge` |
 | tmux | `unitree_g1_stand_reach_arms_train` |
 
-Early status is better than the full handle-arm run: around iteration `8169`, normal timeouts were about `0.80` and `bad_orientation` was about `0.18`. This is not solved yet, but it is no longer the immediate collapse seen with the free-chair attached and full-handle standing attempts.
+Early status is better than the full handle-arm run: at the first saved checkpoint, `model_8200.pt`, normal timeouts were about `0.81` and `bad_orientation` was about `0.17`. This is not solved yet, but it is no longer the immediate collapse seen with the free-chair attached and full-handle standing attempts.
 
 If this partial-reach rung reaches full-horizon standing, the next steps are: full handle-arm standing, then wheelchair-observed standing with handle arms, then free stationary wheelchair with hand-handle attachment.
 
