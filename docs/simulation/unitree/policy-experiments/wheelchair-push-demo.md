@@ -1023,17 +1023,30 @@ The active replacement is `Unitree-G1-29dof-Stand-Reach-Arms`. It uses the same 
 |---|---|
 | Task ID | `Unitree-G1-29dof-Stand-Reach-Arms` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/` |
-| Active run | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/` |
+| Stopped run | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/` |
 | First saved checkpoint | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/model_8200.pt` |
+| Last used checkpoint | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/model_8400.pt` |
 | Warm start | plain standing checkpoint `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/model_8150.pt` |
 | Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/from_plain_stand_8150/model_8150.pt` |
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
 | Code commit | `4a29cc5 Add partial arm reach standing bridge` |
 | tmux | `unitree_g1_stand_reach_arms_train` |
 
-Early status is better than the full handle-arm run: at the first saved checkpoint, `model_8200.pt`, normal timeouts were about `0.81` and `bad_orientation` was about `0.17`. This is not solved yet, but it is no longer the immediate collapse seen with the free-chair attached and full-handle standing attempts.
+Early status was better than the full handle-arm run: at the first saved checkpoint, `model_8200.pt`, normal timeouts were about `0.81` and `bad_orientation` was about `0.17`. The run was stopped at `model_8400.pt` when the next test moved back to the actual wheelchair-attached standing setup.
 
-If this partial-reach rung reaches full-horizon standing, the next steps are: full handle-arm standing, then wheelchair-observed standing with handle arms, then free stationary wheelchair with hand-handle attachment.
+The immediate wheelchair-attached retry used `Unitree-G1-29dof-Wheelchair-Braked-Stationary-Stand-Attached`, not the fixed-base chair. The `model_8400.pt` reach-arm checkpoint was expanded from `(480, 495)` inputs to `(585, 600)` inputs for the wheelchair-observed policy/critic shape, then loaded with `--load_model_only`.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Braked-Stationary-Stand-Attached` |
+| Run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_braked_stationary_stand_attached/2026-05-16_11-48-35_braked_stationary_stand_attached_from_reach_8400/` |
+| Expanded checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_braked_stationary_stand_attached/from_reach_arms_8400/model_8400.pt` |
+| Video | `logs/demos/unitree-wheelchair-braked-stand-attached_model_8400_startup_failure_20260516_115010/model_8400_startup_failure.mp4` |
+| tmux | stopped `unitree_g1_wheelchair_braked_stand_attached_train` |
+
+This run still collapsed immediately with the hand-handle attachment active. Iteration `8400` already had short episodes and `bad_orientation` around `0.57`; by iteration `8401`, `bad_orientation` was about `0.998`, so the run was stopped. The current blocker is therefore not visualization: the free wheelchair and hand attachment are present, but the attached starting condition is still too hard for the policy.
+
+Next steps should adjust the attached starting condition itself, for example with a gentler attachment schedule, softer/longer constraint compliance if available, or a staged reset where the robot reaches the handles while the chair is nearby before the spherical joints become active.
 
 Plain standing launch:
 
