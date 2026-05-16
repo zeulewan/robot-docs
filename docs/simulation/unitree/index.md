@@ -2,7 +2,7 @@
 
 Unitree repos and tools for simulating, training, validating, and eventually deploying G1 policies.
 
-**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [Policy Experiments](policy-experiments/index.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md)
+**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [Policy Experiments](policy-experiments/index.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md) · [Operator Tools](../../infrastructure/operator-tools.md)
 
 ## Repo Overview
 
@@ -103,6 +103,12 @@ Useful scripts in `unitree_sim_isaaclab`:
 ./scripts/start_rtabmap.sh             # start RGB-D RTAB-Map
 ./scripts/stop_rtabmap.sh              # stop RTAB-Map
 ./scripts/start_foxglove_light.sh 8765 # lightweight driving/overview bridge
+```
+
+For one-command policy playback videos, use the workstation-level [`isaac-runclip`](../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-runclip) tool. The current attached-wheelchair preset renders the latest checkpoint and sends the MP4:
+
+```bash
+isaac-runclip send unitree-wheelchair-attached
 ```
 
 ---

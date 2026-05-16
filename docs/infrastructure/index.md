@@ -36,4 +36,12 @@ Workstation configuration, networking, and command reference.
 
     [:octicons-arrow-right-24: Commands](commands.md)
 
+-   :material-tools:{ .lg .middle } **Operator Tools**
+
+    ---
+
+    Reusable CLI wrappers for Moonlight desktop streaming and Isaac playback video capture
+
+    [:octicons-arrow-right-24: Operator Tools](operator-tools.md)
+
 </div>

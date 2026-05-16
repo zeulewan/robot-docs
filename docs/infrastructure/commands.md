@@ -161,6 +161,25 @@ disabled
 
 ---
 
+## Operator Tools
+
+Reusable wrappers are summarized in [Operator Tools](operator-tools.md).
+
+```bash
+# Render latest attached-wheelchair checkpoint and email the MP4
+isaac-runclip send unitree-wheelchair-attached
+
+# Inspect available playback views
+isaac-runclip views unitree-wheelchair-attached
+
+# Print the render command without running it
+isaac-runclip send unitree-wheelchair-attached --dry-run
+```
+
+`isaac-runclip` reads project presets from `~/.config/isaac-runclip/projects.toml`. Do not store local keyring passwords or email credentials in docs or project config.
+
+---
+
 ## Isaac Sim
 
 ### Launching

@@ -315,6 +315,14 @@ This clip was produced with the repeatable sender script, which finds the latest
 
 The script accepts overrides through environment variables such as `RUN_DIR`, `CHECKPOINT`, `EMAIL_TO`, `SEND_EMAIL=0`, `VIDEO_LENGTH`, and `VIDEO_CAMERA_ORBIT_DEG`. It intentionally does not store local keyring passwords or OAuth details.
 
+For newer runs, prefer the general workstation tool documented in [Operator Tools](../../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-runclip):
+
+```bash
+isaac-runclip send unitree-wheelchair-attached
+```
+
+That tool stores project/view presets in `~/.config/isaac-runclip/projects.toml`, archives MP4 plus JSON metadata, and can use either the `gog` email provider or local file output.
+
 ## Model 18100 Rubber-Hand Two-Orbit Preview
 
 Recorded and emailed on May 15, 2026 from the same rubber-hand-only restart, using a `720` degree follow-camera orbit so the camera revolves around the policy twice:
