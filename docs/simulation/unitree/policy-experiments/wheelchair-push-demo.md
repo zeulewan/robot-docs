@@ -597,3 +597,40 @@ TERM=xterm conda run -n isaaclab python scripts/rsl_rl/play.py \
 Important capture note: using `--video` or `--enable_cameras` alone can still fail headless with `NO_GUI_OR_RENDERING`. Use both `--headless` and `--enable_cameras` for workstation offscreen video capture.
 
 Emailing note: videos can be sent with the local `gog send` CLI and the existing keyring setup. Keep all local auth details out of this repo.
+
+## Model 16300 Two-Orbit Preview
+
+Recorded and emailed on May 15, 2026 from the observed dynamic wheelchair-push run with a two-revolution follow camera:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-observed-model-16300-two-orbits.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700/model_16300.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-observed-model-16300-two-orbits.mp4` |
+| Command | observed dynamic play task, `1` env, fixed `0.3 m/s` forward command, zero lateral/yaw command, `600` frames, `720 deg` follow-camera orbit |
+
+This clip is `1280x720`, `50 fps`, and about `12 s` long. The camera orbit setting is `720 deg`, so the follow camera makes two complete revolutions around the tracked robot during the clip.
+
+Two-orbit capture command:
+
+```bash
+latest_ckpt=$(find logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700 -maxdepth 1 -name 'model_*.pt' | sort -V | tail -1)
+
+TERM=xterm conda run -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --enable_cameras \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --num_envs 1 \
+  --checkpoint "$latest_ckpt" \
+  --video \
+  --video-start-step 50 \
+  --video_length 600 \
+  --video-follow-robot \
+  --video-camera-eye-offset -4.5 -3.2 2.2 \
+  --video-camera-target-offset 0.5 0.0 0.9 \
+  --video-camera-orbit-deg 720.0
+```
