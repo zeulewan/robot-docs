@@ -925,7 +925,7 @@ The new pretrain stage isolates the first skill:
 |---|---|
 | Task ID | `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_attached/` |
-| Warm start target | latest attached checkpoint, currently `model_21999.pt` |
+| Warm start target | observed wheelchair checkpoint `model_19000.pt` |
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 
 Standing changes:
@@ -937,8 +937,11 @@ Standing changes:
 | Walking incentives | Disable gait and foot-clearance rewards so the policy is not encouraged to step just to earn gait reward. |
 | Wheelchair | Reward zero chair forward velocity and penalize chair XY/yaw velocity, centerline drift, tilt, and wheel/caster height error. |
 | Randomization | Disable added torso mass during this first balance phase. |
+| Action scale | Reduce leg/waist action scale to `0.12` and keep arm action scale at `0.0` so the first stand phase cannot flail as aggressively. |
 
 The intended curriculum is: train this standing task until `bad_orientation` stays low and the video shows quiet balance, then use that checkpoint to warm-start the attached push task again. This is a pretrain stage, not the final wheelchair-pushing objective.
+
+An initial attempt warm-started from the latest attached-push checkpoint, `model_21999.pt`, but `bad_orientation` quickly climbed to about `0.9985`. That checkpoint had already adapted toward an unstable pushing behavior, so it was stopped and the standing phase was switched back to the earlier observed checkpoint.
 
 Planned launch shape:
 
@@ -947,9 +950,9 @@ python scripts/rsl_rl/train.py \
   --headless \
   --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached \
   --resume \
-  --load_run warmstart_attached_21999 \
-  --checkpoint model_21999.pt \
+  --load_run warmstart_observed_19000 \
+  --checkpoint model_19000.pt \
   --load_model_only \
-  --run_name stand_attached_from_21999 \
+  --run_name stand_attached_from_observed_19000 \
   --max_iterations 1500
 ```
