@@ -876,3 +876,33 @@ TERM=xterm python scripts/rsl_rl/train.py \
 ```
 
 Early status: the spherical-joint smoke test completed without the hard-joint numerical blow-up. The full slow-command run is active, but early iterations still show high `bad_orientation`, so this is not solved yet; the next checkpoint video should be judged mainly for whether the anchored hands stay on the handles and whether the robot starts recovering a stable walking gait.
+
+## Attached Start-Pose Tuning
+
+Added on May 16, 2026 after reviewing the attached-hands startup. The task reset itself was already deterministic: the robot and wheelchair reset x/y/yaw ranges were zeroed and reset velocities were zero. The remaining startup issue was geometric preload: the old default arm pose placed the G1 rubber-hand body origins about `4 cm` above the wheelchair handle frames and about `1.5 cm` behind them. Because the spherical hand-handle joint was created at startup, that offset made the visible hands and wrists start from a slightly artificial pose.
+
+The fix keeps the wheelchair wheels on the ground and tunes the initial hand/chair geometry instead:
+
+| Field | Previous | Updated |
+|---|---:|---:|
+| `wheelchair.init_state.pos.x` | `0.750` | `0.728` |
+| handle target x in robot root frame | `0.350` | `0.328` |
+| handle target z in robot root frame | `0.180` | `0.120` |
+| left/right elbow default | `0.570` | `0.664` |
+| left/right wrist pitch default | `-0.130` | `-0.088` |
+
+The updated constants are in `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` as `WHEELCHAIR_HANDLE_TARGETS_B`, `WHEELCHAIR_ARM_JOINT_POSE`, and `DYNAMIC_WHEELCHAIR_INIT_POS`. The FK check after tuning put the rubber-hand origins within roughly `1 mm` of the URDF handle frames before the spherical joints are attached.
+
+Short preview with the tuned startup geometry:
+
+<video controls width="100%">
+  <source src="../../../assets/g1-wheelchair-attached-start-pose-tuned-model-20100-preview.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_attached/2026-05-15_23-19-03_dynamic_push_attached_spherical_slow_from_19000/model_20100.pt` |
+| Demo output | `logs/demos/start_pose_tuned_preview/unitree-wheelchair-attached_model_20100_short_best_20260516_000639/model_20100_short_best.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-attached-start-pose-tuned-model-20100-preview.mp4` |
+
+This change affects new play/training processes. The training process that was already running when the edit was made still had the previous task config loaded in memory.
