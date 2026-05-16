@@ -1078,6 +1078,22 @@ Passive ragdoll diagnostic recorded on May 16, 2026:
 
 This playback uses the same relaxed attached scene, but does not use the policy. The robot is made passive by zeroing joint stiffness and damping, actions are zeroed, and the fall/base-height terminations are disabled so the clip shows the raw startup physics instead of immediately resetting.
 
+The free-chair relaxed continuation was stopped on May 16, 2026 after it still showed no useful recovery. Around iteration `10851`, `bad_orientation` was about `0.9999`, timeout was effectively zero, and mean episode length was only about `5.1` steps. That supported the earlier diagnosis that the free wheelchair plus hard hand attachment remained too unstable for this curriculum step.
+
+The next diagnostic is `Unitree-G1-29dof-Wheelchair-Fixed-Relaxed-Stand-Attached`, added in commit `c4d019a Add fixed-base relaxed wheelchair stand task`. It locks the wheelchair root like the earlier fixed-base diagnostic, but keeps the relaxed arm and wrist action scales from the free-chair relaxed task instead of freezing the arms. This is intentionally a scaffold: it may teach some support against an immovable handle, but it isolates whether the policy can learn the hand-held standing pose when the wheelchair base is not moving under it.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Fixed-Relaxed-Stand-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/2026-05-16_14-39-39_fixed_relaxed_stand_attached_from_neutral_9649/` |
+| Warm start | neutral wheelchair-observed standing checkpoint `model_9649.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/from_neutral_stand_9649/model_9649.pt` |
+| Code commit | `c4d019a Add fixed-base relaxed wheelchair stand task` |
+| tmux | `unitree_g1_wheelchair_fixed_relaxed_stand_attached_train` |
+
+Early fixed-base relaxed status is significantly better than the free-chair relaxed run. At iteration `9668`, `bad_orientation` was about `0.455`, `base_height` was near zero, timeout was about `0.545`, mean episode length was about `365` steps, and mean reward was positive at about `29.1`. This is not a final transferable solution because the chair root is fixed, but it is a useful bridge checkpoint candidate if it continues improving.
+
 Plain standing launch:
 
 ```bash
