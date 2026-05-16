@@ -67,11 +67,11 @@ On May 15, 2026, a first trainable wheelchair-push proxy was added.
 
 This variant keeps the policy observation and action spaces identical to the base walking task: policy observation shape is still `(480,)`, critic observation shape is still `(495,)`, and the action shape is still `29`. That is deliberate. It lets the wheelchair task resume from the walking checkpoint instead of relearning the whole walking gait.
 
-The task changes the default arm pose so the wrist-yaw links start near a wheelchair handle position, then adds two rewards:
+The task changes the default arm pose so the rubber hand bodies start near a wheelchair handle position, then adds two rewards:
 
 | Reward | Purpose |
 |---|---|
-| `hand_handle_position` | Exponential positive reward for keeping the left/right wrist-yaw links near fixed handle targets. |
+| `hand_handle_position` | Exponential positive reward for keeping the left/right rubber hand bodies near fixed handle targets. |
 | `hand_handle_position_l2` | L2 penalty for the same hand-handle error. |
 
 The current handle targets are expressed in the robot root frame:
@@ -250,11 +250,24 @@ This variant puts the passive wheelchair articulation into the training scene in
 
 The policy observation and action shapes are still unchanged from the earlier walking and handle-grip runs: policy observation `(480,)`, critic observation `(495,)`, and action `(29,)`. That keeps the old checkpoint loadable. The wheelchair state is used for rewards and contact checks, but is not yet part of the policy observation.
 
-The new task adds reward terms for keeping both wrist-yaw links near the real chair handles, matching the wheelchair's forward velocity to the command, rewarding forward wheelchair progress, penalizing lateral drift, yaw spin, and chair tilt, rewarding contact on the two handles, and penalizing robot contact on the chair body and wheels.
+The new task adds reward terms for keeping both rubber hand bodies near the real chair handles, matching the wheelchair's forward velocity to the command, rewarding forward wheelchair progress, penalizing lateral drift, yaw spin, and chair tilt, rewarding contact on the two handles, and penalizing robot contact on the chair body and wheels.
 
-Correction added after the first dynamic preview: the original handle-contact reward accepted contact from any G1 body on the handle prims. Commit `a3d0222 Restrict wheelchair handle contact to hands` changes the setup so the left handle only rewards left end-effector contact (`left_wrist_yaw_link`, `left_rubber_hand`), the right handle only rewards right end-effector contact (`right_wrist_yaw_link`, `right_rubber_hand`), and all other robot body contact on either handle is included in the invalid-contact penalty.
+Correction added after the first dynamic preview: the original handle-contact reward accepted contact from any G1 body on the handle prims. Commit `a3d0222 Restrict wheelchair handle contact to hands` first narrowed the filter to wrist-yaw/rubber-hand end effectors. Commit `e7cc050 Use rubber hands for wheelchair handle rewards` then tightened the rule so only `left_rubber_hand` and `right_rubber_hand` are valid handle-contact bodies; wrist-yaw contact on a handle is now included in the invalid-contact penalty for new runs.
 
-Smoke test command:
+Smoke test for the rubber-hand-only rule:
+
+```bash
+TERM=xterm timeout 240s conda run -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --num_envs 1 \
+  --max_iterations 1 \
+  --run_name rubber_hand_only_smoke
+```
+
+The smoke test completed and resolved the observed task with policy observation shape `(585,)`, critic observation shape `(600,)`, and the handle state still at `(60,)`, now computed from the two rubber-hand bodies.
+
+Original dynamic-task smoke test command:
 
 ```bash
 source /home/zeul/miniconda3/etc/profile.d/conda.sh
@@ -549,7 +562,7 @@ This is a first version. If it learns too slowly, the next likely changes are to
 
 ## Observed Dynamic Push Variant
 
-Added on May 15, 2026 after the `model_16000.pt` soft straight-line preview still veered left and then became unstable. The problem with the prior dynamic task was that the wheelchair was only used by rewards; the policy could not directly observe chair pose, chair velocity, chair heading, handle position, or wrist-to-handle error. That made straight-line penalties hard to satisfy without damaging the walking gait.
+Added on May 15, 2026 after the `model_16000.pt` soft straight-line preview still veered left and then became unstable. The problem with the prior dynamic task was that the wheelchair was only used by rewards; the policy could not directly observe chair pose, chair velocity, chair heading, handle position, or hand-to-handle error. That made straight-line penalties hard to satisfy without damaging the walking gait.
 
 The new task is registered as:
 
@@ -564,7 +577,7 @@ It adds these policy and critic observation terms:
 | Term | Shape with history | Purpose |
 |---|---:|---|
 | `wheelchair_root_state` | `45` | Chair position, relative velocity, forward direction, yaw rate, and centerline error |
-| `wheelchair_handle_state` | `60` | Left/right handle positions in robot-root frame plus wrist-to-handle errors |
+| `wheelchair_handle_state` | `60` | Left/right handle positions in robot-root frame plus hand-to-handle errors |
 
 The old dynamic task remains at policy observation `(480,)` and critic observation `(495,)`. The observed task is policy observation `(585,)` and critic observation `(600,)`, so older checkpoints cannot be loaded directly. The first actor/critic input layer was expanded with zero-filled columns for the new observation terms:
 
