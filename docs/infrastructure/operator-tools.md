@@ -46,22 +46,7 @@ More detail: [Sunshine Streaming](workstation/sunshine.md) and [GPU & Display Co
 | `gog` | Send the rendered MP4 by email using the local `gog` CLI. |
 | `file` | Render/archive the MP4 and metadata without sending email. |
 
-The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`.
-
-There may also be small local wrapper commands in `/home/zeul/bin` for the active experiment. These are convenience presets only; they call `isaac-clip` underneath. The current wheelchair standing wrapper is:
-
-```bash
-# Short preview of the active fixed-base relaxed attached wheelchair run
-wvid
-
-# Longer orbit preview of the same project
-wvid orbit
-
-# Show the selected run/checkpoint/render command without rendering
-wvid --dry-run
-```
-
-`wvid` currently expands to the `unitree-wheelchair-fixed-relaxed-stand-attached` project and its default `startup_failure` view. Use `isaac-clip` directly when switching projects or inspecting presets.
+The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`. Project/view behavior should live in `isaac-clip` config, not in local wrapper scripts.
 
 Project presets live in:
 
@@ -94,6 +79,8 @@ isaac-clip checkpoints unitree-wheelchair-attached
 # Print the render command without running it
 isaac-clip send unitree-wheelchair-relaxed-stand-attached --dry-run
 ```
+
+The fixed-base relaxed attached wheelchair views include the diagnostic `play_args = ["--show-wheelchair-urdf-proxy"]`, so those renders show the simplified URDF proxy geometry used for collision/handle inspection.
 
 The default `unitree-wheelchair-attached` view currently uses:
 

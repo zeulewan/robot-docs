@@ -166,20 +166,14 @@ disabled
 Reusable wrappers are summarized in [Operator Tools](operator-tools.md).
 
 ```bash
-# Short wrapper for the current relaxed attached wheelchair standing run
-wvid
-
-# Same thing, but show what would run first
-wvid --dry-run
-
-# Render latest attached-wheelchair checkpoint and email the MP4
-isaac-clip send unitree-wheelchair-attached
+# Render latest fixed-base relaxed wheelchair checkpoint and email the MP4
+isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached
 
 # Inspect available playback views
-isaac-clip views unitree-wheelchair-attached
+isaac-clip views unitree-wheelchair-fixed-relaxed-stand-attached
 
 # Print the render command without running it
-isaac-clip send unitree-wheelchair-attached --dry-run
+isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached --view two_orbit --dry-run
 ```
 
 `isaac-clip` reads project presets from `~/.config/isaac-clip/projects.toml`. Do not store local keyring passwords or email credentials in docs or project config.
