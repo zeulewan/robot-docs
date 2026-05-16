@@ -1139,12 +1139,15 @@ The active auto-preview watcher updates the latest-video site every `250` traini
 
 ```bash
 isaac-clip watch unitree-wheelchair-relaxed-push-attached \
+  --target-iteration 12500 \
   --every-iterations 250 \
   --view two_orbit \
-  --render
+  --render \
+  --notify \
+  --to <email>
 ```
 
-At setup time the new walking run had produced `model_12300.pt`, so the first automatic preview target was `model_12500.pt`. The watcher then advances to `model_12750.pt`, `model_13000.pt`, and so on. The watcher uses the `site` provider, so it replaces the embedded video at:
+At setup time the new walking run had produced `model_12300.pt`, so the first automatic preview target was `model_12500.pt`. The watcher then advances to `model_12750.pt`, `model_13000.pt`, and so on. The watcher uses the `site` provider, so it replaces the embedded video and sends a short `gog` notification email after each successful render:
 
 ```text
 https://workstation.tailee9084.ts.net:8002/

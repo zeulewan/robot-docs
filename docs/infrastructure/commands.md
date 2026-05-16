@@ -178,8 +178,8 @@ isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached --view two_orbit
 # Wait for a future checkpoint, render it, and update the latest-video page
 isaac-clip watch unitree-wheelchair-fixed-relaxed-stand-attached --target-iteration 12000 --view two_orbit --render
 
-# Keep updating the latest-video page every 250 training iterations
-isaac-clip watch unitree-wheelchair-relaxed-push-attached --every-iterations 250 --view two_orbit --render
+# Keep updating the latest-video page every 250 training iterations and email each update
+isaac-clip watch unitree-wheelchair-relaxed-push-attached --every-iterations 250 --view two_orbit --render --notify --to <email>
 ```
 
 `isaac-clip` reads project presets from `~/.config/isaac-clip/projects.toml`. Do not store local keyring passwords or email credentials in docs or project config.
