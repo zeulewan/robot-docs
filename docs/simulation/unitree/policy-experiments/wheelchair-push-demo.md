@@ -978,7 +978,7 @@ The corrected second rung is `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | tmux | `unitree_g1_wheelchair_stand_neutral_train` |
 
-As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelchair-observed run reached full 500-step episodes with `bad_orientation = 0.0`, `base_height = 0.0`, and `fall_termination = 0.0` through the first several PPO updates. The intended order is now plain stand, wheelchair-observed neutral-arm stand, wheelchair-observed handle-pose stand, attached stand, then attached push.
+As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelchair-observed run reached full 500-step episodes with `bad_orientation = 0.0`, `base_height = 0.0`, and `fall_termination = 0.0` through the first several PPO updates. The first corrected checkpoint saved as `model_8200.pt`; live metrics at iteration `8204` were still full-horizon with no fall terminations. The intended order is now plain stand, wheelchair-observed neutral-arm stand, wheelchair-observed handle-pose stand, attached stand, then attached push.
 
 Plain standing launch:
 
