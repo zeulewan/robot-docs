@@ -978,7 +978,22 @@ The corrected second rung is `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | tmux | `unitree_g1_wheelchair_stand_neutral_train` |
 
-As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelchair-observed run reached full 500-step episodes with `bad_orientation = 0.0`, `base_height = 0.0`, and `fall_termination = 0.0` through the first several PPO updates. The first corrected checkpoint saved as `model_8200.pt`; live metrics at iteration `8204` were still full-horizon with no fall terminations. The intended order is now plain stand, wheelchair-observed neutral-arm stand, wheelchair-observed handle-pose stand, attached stand, then attached push.
+As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelchair-observed run reached full 500-step episodes with `bad_orientation = 0.0`, `base_height = 0.0`, and `fall_termination = 0.0` through the first several PPO updates. The run completed at `model_9649.pt`, and playback showed the robot standing with the wheelchair present but with neutral arms, not holding the handles. That makes it a stability bridge only.
+
+Two direct next-step attempts failed. `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed` reintroduced the handle arm pose but no hand-handle joint; by `model_9700.pt`, `bad_orientation` was about `0.9985`. `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached` attached the hands to the dynamic wheelchair handles, but the free chair was pulled/tipped through the hand constraints and `bad_orientation` quickly rose to about `0.99`.
+
+The current active first holding primitive is `Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached`. In this rung the robot's hands are attached to the wheelchair handles with the same spherical joints, but the wheelchair root is fixed to the world. This is intentional curriculum: the robot first learns to stand while its hands are constrained to the handles, then a later task can unfix the chair and gradually reintroduce wheelchair motion.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_stand_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_stand_attached/2026-05-16_11-13-17_fixed_stand_attached_from_neutral_9649/` |
+| Warm start | neutral wheelchair-observed checkpoint `model_9649.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+| tmux | `unitree_g1_wheelchair_fixed_stand_attached_train` |
+
+Early fixed-base status is better than the free-chair attached run but not solved yet. The first saved checkpoint was `model_9650.pt`; by iteration `9709`, about half of the environments were timing out, `bad_orientation` had dropped to about `0.4565`, and the wheelchair velocity/tilt rewards were zero because the chair is fixed for this rung.
 
 Plain standing launch:
 
@@ -1023,11 +1038,11 @@ Planned launch shape:
 ```bash
 python scripts/rsl_rl/train.py \
   --headless \
-  --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached \
+  --task Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached \
   --resume \
-  --load_run warmstart_observed_19000 \
-  --checkpoint model_19000.pt \
+  --load_run from_neutral_stand_9649 \
+  --checkpoint model_9649.pt \
   --load_model_only \
-  --run_name stand_attached_from_observed_19000 \
+  --run_name fixed_stand_attached_from_neutral_9649 \
   --max_iterations 1500
 ```
