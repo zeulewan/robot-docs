@@ -1096,6 +1096,20 @@ Early fixed-base relaxed status is significantly better than the free-chair rela
 
 While reviewing the fixed-base preview, we noticed a visible two-step startup: the hands appear off the handles at the start of the clip, then snap onto the handles shortly after physics begins. A follow-up playback with direct hand-origin to handle-origin anchoring produced PhysX warnings that the hand-handle joints were created with disjoint body transforms. The measured no-attachment reset offset was almost entirely vertical: both handle frames were about `0.04029 m` below the rubber-hand origins. The wheelchair URDF handle frames were raised from `z=0.88` to `z=0.92029`, after which the reset error dropped to about `0.0005 m` per hand and the attached-task startup check no longer emitted the disjoint-joint snap warning. The active attached tasks now create direct origin-to-origin spherical joints after reset instead of preserving a startup offset.
 
+For visual inspection of the simplified URDF itself, `play.py` now has a diagnostic playback flag, `--show-wheelchair-urdf-proxy`. It swaps the normal Free3D visual mesh for `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair_proxy_visual.urdf`, which renders the URDF proxy boxes/cylinders for the seat, frame, wheels, casters, and handle frames. This is a playback-only view for checking what the training collision/handle model looks like; the normal training asset remains `active_manual_wheelchair.urdf`.
+
+The verified slow-revolve proxy clip is currently the newest video on the fixed latest-video dashboard:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
+Archived video:
+
+```text
+logs/demos/unitree-wheelchair-urdf-proxy_model_11100_slow_revolve_20260516_170039/model_11100_urdf_proxy_slow_revolve.mp4
+```
+
 Plain standing launch:
 
 ```bash

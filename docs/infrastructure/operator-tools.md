@@ -10,6 +10,7 @@ These are convenience wrappers around repeatable workstation operations. They sh
 |---|---|---|
 | `stream-desktop` | Start/stop Sunshine + GNOME X11 for Moonlight remote desktop. | `stream-desktop start` / `stream-desktop stop` |
 | `isaac-clip` | Render, archive, and send Isaac Lab policy playback videos from project presets. | `isaac-clip send unitree-wheelchair-attached` |
+| `latest_video_site.py` | Serve the newest archived Isaac demo video through a fixed browser URL. | `tmux attach -t latest_video_site` |
 
 ## Remote Desktop: `stream-desktop`
 
@@ -50,7 +51,7 @@ The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewa
 There may also be small local wrapper commands in `/home/zeul/bin` for the active experiment. These are convenience presets only; they call `isaac-clip` underneath. The current wheelchair standing wrapper is:
 
 ```bash
-# Short preview of the active relaxed attached wheelchair run
+# Short preview of the active fixed-base relaxed attached wheelchair run
 wvid
 
 # Longer orbit preview of the same project
@@ -60,7 +61,7 @@ wvid orbit
 wvid --dry-run
 ```
 
-`wvid` currently expands to the `unitree-wheelchair-relaxed-stand-attached` project and its default `startup_failure` view. Use `isaac-clip` directly when switching projects or inspecting presets.
+`wvid` currently expands to the `unitree-wheelchair-fixed-relaxed-stand-attached` project and its default `startup_failure` view. Use `isaac-clip` directly when switching projects or inspecting presets.
 
 Project presets live in:
 
@@ -71,7 +72,13 @@ Project presets live in:
 The important attached-wheelchair presets are:
 
 ```bash
-# Current relaxed attached standing run
+# Current fixed-base relaxed attached standing run
+isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached
+isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached --view two_orbit
+isaac-clip views unitree-wheelchair-fixed-relaxed-stand-attached
+isaac-clip checkpoints unitree-wheelchair-fixed-relaxed-stand-attached
+
+# Older free-chair relaxed attached standing run
 isaac-clip send unitree-wheelchair-relaxed-stand-attached
 isaac-clip send unitree-wheelchair-relaxed-stand-attached --view two_orbit
 isaac-clip views unitree-wheelchair-relaxed-stand-attached
@@ -121,6 +128,48 @@ isaac-clip send unitree-wheelchair-attached --training-policy fail
 The pause uses process signals, not checkpointing. It avoids compute contention but does not free training VRAM.
 
 Do not document or commit local email/keyring credentials. If the `gog` provider cannot unlock in a non-interactive shell, unlock the local keyring/session first or run the command from an interactive workstation shell.
+
+## Latest Video Website
+
+A small local dashboard serves the newest archived Isaac demo video at a stable tailnet URL:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
+The server runs from `unitree_rl_lab` in tmux session `latest_video_site`:
+
+```bash
+tmux attach -t latest_video_site
+```
+
+It is backed by:
+
+```bash
+cd /home/zeul/GIT/unitree_rl_lab
+./tools/latest_video_site.py --host 127.0.0.1 --port 8002 --title "Latest Isaac Demo Video"
+```
+
+Tailscale Serve exposes that local port:
+
+```bash
+tailscale serve --https=8002 8002
+tailscale serve status
+```
+
+The page scans `/home/zeul/GIT/unitree_rl_lab/logs/demos/**/*.mp4` at request time and embeds only the newest MP4. It also shows the video creation time, exposes `/latest.mp4` for direct playback/download, supports byte-range requests for browser seeking, and auto-refreshes when a newer archived render appears.
+
+To update what the page shows, put the desired MP4 under `logs/demos` with a newer timestamp than the previous videos. The current diagnostic wheelchair-URDF proxy clip was archived as:
+
+```text
+logs/demos/unitree-wheelchair-urdf-proxy_model_11100_slow_revolve_20260516_170039/model_11100_urdf_proxy_slow_revolve.mp4
+```
+
+That clip was rendered with `scripts/rsl_rl/play.py --show-wheelchair-urdf-proxy`, which swaps the playback wheelchair to the diagnostic proxy-visual URDF:
+
+```text
+assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair_proxy_visual.urdf
+```
 
 ## When To Use Which View
 
