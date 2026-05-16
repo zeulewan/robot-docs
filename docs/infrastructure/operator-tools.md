@@ -85,6 +85,8 @@ The default `unitree-wheelchair-attached` view currently uses:
 
 The CLI writes both an MP4 and JSON metadata file. The metadata records the project, checkpoint, view settings, and exact render command so videos are reproducible.
 
+The command prints the operational status that would otherwise require side checks: selected checkpoint, run directory, view, output directory, GPU memory/utilization before and after render, detected training process, training-guard decision, render duration, and final output paths.
+
 `isaac-clip` is not a training manager, but it has a render-time training guard. The default `--training-policy auto` checks for a running Isaac Lab `scripts/rsl_rl/train.py` process. If GPU telemetry has enough headroom, training keeps running while the video renders. If free GPU memory or GPU utilization crosses the configured thresholds, the CLI pauses the training process for the render and resumes it afterward.
 
 Useful overrides:
