@@ -938,10 +938,13 @@ Standing changes:
 | Wheelchair | Reward zero chair forward velocity and penalize chair XY/yaw velocity, centerline drift, tilt, and wheel/caster height error. |
 | Randomization | Disable added torso mass during this first balance phase. |
 | Action scale | Reduce leg/waist action scale to `0.12` and keep arm action scale at `0.0` so the first stand phase cannot flail as aggressively. |
+| PPO update | Use a conservative fine-tune: learning rate `3e-5`, clip `0.05`, one learning epoch, entropy `0.001`, max grad norm `0.25`, and no action-rate reward. |
 
 The intended curriculum is: train this standing task until `bad_orientation` stays low and the video shows quiet balance, then use that checkpoint to warm-start the attached push task again. This is a pretrain stage, not the final wheelchair-pushing objective.
 
 An initial attempt warm-started from the latest attached-push checkpoint, `model_21999.pt`, but `bad_orientation` quickly climbed to about `0.9985`. That checkpoint had already adapted toward an unstable pushing behavior, so it was stopped and the standing phase was switched back to the earlier observed checkpoint.
+
+The first observed-checkpoint attempt started with `bad_orientation` around `0.17`, then collapsed to about `0.99` after the first PPO update. The cause was optimizer shock: the objective changed from moving/pushing to zero-motion standing, while the action-rate reward produced very large penalties. The standing runner now disables that reward and uses a smaller PPO update.
 
 Planned launch shape:
 
