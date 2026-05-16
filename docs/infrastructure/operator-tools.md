@@ -89,6 +89,17 @@ The current fixed-base relaxed attached wheelchair preset uses `provider = "site
 https://workstation.tailee9084.ts.net:8002/
 ```
 
+To wait for a future checkpoint and update the page automatically:
+
+```bash
+isaac-clip watch unitree-wheelchair-fixed-relaxed-stand-attached \
+  --target-iteration 12000 \
+  --view two_orbit \
+  --render
+```
+
+Add `--notify --to <email>` when a short ready email should be sent after the checkpoint is rendered. The notification uses `gog`; keep provider credentials/keyring material out of docs and project config.
+
 The default `unitree-wheelchair-attached` view currently uses:
 
 | Setting | Value |
