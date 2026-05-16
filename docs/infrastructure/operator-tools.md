@@ -45,6 +45,7 @@ More detail: [Sunshine Streaming](workstation/sunshine.md) and [GPU & Display Co
 |---|---|
 | `gog` | Send the rendered MP4 by email using the local `gog` CLI. |
 | `file` | Render/archive the MP4 and metadata without sending email. |
+| `site` | Render/archive, then overwrite the stable MP4/JSON watched by the latest-video page. |
 
 The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`. Project/view behavior should live in `isaac-clip` config, not in local wrapper scripts.
 
@@ -81,6 +82,12 @@ isaac-clip send unitree-wheelchair-relaxed-stand-attached --dry-run
 ```
 
 The fixed-base relaxed attached wheelchair views include the diagnostic `play_args = ["--show-wheelchair-urdf-proxy"]`, so those renders show the simplified URDF proxy geometry used for collision/handle inspection.
+
+The current fixed-base relaxed attached wheelchair preset uses `provider = "site"`, `site_dir = "logs/demos/latest-site"`, and `site_name = "latest.mp4"`. That means the normal `isaac-clip send ...` command updates the latest-video page instead of emailing by default:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
 
 The default `unitree-wheelchair-attached` view currently uses:
 
