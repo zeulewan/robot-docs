@@ -556,3 +556,44 @@ Launch log:
 `logs/rsl_rl/unitree_g1_wheelchair_dynamic_push_observed_conservative_from_15700_20260515_204700.log`
 
 Early status: after the initial value/action-rate spike, the conservative run recovered by about iteration `15725`; value loss returned to normal, action-rate was around `-0.75`, reward was positive, and `bad_orientation` was around `0.20` rather than the `1.0` collapse seen in the `model_16000.pt` continuation.
+
+## Model 16200 Observed Preview
+
+Recorded and emailed on May 15, 2026 from the observed dynamic wheelchair-push run:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-observed-model-16200.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700/model_16200.pt` |
+| Demo output | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700/videos/play/rl-video-step-50.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-observed-model-16200.mp4` |
+| Command | observed dynamic play task, `1` env, fixed `0.3 m/s` forward command, zero lateral/yaw command, follow camera with slight `12 deg` orbit |
+
+At the time of recording, the live training run had passed `model_16200.pt` and looked much healthier than the first observed attempts: reward was around `100`, `bad_orientation` had dropped to about `0.0`, and the wheelchair forward reward/contact terms were active. Yaw error was still nonzero, so this is an improved checkpoint rather than a final solved policy.
+
+Working capture command:
+
+```bash
+latest_ckpt=$(find logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700 -maxdepth 1 -name 'model_*.pt' | sort -V | tail -1)
+
+TERM=xterm conda run -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --enable_cameras \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --num_envs 1 \
+  --checkpoint "$latest_ckpt" \
+  --video \
+  --video-start-step 50 \
+  --video_length 300 \
+  --video-follow-robot \
+  --video-camera-eye-offset -4.5 -3.2 2.2 \
+  --video-camera-target-offset 0.5 0.0 0.9 \
+  --video-camera-orbit-deg 12.0
+```
+
+Important capture note: using `--video` or `--enable_cameras` alone can still fail headless with `NO_GUI_OR_RENDERING`. Use both `--headless` and `--enable_cameras` for workstation offscreen video capture.
+
+Emailing note: videos can be sent with the local `gog send` CLI and the existing keyring setup. Keep all local auth details out of this repo.
