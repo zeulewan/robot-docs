@@ -982,18 +982,57 @@ As of the May 16, 2026 launch from expanded `model_8150.pt`, the neutral wheelch
 
 Two direct next-step attempts failed. `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed` reintroduced the handle arm pose but no hand-handle joint; by `model_9700.pt`, `bad_orientation` was about `0.9985`. `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached` attached the hands to the dynamic wheelchair handles, but the free chair was pulled/tipped through the hand constraints and `bad_orientation` quickly rose to about `0.99`.
 
-The current active first holding primitive is `Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached`. In this rung the robot's hands are attached to the wheelchair handles with the same spherical joints, but the wheelchair root is fixed to the world. This is intentional curriculum: the robot first learns to stand while its hands are constrained to the handles, then a later task can unfix the chair and gradually reintroduce wheelchair motion.
+The fixed-base hold was stopped as an active training direction. It is useful as a diagnostic because the hand-handle spherical joints are less explosive when the wheelchair root cannot move, but it can teach the wrong shortcut: the robot may learn to stand by loading the handles into an immovable chair instead of balancing its own body. That is not the primitive we want to transfer into a real free wheelchair.
 
 | Item | Value |
 |---|---|
 | Task ID | `Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_stand_attached/` |
-| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_stand_attached/2026-05-16_11-13-17_fixed_stand_attached_from_neutral_9649/` |
+| Diagnostic run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_stand_attached/2026-05-16_11-13-17_fixed_stand_attached_from_neutral_9649/` |
 | Warm start | neutral wheelchair-observed checkpoint `model_9649.pt` |
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
-| tmux | `unitree_g1_wheelchair_fixed_stand_attached_train` |
+| Code commit | `ee3a5d0 Add fixed-base wheelchair hold task` |
 
-Early fixed-base status is better than the free-chair attached run but not solved yet. The first saved checkpoint was `model_9650.pt`; by iteration `9709`, about half of the environments were timing out, `bad_orientation` had dropped to about `0.4565`, and the wheelchair velocity/tilt rewards were zero because the chair is fixed for this rung.
+Early fixed-base status was better than the free-chair attached run but not solved. The first saved checkpoint was `model_9650.pt`; by iteration `9709`, about half of the environments were timing out, `bad_orientation` had dropped to about `0.4565`, and the wheelchair velocity/tilt rewards were zero because the chair was fixed for this rung.
+
+Two free-wheelchair alternatives were tried next so the chair could stay physically movable while rewards biased it to remain stationary:
+
+| Task ID | Change | Status |
+|---|---|---|
+| `Unitree-G1-29dof-Wheelchair-Stationary-Stand-Attached` | Free wheelchair, hands attached, strong root position/height/heading, velocity, tilt, and wheel-ground penalties. | Stopped; it still collapsed from the neutral standing checkpoint with `bad_orientation` near `0.99`. |
+| `Unitree-G1-29dof-Wheelchair-Braked-Stationary-Stand-Attached` | Same stationary rewards plus wheel/caster velocity drives and light root damping. | Stopped; the braked free chair also collapsed early, with `bad_orientation` above `0.996`. |
+
+Those failures suggest the current jump is too large: stable neutral standing plus wheelchair observations is not enough to immediately add the handle arm pose, attached hands, and a free chair.
+
+The next bridge removed the wheelchair entirely and asked the robot to stand with the full handle-reaching arm pose. There was no wheelchair support and no hand-handle joint, so the policy had to balance its own body. That full pose was still too abrupt: it loaded the plain standing checkpoint, but after a few PPO updates `bad_orientation` climbed to about `0.94`, so the run was stopped.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Stand-Handle-Arms` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand_handle_arms/` |
+| Stopped run | `logs/rsl_rl/unitree_g1_29dof_stand_handle_arms/2026-05-16_11-29-54_stand_handle_arms_from_plain_8150/` |
+| Warm start | plain standing checkpoint `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/model_8150.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand_handle_arms/from_plain_stand_8150/model_8150.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
+| Code commit | `e3092b7 Add handle-arm standing bridge` |
+| tmux | stopped `unitree_g1_stand_handle_arms_train` |
+
+The active replacement is `Unitree-G1-29dof-Stand-Reach-Arms`. It uses the same no-chair standing task, but the arm reset pose is only `35%` of the way from the neutral G1 arm pose to the full handle pose. This keeps the important constraint from the fixed-base discussion: the robot cannot lean on a fixed chair. It also turns the posture change into a smaller curriculum step before trying the full handle pose again.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Stand-Reach-Arms` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/2026-05-16_11-34-15_stand_reach_arms_from_plain_8150/` |
+| Warm start | plain standing checkpoint `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/model_8150.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand_reach_arms/from_plain_stand_8150/model_8150.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
+| Code commit | `4a29cc5 Add partial arm reach standing bridge` |
+| tmux | `unitree_g1_stand_reach_arms_train` |
+
+Early status is better than the full handle-arm run: around iteration `8169`, normal timeouts were about `0.80` and `bad_orientation` was about `0.18`. This is not solved yet, but it is no longer the immediate collapse seen with the free-chair attached and full-handle standing attempts.
+
+If this partial-reach rung reaches full-horizon standing, the next steps are: full handle-arm standing, then wheelchair-observed standing with handle arms, then free stationary wheelchair with hand-handle attachment.
 
 Plain standing launch:
 
@@ -1033,16 +1072,16 @@ python scripts/rsl_rl/train.py \
   --max_iterations 1500
 ```
 
-Planned launch shape:
+Partial-reach bridge launch:
 
 ```bash
 python scripts/rsl_rl/train.py \
   --headless \
-  --task Unitree-G1-29dof-Wheelchair-Fixed-Stand-Attached \
+  --task Unitree-G1-29dof-Stand-Reach-Arms \
   --resume \
-  --load_run from_neutral_stand_9649 \
-  --checkpoint model_9649.pt \
+  --load_run from_plain_stand_8150 \
+  --checkpoint model_8150.pt \
   --load_model_only \
-  --run_name fixed_stand_attached_from_neutral_9649 \
+  --run_name stand_reach_arms_from_plain_8150 \
   --max_iterations 1500
 ```
