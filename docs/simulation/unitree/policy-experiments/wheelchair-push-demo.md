@@ -489,3 +489,66 @@ Recorded and emailed on May 15, 2026 from the soft straight-line run:
 The soft straight-line run was stopped after this checkpoint because the live training metrics had `bad_orientation` near `1.0`, indicating the continuation was no longer improving the gait. The current best path is likely not simply "train longer" with the same reward stack; it needs a gentler curriculum or better wheelchair/handle observations so the policy can correct veering without losing walking stability.
 
 This is a first version. If it learns too slowly, the next likely changes are to add wheelchair-relative handle observations to the policy, reduce the initial chair speed target, add a short grip/settle curriculum before pushing speed is rewarded, or temporarily lower chair mass/friction while the agent learns contact.
+
+## Observed Dynamic Push Variant
+
+Added on May 15, 2026 after the `model_16000.pt` soft straight-line preview still veered left and then became unstable. The problem with the prior dynamic task was that the wheelchair was only used by rewards; the policy could not directly observe chair pose, chair velocity, chair heading, handle position, or wrist-to-handle error. That made straight-line penalties hard to satisfy without damaging the walking gait.
+
+The new task is registered as:
+
+`Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed`
+
+It adds these policy and critic observation terms:
+
+| Term | Shape with history | Purpose |
+|---|---:|---|
+| `wheelchair_root_state` | `45` | Chair position, relative velocity, forward direction, yaw rate, and centerline error |
+| `wheelchair_handle_state` | `60` | Left/right handle positions in robot-root frame plus wrist-to-handle errors |
+
+The old dynamic task remains at policy observation `(480,)` and critic observation `(495,)`. The observed task is policy observation `(585,)` and critic observation `(600,)`, so older checkpoints cannot be loaded directly. The first actor/critic input layer was expanded with zero-filled columns for the new observation terms:
+
+```bash
+TERM=xterm conda run -n isaaclab python scripts/rsl_rl/expand_input_checkpoint.py \
+  logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push/2026-05-15_17-32-53_dynamic_push_four_wheel_ground_resume_14999/model_15700.pt \
+  logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/from_dynamic_four_wheel_model_15700/model_15700.pt \
+  --actor-input-dim 585 \
+  --critic-input-dim 600
+```
+
+`model_16000.pt` was also expanded first, but that checkpoint already carried the collapsed gait from the soft straight-line run (`bad_orientation` around `1.0`), so it was abandoned. A first observed resume from `model_15700.pt` using the normal PPO settings also destabilized action updates, so the observed task was changed into a conservative adaptation stage:
+
+| Setting | Value |
+|---|---|
+| Training command range | `0.15-0.35 m/s` forward only |
+| Playback command | `0.3 m/s` forward only |
+| PPO learning rate | `1e-4` |
+| PPO clip | `0.1` |
+| PPO epochs | `2` |
+| PPO desired KL | `0.005` |
+
+Active conservative run:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --resume \
+  --load_run from_dynamic_four_wheel_model_15700 \
+  --checkpoint model_15700.pt \
+  --load_model_only \
+  --run_name dynamic_push_observed_conservative_from_15700
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700/`
+
+Training tmux:
+
+`unitree_g1_wheelchair_dynamic_push_observed_train`
+
+Launch log:
+
+`logs/rsl_rl/unitree_g1_wheelchair_dynamic_push_observed_conservative_from_15700_20260515_204700.log`
+
+Early status: after the initial value/action-rate spike, the conservative run recovered by about iteration `15725`; value loss returned to normal, action-rate was around `-0.75`, reward was positive, and `bad_orientation` was around `0.20` rather than the `1.0` collapse seen in the `model_16000.pt` continuation.

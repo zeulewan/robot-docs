@@ -14,5 +14,6 @@ This folder tracks policy experiments separately from the base Unitree training 
 | [G1 wheelchair push demo](wheelchair-push-demo.md) | `Unitree-G1-29dof-Velocity` | Visual demo using the walking policy with a kinematic wheelchair prop. |
 | [G1 wheelchair handle-grip training](wheelchair-push-demo.md#handle-grip-training-task) | `Unitree-G1-29dof-Wheelchair-Push` | Warm-started from the walking policy; trains forward walking while wrist-yaw links stay near wheelchair handle targets. |
 | [G1 dynamic wheelchair push](wheelchair-push-demo.md#dynamic-wheelchair-push-training) | `Unitree-G1-29dof-Wheelchair-Dynamic-Push` | Warm-started from the handle-grip policy; trains a passive wheelchair to move forward through handle contact while penalizing non-handle contact. |
+| [G1 observed dynamic wheelchair push](wheelchair-push-demo.md#observed-dynamic-push-variant) | `Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed` | Active conservative adaptation run; adds wheelchair pose/handle observations to correct veering without reward-only guessing. |
 
 New policy experiments should get their own page or subfolder here. Every variant should record its task ID, config file, command, checkpoint lineage, TensorBoard behavior, and playback notes.
