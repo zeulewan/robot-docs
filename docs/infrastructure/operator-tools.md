@@ -98,6 +98,17 @@ isaac-clip watch unitree-wheelchair-fixed-relaxed-stand-attached \
   --render
 ```
 
+To keep updating the page throughout training, use an interval watcher:
+
+```bash
+isaac-clip watch unitree-wheelchair-relaxed-push-attached \
+  --every-iterations 250 \
+  --view two_orbit \
+  --render
+```
+
+That command starts from the next interval after the current latest checkpoint. For example, if the latest checkpoint is `model_12300.pt` and the interval is `250`, the first render target is `model_12500.pt`, then `model_12750.pt`, `model_13000.pt`, and so on. It updates the latest-video page without sending email unless `--notify --to <email>` is added.
+
 Add `--notify --to <email>` when a short ready email should be sent after the checkpoint is rendered. The notification uses `gog`; keep provider credentials/keyring material out of docs and project config.
 
 The default `unitree-wheelchair-attached` view currently uses:

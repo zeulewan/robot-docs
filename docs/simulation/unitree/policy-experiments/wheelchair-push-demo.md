@@ -1123,6 +1123,33 @@ The immediate collision-clearance fix narrowed the seat collision from `0.48 x 0
 
 Follow-up on May 16, 2026: the fixed-base relaxed attached diagnostic was changed to test a straighter wrist posture. The hand-handle attachment collision mask was disabled for this temporary diagnostic, so the rubber hand and handle can collide instead of being filtered. The wrist deviation reward now targets explicit zero wrist roll/pitch/yaw instead of the reset/default wrist pose, the fixed-base relaxed task strengthens that term to `-0.25`, and wrist action authority is reduced from `0.03` to `0.015`. This should bias the learned hold toward straight wrists while still allowing small corrections.
 
+After the fixed-base attached standing policy looked stable, training moved into a walking/pushing phase. The new task is `Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached`. It keeps the hard spherical hand-to-handle attachments and the relaxed arm action scales from the successful standing diagnostic, but switches the wheelchair back to a free dynamic root and restores forward wheelchair velocity/progress rewards. The point is to warm-start from the stable attached stand instead of asking a cold policy to solve standing, hand constraints, and chair motion at the same time.
+
+| Item | Value |
+|---|---|
+| Walking task | `Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/2026-05-16_19-21-50_relaxed_push_attached_from_fixed_stand_12250/` |
+| Warm start | fixed-base relaxed attached standing `model_12250.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/warmstart_fixed_relaxed_stand_12250/model_12250.pt` |
+| Training tmux | `unitree_g1_wheelchair_relaxed_push_attached_train` |
+| Auto-preview tmux | `isaac_clip_watch_wheelchair_walk_250` |
+
+The active auto-preview watcher updates the latest-video site every `250` training iterations:
+
+```bash
+isaac-clip watch unitree-wheelchair-relaxed-push-attached \
+  --every-iterations 250 \
+  --view two_orbit \
+  --render
+```
+
+At setup time the new walking run had produced `model_12300.pt`, so the first automatic preview target was `model_12500.pt`. The watcher then advances to `model_12750.pt`, `model_13000.pt`, and so on. The watcher uses the `site` provider, so it replaces the embedded video at:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
 Plain standing launch:
 
 ```bash
