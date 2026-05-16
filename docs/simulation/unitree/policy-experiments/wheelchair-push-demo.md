@@ -267,6 +267,30 @@ TERM=xterm timeout 240s conda run -n isaaclab python scripts/rsl_rl/train.py \
 
 The smoke test completed and resolved the observed task with policy observation shape `(585,)`, critic observation shape `(600,)`, and the handle state still at `(60,)`, now computed from the two rubber-hand bodies.
 
+After the code change, the old observed training process was stopped at the latest saved checkpoint `model_17600.pt` because it had been launched before the rubber-hand-only rule existed. Training was restarted from that checkpoint with a fresh optimizer state so the new reward/contact semantics are active:
+
+```bash
+TERM=xterm python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed \
+  --resume \
+  --load_run 2026-05-15_20-47-07_dynamic_push_observed_conservative_from_15700 \
+  --checkpoint model_17600.pt \
+  --load_model_only \
+  --run_name dynamic_push_observed_rubber_hands_resume_17600 \
+  --max_iterations 3100
+```
+
+Run folder:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-04-24_dynamic_push_observed_rubber_hands_resume_17600/`
+
+Training tmux:
+
+`unitree_g1_wheelchair_dynamic_push_observed_train`
+
+Early restart status: the run loaded `left_rubber_hand` and `right_rubber_hand` for the handle observations/rewards, started at iteration `17600/20700`, and had `bad_orientation` at `0.0` in the first printed iterations. Reward initially dropped because the target body changed from wrist yaw links to rubber hands, so this continuation should be treated as an adaptation stage.
+
 Original dynamic-task smoke test command:
 
 ```bash
