@@ -101,6 +101,34 @@ The source visual model is the Free3D active manual wheelchair (`active-wheelcha
 
 The committed URDF is the physics source of truth. It uses primitive collisions for the chair body, passive rear wheel joints, passive front caster yaw/wheel joints, approximately `15.3 kg` total empty-chair mass, and fixed left/right handle frames near the push handles. The OBJ is visual-only.
 
+## Free3D Asset Turntable
+
+Recorded on May 15, 2026 to inspect the underlying downloaded wheelchair visual by itself, without the G1, contact helpers, or policy playback:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/free3d-active-wheelchair-asset-two-orbits.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Renderer | `scripts/assets/render_wheelchair_asset_turntable.py` |
+| Code commit | `c542cfc Add wheelchair asset turntable renderer` |
+| Visual mesh | `assets/objects/wheelchair/free3d_active_wheelchair/visual/active_wheelchair.obj` |
+| Docs asset | `docs/assets/free3d-active-wheelchair-asset-two-orbits.mp4` |
+| Output video | `logs/asset_turntables/free3d_active_wheelchair_two_orbits.mp4` |
+
+The renderer is a lightweight software turntable for the normalized OBJ/MTL visual asset. It uses the same local Free3D visual mesh as the playback demos and renders two complete revolutions at `1280x720`, `24 fps`, and `12 s`.
+
+```bash
+TERM=xterm conda run -n isaaclab python scripts/assets/render_wheelchair_asset_turntable.py \
+  --output logs/asset_turntables/free3d_active_wheelchair_two_orbits.mp4 \
+  --width 1280 \
+  --height 720 \
+  --fps 24 \
+  --duration 12 \
+  --turns 2
+```
+
 ## First Handle-Grip Run
 
 Started on May 15, 2026:
