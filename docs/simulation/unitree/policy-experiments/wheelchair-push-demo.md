@@ -378,6 +378,30 @@ Run folder:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-36-27_dynamic_push_observed_wrist_alignment_resume_18300/`
 
+## Model 18700 Wrist-Alignment Preview
+
+Recorded and emailed on May 15, 2026 from the wrist-alignment restart, using the same `720` degree two-orbit follow camera as the previous comparison clip:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-wrist-alignment-model-18700-two-orbits.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-36-27_dynamic_push_observed_wrist_alignment_resume_18300/model_18700.pt` |
+| Demo output | `logs/demos/wheelchair_wrist_alignment_model_18700_20260515_225254/model_18700_latest.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-wrist-alignment-model-18700-two-orbits.mp4` |
+| Email message id | `19e2eb5773838dbf` |
+
+Render command:
+
+```bash
+CHECKPOINT=/home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-36-27_dynamic_push_observed_wrist_alignment_resume_18300/model_18700.pt \
+VIDEO_LENGTH=600 \
+VIDEO_CAMERA_ORBIT_DEG=720 \
+./scripts/rsl_rl/send_latest_wheelchair_video.sh
+```
+
 Original dynamic-task smoke test command:
 
 ```bash
