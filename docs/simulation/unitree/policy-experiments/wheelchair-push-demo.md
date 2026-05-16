@@ -498,6 +498,10 @@ The new task is registered as:
 
 `Unitree-G1-29dof-Wheelchair-Dynamic-Push-Observed`
 
+Code commit:
+
+`bf09da1 Add observed wheelchair push task`
+
 It adds these policy and critic observation terms:
 
 | Term | Shape with history | Purpose |
