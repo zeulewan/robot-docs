@@ -166,7 +166,7 @@ disabled
 Reusable wrappers are summarized in [Operator Tools](operator-tools.md).
 
 ```bash
-# Render latest fixed-base relaxed wheelchair checkpoint and email the MP4
+# Render latest fixed-base relaxed wheelchair checkpoint and update the latest-video page
 isaac-clip send unitree-wheelchair-fixed-relaxed-stand-attached
 
 # Inspect available playback views
