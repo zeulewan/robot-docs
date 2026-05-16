@@ -1121,6 +1121,8 @@ The immediate collision-clearance fix narrowed the seat collision from `0.48 x 0
 | New run name | `fixed_relaxed_stand_attached_collision_clearance_from_11250` |
 | Preview video | `logs/demos/unitree-wheelchair-collision-clearance_model_11250_slow_revolve_20260516_172016/model_11250_collision_clearance_slow_revolve.mp4` |
 
+Follow-up on May 16, 2026: the fixed-base relaxed attached diagnostic was changed to test a straighter wrist posture. The hand-handle attachment collision mask was disabled for this temporary diagnostic, so the rubber hand and handle can collide instead of being filtered. The wrist deviation reward now targets explicit zero wrist roll/pitch/yaw instead of the reset/default wrist pose, the fixed-base relaxed task strengthens that term to `-0.25`, and wrist action authority is reduced from `0.03` to `0.015`. This should bias the learned hold toward straight wrists while still allowing small corrections.
+
 Plain standing launch:
 
 ```bash
