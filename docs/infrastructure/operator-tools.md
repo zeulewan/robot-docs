@@ -45,7 +45,22 @@ More detail: [Sunshine Streaming](workstation/sunshine.md) and [GPU & Display Co
 | `gog` | Send the rendered MP4 by email using the local `gog` CLI. |
 | `file` | Render/archive the MP4 and metadata without sending email. |
 
-The CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`.
+The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`.
+
+There may also be small local wrapper commands in `/home/zeul/bin` for the active experiment. These are convenience presets only; they call `isaac-clip` underneath. The current wheelchair standing wrapper is:
+
+```bash
+# Short preview of the active relaxed attached wheelchair run
+wvid
+
+# Longer orbit preview of the same project
+wvid orbit
+
+# Show the selected run/checkpoint/render command without rendering
+wvid --dry-run
+```
+
+`wvid` currently expands to the `unitree-wheelchair-relaxed-stand-attached` project and its default `startup_failure` view. Use `isaac-clip` directly when switching projects or inspecting presets.
 
 Project presets live in:
 
@@ -53,23 +68,24 @@ Project presets live in:
 ~/.config/isaac-clip/projects.toml
 ```
 
-The important attached-wheelchair preset is:
+The important attached-wheelchair presets are:
 
 ```bash
-# Render the latest checkpoint and email the video
+# Current relaxed attached standing run
+isaac-clip send unitree-wheelchair-relaxed-stand-attached
+isaac-clip send unitree-wheelchair-relaxed-stand-attached --view two_orbit
+isaac-clip views unitree-wheelchair-relaxed-stand-attached
+isaac-clip checkpoints unitree-wheelchair-relaxed-stand-attached
+
+# Older attached-push run
 isaac-clip send unitree-wheelchair-attached
 
-# Same project, shorter view
-isaac-clip send unitree-wheelchair-attached --view short_best
-
-# Inspect available views
+# Inspect available views/checkpoints
 isaac-clip views unitree-wheelchair-attached
-
-# Inspect recent checkpoints
 isaac-clip checkpoints unitree-wheelchair-attached
 
 # Print the render command without running it
-isaac-clip send unitree-wheelchair-attached --dry-run
+isaac-clip send unitree-wheelchair-relaxed-stand-attached --dry-run
 ```
 
 The default `unitree-wheelchair-attached` view currently uses:

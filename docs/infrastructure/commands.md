@@ -166,6 +166,12 @@ disabled
 Reusable wrappers are summarized in [Operator Tools](operator-tools.md).
 
 ```bash
+# Short wrapper for the current relaxed attached wheelchair standing run
+wvid
+
+# Same thing, but show what would run first
+wvid --dry-run
+
 # Render latest attached-wheelchair checkpoint and email the MP4
 isaac-clip send unitree-wheelchair-attached
 
