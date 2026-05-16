@@ -938,7 +938,7 @@ Standing changes:
 | Wheelchair | Reward zero chair forward velocity and penalize chair XY/yaw velocity, centerline drift, tilt, and wheel/caster height error. |
 | Randomization | Disable added torso mass during this first balance phase. |
 | Action scale | Reduce leg/waist action scale to `0.12` and keep arm action scale at `0.0` so the first stand phase cannot flail as aggressively. |
-| PPO update | Use a conservative fine-tune: learning rate `3e-5`, clip `0.05`, one learning epoch, entropy `0.001`, max grad norm `0.25`, and no action-rate reward. |
+| PPO update | Use a cold fine-tune: learning rate `1e-6`, clip `0.01`, one learning epoch, entropy `0.0`, max grad norm `0.05`, and no action-rate reward. |
 
 The intended curriculum is: train this standing task until `bad_orientation` stays low and the video shows quiet balance, then use that checkpoint to warm-start the attached push task again. This is a pretrain stage, not the final wheelchair-pushing objective.
 
@@ -946,7 +946,46 @@ An initial attempt warm-started from the latest attached-push checkpoint, `model
 
 The first observed-checkpoint attempt started with `bad_orientation` around `0.17`, then collapsed to about `0.99` after the first PPO update. The cause was optimizer shock: the objective changed from moving/pushing to zero-motion standing, while the action-rate reward produced very large penalties. The standing runner now disables that reward and uses a smaller PPO update.
 
-The attached constraint still proved too hard at reset. The next lower curriculum rung is `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed`: same wheelchair scene and same observed policy shape, but no spherical hand-handle joint yet. That stage should learn quiet zero-command standing with the arms held in the handle pose before reintroducing the physical attachment.
+The attached constraint still proved too hard at reset. The next lower curriculum rung was `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed`: same wheelchair scene and same observed policy shape, but no spherical hand-handle joint yet. That stage starts stable but still drifts into `bad_orientation` when warm-started from the push-adapted `model_19000.pt`; it is too much of an objective change from pushing to standing.
+
+The lower rung added after that is a plain standing task:
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Stand` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand/` |
+| Warm start | walking checkpoint `logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/model_7200.pt` |
+| Cold warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand/warmstart_walk_7200_cold/model_7200.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
+| tmux | `unitree_g1_stand_train` |
+
+This task removes the wheelchair entirely, commands exactly zero base velocity, disables gait and foot-clearance rewards, freezes the arm action scale, keeps only low leg/waist action authority, and adds the same explicit fall penalty for `bad_orientation` and `base_height`. The cold checkpoint copy preserves the walking policy weights but lowers action noise to `0.02`.
+
+Initial status from the plain standing run was healthy: `bad_orientation = 0.0`, `base_height = 0.0`, `fall_termination = 0.0`, and episode length climbed toward the full `10 s` horizon. This is now the first curriculum stage. The intended order is plain stand, wheelchair-observed stand, attached stand, then attached push.
+
+Plain standing launch:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Stand \
+  --resume \
+  --load_run warmstart_walk_7200_cold \
+  --checkpoint model_7200.pt \
+  --load_model_only \
+  --run_name stand_from_walk_7200_cold \
+  --max_iterations 1500
+```
+
+To move a plain standing checkpoint into the wheelchair-observed standing task, expand its first actor/critic input layers to the observed dimensions and keep the added observation columns zero-initialized:
+
+```bash
+python scripts/rsl_rl/expand_input_checkpoint.py \
+  logs/rsl_rl/unitree_g1_29dof_stand/<stand-run>/model_<iter>.pt \
+  logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_observed/from_plain_stand_<iter>/model_<iter>.pt \
+  --actor-input-dim 585 \
+  --critic-input-dim 600
+```
 
 Observed standing launch:
 
@@ -955,10 +994,10 @@ python scripts/rsl_rl/train.py \
   --headless \
   --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Observed \
   --resume \
-  --load_run warmstart_observed_19000 \
-  --checkpoint model_19000.pt \
+  --load_run from_plain_stand_<iter> \
+  --checkpoint model_<iter>.pt \
   --load_model_only \
-  --run_name stand_observed_from_19000_conservative \
+  --run_name stand_observed_from_plain_stand_<iter> \
   --max_iterations 1500
 ```
 
