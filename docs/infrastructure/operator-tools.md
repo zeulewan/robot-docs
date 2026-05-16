@@ -9,7 +9,7 @@ These are convenience wrappers around repeatable workstation operations. They sh
 | Tool | Purpose | Normal command |
 |---|---|---|
 | `stream-desktop` | Start/stop Sunshine + GNOME X11 for Moonlight remote desktop. | `stream-desktop start` / `stream-desktop stop` |
-| `isaac-runclip` | Render, archive, and send Isaac Lab policy playback videos from project presets. | `isaac-runclip send unitree-wheelchair-attached` |
+| `isaac-clip` | Render, archive, and send Isaac Lab policy playback videos from project presets. | `isaac-clip send unitree-wheelchair-attached` |
 
 ## Remote Desktop: `stream-desktop`
 
@@ -36,40 +36,40 @@ Keep Sunshine autostart disabled. The normal workstation state is no desktop str
 
 More detail: [Sunshine Streaming](workstation/sunshine.md) and [GPU & Display Config](workstation/gpu-display.md).
 
-## Isaac Playback Videos: `isaac-runclip`
+## Isaac Playback Videos: `isaac-clip`
 
-`isaac-runclip` renders Isaac Lab policy playback videos from named project profiles. It can archive videos locally or send them through a provider. The current providers are:
+`isaac-clip` renders Isaac Lab policy playback videos from named project profiles. It can archive videos locally or send them through a provider. The current providers are:
 
 | Provider | Use |
 |---|---|
 | `gog` | Send the rendered MP4 by email using the local `gog` CLI. |
 | `file` | Render/archive the MP4 and metadata without sending email. |
 
-The CLI is installed as `isaac-runclip`. Its source repo is `zeulewan/isaac-runclip`; the local checkout is currently `/home/zeul/GIT/telecli`.
+The CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`.
 
 Project presets live in:
 
 ```text
-~/.config/isaac-runclip/projects.toml
+~/.config/isaac-clip/projects.toml
 ```
 
 The important attached-wheelchair preset is:
 
 ```bash
 # Render the latest checkpoint and email the video
-isaac-runclip send unitree-wheelchair-attached
+isaac-clip send unitree-wheelchair-attached
 
 # Same project, shorter view
-isaac-runclip send unitree-wheelchair-attached --view short_best
+isaac-clip send unitree-wheelchair-attached --view short_best
 
 # Inspect available views
-isaac-runclip views unitree-wheelchair-attached
+isaac-clip views unitree-wheelchair-attached
 
 # Inspect recent checkpoints
-isaac-runclip checkpoints unitree-wheelchair-attached
+isaac-clip checkpoints unitree-wheelchair-attached
 
 # Print the render command without running it
-isaac-runclip send unitree-wheelchair-attached --dry-run
+isaac-clip send unitree-wheelchair-attached --dry-run
 ```
 
 The default `unitree-wheelchair-attached` view currently uses:
@@ -85,10 +85,27 @@ The default `unitree-wheelchair-attached` view currently uses:
 
 The CLI writes both an MP4 and JSON metadata file. The metadata records the project, checkpoint, view settings, and exact render command so videos are reproducible.
 
+`isaac-clip` is not a training manager, but it has a render-time training guard. The default `--training-policy auto` checks for a running Isaac Lab `scripts/rsl_rl/train.py` process. If GPU telemetry has enough headroom, training keeps running while the video renders. If free GPU memory or GPU utilization crosses the configured thresholds, the CLI pauses the training process for the render and resumes it afterward.
+
+Useful overrides:
+
+```bash
+# Always render alongside training
+isaac-clip send unitree-wheelchair-attached --training-policy continue
+
+# Always pause training during the render, then resume it
+isaac-clip send unitree-wheelchair-attached --training-policy pause
+
+# Refuse to render if training is already running
+isaac-clip send unitree-wheelchair-attached --training-policy fail
+```
+
+The pause uses process signals, not checkpointing. It avoids compute contention but does not free training VRAM.
+
 Do not document or commit local email/keyring credentials. If the `gog` provider cannot unlock in a non-interactive shell, unlock the local keyring/session first or run the command from an interactive workstation shell.
 
 ## When To Use Which View
 
-Use `isaac-runclip` for policy playback videos that need to be shared or logged. Use Moonlight through `stream-desktop` when the goal is interactive inspection: Isaac Sim GUI, RViz2, `rtabmap_viz`, or any heavy 3D view that should render locally on the workstation and stream as compressed video.
+Use `isaac-clip` for policy playback videos that need to be shared or logged. Use Moonlight through `stream-desktop` when the goal is interactive inspection: Isaac Sim GUI, RViz2, `rtabmap_viz`, or any heavy 3D view that should render locally on the workstation and stream as compressed video.
 
 For Foxglove/Lichtblick over the browser, keep the view lightweight. Avoid heavy accumulated point clouds over the network unless explicitly debugging them.

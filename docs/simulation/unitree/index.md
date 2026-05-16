@@ -105,10 +105,10 @@ Useful scripts in `unitree_sim_isaaclab`:
 ./scripts/start_foxglove_light.sh 8765 # lightweight driving/overview bridge
 ```
 
-For one-command policy playback videos, use the workstation-level [`isaac-runclip`](../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-runclip) tool. The current attached-wheelchair preset renders the latest checkpoint and sends the MP4:
+For one-command policy playback videos, use the workstation-level [`isaac-clip`](../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-clip) tool. The current attached-wheelchair preset renders the latest checkpoint and sends the MP4:
 
 ```bash
-isaac-runclip send unitree-wheelchair-attached
+isaac-clip send unitree-wheelchair-attached
 ```
 
 ---

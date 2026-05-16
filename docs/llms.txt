@@ -44,7 +44,7 @@
 ### Commands
 
 - [Commands Reference](infrastructure/commands.md): Docker, ROS 2, Isaac Sim, tmux, and system commands.
-- [Operator Tools](infrastructure/operator-tools.md): Reusable local CLI wrappers, including `stream-desktop` for Moonlight/Sunshine and `isaac-runclip` for Isaac Lab playback videos.
+- [Operator Tools](infrastructure/operator-tools.md): Reusable local CLI wrappers, including `stream-desktop` for Moonlight/Sunshine and `isaac-clip` for Isaac Lab playback videos.
 
 ## Project
 
