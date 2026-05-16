@@ -1046,7 +1046,22 @@ The immediate wheelchair-attached retry used `Unitree-G1-29dof-Wheelchair-Braked
 
 This run still collapsed immediately with the hand-handle attachment active. Iteration `8400` already had short episodes and `bad_orientation` around `0.57`; by iteration `8401`, `bad_orientation` was about `0.998`, so the run was stopped. The current blocker is therefore not visualization: the free wheelchair and hand attachment are present, but the attached starting condition is still too hard for the policy.
 
-Next steps should adjust the attached starting condition itself, for example with a gentler attachment schedule, softer/longer constraint compliance if available, or a staged reset where the robot reaches the handles while the chair is nearby before the spherical joints become active.
+After that, commit `b0f32d9 Add relaxed wheelchair attached stand variants` added two diagnostic variants. `Unitree-G1-29dof-Wheelchair-Relaxed-Stand-Attached` keeps the braked dynamic wheelchair and hand-handle attachment, but restores arm action authority instead of freezing the arms. It also greatly relaxes the chair root, wheel-ground, velocity, and wrist-deviation penalties so the robot is not immediately punished for every small chair movement. `Unitree-G1-29dof-Wheelchair-Left-Hand-Relaxed-Stand-Attached` is the same diagnostic idea, but attaches only the left rubber hand to check whether the closed-chain two-hand constraint is the main source of startup preload.
+
+| Item | Value |
+|---|---|
+| Two-hand task ID | `Unitree-G1-29dof-Wheelchair-Relaxed-Stand-Attached` |
+| Left-hand task ID | `Unitree-G1-29dof-Wheelchair-Left-Hand-Relaxed-Stand-Attached` |
+| Two-hand reach-arm run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_stand_attached/2026-05-16_12-02-06_relaxed_stand_attached_from_reach_8400/` |
+| Left-hand reach-arm run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_left_hand_relaxed_stand_attached/2026-05-16_12-05-07_left_hand_relaxed_stand_attached_from_reach_8400/` |
+| Two-hand neutral run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_stand_attached/2026-05-16_12-06-40_relaxed_stand_attached_from_neutral_9649/` |
+| Sent preview | `logs/demos/unitree-wheelchair-relaxed-stand-attached_model_9650_startup_failure_20260516_120937/model_9650_startup_failure.mp4` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+| Code commit | `b0f32d9 Add relaxed wheelchair attached stand variants` |
+
+All three relaxed diagnostics were stopped. The two-hand run from the reach-arm checkpoint failed immediately with `bad_orientation` around `0.995+`. The one-hand diagnostic was slightly less violent, around `0.94-0.95`, but still failed. Retrying the relaxed two-hand task from the stable neutral wheelchair-observed checkpoint `model_9649.pt` also failed immediately, with `bad_orientation` near `0.9995` at the first update.
+
+The takeaway is that this is not just an arm-freezing mistake or an overly tight reward stack. Freeing the arms and relaxing the rewards did not recover standing, and the stable neutral wheelchair checkpoint also collapses once the hard hand-handle attachment is added. The next fix should target the attachment mechanics themselves: inspect the spherical USD joint frames, avoid reset preload, consider creating or enabling the hand-handle constraint after the robot has reached the handles, or replace the hard startup joint with a softer staged constraint.
 
 Plain standing launch:
 
