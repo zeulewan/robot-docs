@@ -101,6 +101,35 @@ The source visual model is the Free3D active manual wheelchair (`active-wheelcha
 
 The committed URDF is the physics source of truth. It uses primitive collisions for the chair body, passive rear wheel joints, passive front caster yaw/wheel joints, approximately `15.3 kg` total empty-chair mass, and fixed left/right handle frames near the push handles. The OBJ is visual-only.
 
+## Training Collision Proxy Turntable
+
+Recorded on May 15, 2026 to inspect the actual wheelchair proxy the dynamic push policies train against: the primitive collision/articulation model from the URDF, without the detailed Free3D visual mesh.
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/active-manual-wheelchair-training-collision-two-orbits.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Renderer | `scripts/assets/render_wheelchair_asset_turntable.py --mode training-collision` |
+| Code commit | `9312b00 Render wheelchair training collision proxy` |
+| URDF source | `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair.urdf` |
+| Docs asset | `docs/assets/active-manual-wheelchair-training-collision-two-orbits.mp4` |
+| Output video | `logs/asset_turntables/active_manual_wheelchair_training_collision_two_orbits.mp4` |
+
+The policy does not learn contact from the detailed OBJ visual mesh. It learns against this URDF articulation: the box seat/back/frame/handle collisions, rear-wheel cylinders, front-caster cylinders, passive joints, masses, and contact sensors. The turntable uses brighter inspection colors, but the shapes and poses come from the training URDF collision geometry.
+
+```bash
+TERM=xterm conda run -n isaaclab python scripts/assets/render_wheelchair_asset_turntable.py \
+  --mode training-collision \
+  --output logs/asset_turntables/active_manual_wheelchair_training_collision_two_orbits.mp4 \
+  --width 1280 \
+  --height 720 \
+  --fps 24 \
+  --duration 12 \
+  --turns 2
+```
+
 ## Free3D Asset Turntable
 
 Recorded on May 15, 2026 to inspect the underlying downloaded wheelchair visual by itself, without the G1, contact helpers, or policy playback:
