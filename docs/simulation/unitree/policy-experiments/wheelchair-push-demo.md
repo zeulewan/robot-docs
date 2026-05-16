@@ -954,14 +954,16 @@ The lower rung added after that is a plain standing task:
 |---|---|
 | Task ID | `Unitree-G1-29dof-Stand` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_stand/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/` |
 | Warm start | walking checkpoint `logs/rsl_rl/unitree_g1_29dof_velocity/2026-03-06_14-30-46/model_7200.pt` |
 | Cold warm-start copy | `logs/rsl_rl/unitree_g1_29dof_stand/warmstart_walk_7200_cold/model_7200.pt` |
+| First saved checkpoint | `logs/rsl_rl/unitree_g1_29dof_stand/2026-05-16_02-45-11_stand_from_walk_7200_cold/model_7250.pt` |
 | Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/standing_env_cfg.py` |
 | tmux | `unitree_g1_stand_train` |
 
 This task removes the wheelchair entirely, commands exactly zero base velocity, disables gait and foot-clearance rewards, freezes the arm action scale, keeps only low leg/waist action authority, and adds the same explicit fall penalty for `bad_orientation` and `base_height`. The cold checkpoint copy preserves the walking policy weights but lowers action noise to `0.02`.
 
-Initial status from the plain standing run was healthy: `bad_orientation = 0.0`, `base_height = 0.0`, `fall_termination = 0.0`, and episode length climbed toward the full `10 s` horizon. This is now the first curriculum stage. The intended order is plain stand, wheelchair-observed stand, attached stand, then attached push.
+Initial status from the plain standing run was healthy: by `model_7250`, `bad_orientation = 0.0`, `base_height = 0.0`, `fall_termination = 0.0`, and episode length reached the full `10 s` horizon. This is now the first curriculum stage. The intended order is plain stand, wheelchair-observed stand, attached stand, then attached push.
 
 Plain standing launch:
 
