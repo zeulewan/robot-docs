@@ -1110,6 +1110,17 @@ Archived video:
 logs/demos/unitree-wheelchair-urdf-proxy_model_11100_slow_revolve_20260516_170039/model_11100_urdf_proxy_slow_revolve.mp4
 ```
 
+After reviewing that proxy render, the handle collision boxes were found to overlap the backrest collision in the side lanes where the hands attach. Each handle overlapped the backrest by roughly `6.5 cm` in X, `3.75 cm` in Y, and `4.7 cm` in Z. That meant the hard hand-handle attachment could pull the hand into the chair back collision, which looked like the hands were fighting the seat/back rather than simply holding the handles.
+
+The immediate collision-clearance fix narrowed the seat collision from `0.48 x 0.46 x 0.08` to `0.48 x 0.38 x 0.08`, narrowed the backrest collision from `0.07 x 0.50 x 0.44` to `0.07 x 0.32 x 0.44`, and shrank each handle collision box from `0.18 x 0.055 x 0.055` to `0.12 x 0.04 x 0.04`. The handle frame origins stayed at `z=0.92029`, so the hand-handle startup alignment stayed at about `0.5 mm` instead of reintroducing the old snap.
+
+| Item | Value |
+|---|---|
+| Resume checkpoint | `model_11250.pt` |
+| Restarted tmux | `unitree_g1_wheelchair_fixed_relaxed_stand_attached_collision_clearance_train` |
+| New run name | `fixed_relaxed_stand_attached_collision_clearance_from_11250` |
+| Preview video | `logs/demos/unitree-wheelchair-collision-clearance_model_11250_slow_revolve_20260516_172016/model_11250_collision_clearance_slow_revolve.mp4` |
+
 Plain standing launch:
 
 ```bash
