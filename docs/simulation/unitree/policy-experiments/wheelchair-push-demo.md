@@ -291,6 +291,30 @@ Training tmux:
 
 Early restart status: the run loaded `left_rubber_hand` and `right_rubber_hand` for the handle observations/rewards, started at iteration `17600/20700`, and had `bad_orientation` at `0.0` in the first printed iterations. Reward initially dropped because the target body changed from wrist yaw links to rubber hands, so this continuation should be treated as an adaptation stage.
 
+## Model 18000 Rubber-Hand Preview
+
+Recorded and emailed on May 15, 2026 from the rubber-hand-only restart:
+
+<video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
+  <source src="../../../assets/g1-wheelchair-rubber-hands-model-18000-latest.mp4" type="video/mp4">
+</video>
+
+| Item | Value |
+|---|---|
+| Checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_push_observed/2026-05-15_22-04-24_dynamic_push_observed_rubber_hands_resume_17600/model_18000.pt` |
+| Demo output | `logs/demos/wheelchair_latest_20260515_222030/model_18000_latest.mp4` |
+| Docs asset | `docs/assets/g1-wheelchair-rubber-hands-model-18000-latest.mp4` |
+| Sender script | `scripts/rsl_rl/send_latest_wheelchair_video.sh` |
+| Script commit | `15d935c Add latest wheelchair video sender` |
+
+This clip was produced with the repeatable sender script, which finds the latest checkpoint in the rubber-hand run, renders a short follow-camera playback, copies the MP4 to `logs/demos/`, and emails it with the local `gog` setup.
+
+```bash
+./scripts/rsl_rl/send_latest_wheelchair_video.sh
+```
+
+The script accepts overrides through environment variables such as `RUN_DIR`, `CHECKPOINT`, `EMAIL_TO`, `SEND_EMAIL=0`, `VIDEO_LENGTH`, and `VIDEO_CAMERA_ORBIT_DEG`. It intentionally does not store local keyring passwords or OAuth details.
+
 Original dynamic-task smoke test command:
 
 ```bash
