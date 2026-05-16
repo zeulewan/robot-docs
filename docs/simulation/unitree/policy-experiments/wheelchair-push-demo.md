@@ -914,3 +914,42 @@ Short preview with the tuned startup geometry:
 | Docs asset | `docs/assets/g1-wheelchair-attached-start-pose-tuned-model-20100-preview.mp4` |
 
 This change affects new play/training processes. The training process that was already running when the edit was made still had the previous task config loaded in memory.
+
+## Standing-First Attached Pretrain
+
+Added on May 16, 2026 after the latest attached-hands playback showed the robot could not reliably stand still with the wheelchair constraint. The previous attached task still requested slow forward motion and kept walking-shaped incentives such as gait and foot clearance. That made the policy solve balance, hand anchoring, and pushing at the same time.
+
+The new pretrain stage isolates the first skill:
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_dynamic_stand_attached/` |
+| Warm start target | latest attached checkpoint, currently `model_21999.pt` |
+| Config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
+
+Standing changes:
+
+| Area | Change |
+|---|---|
+| Command | Set base velocity command to exactly zero: no forward, lateral, or yaw motion. |
+| Locomotion rewards | Keep zero-velocity tracking, alive, upright orientation, base height, feet contact, and smooth action terms. |
+| Walking incentives | Disable gait and foot-clearance rewards so the policy is not encouraged to step just to earn gait reward. |
+| Wheelchair | Reward zero chair forward velocity and penalize chair XY/yaw velocity, centerline drift, tilt, and wheel/caster height error. |
+| Randomization | Disable added torso mass during this first balance phase. |
+
+The intended curriculum is: train this standing task until `bad_orientation` stays low and the video shows quiet balance, then use that checkpoint to warm-start the attached push task again. This is a pretrain stage, not the final wheelchair-pushing objective.
+
+Planned launch shape:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Dynamic-Stand-Attached \
+  --resume \
+  --load_run warmstart_attached_21999 \
+  --checkpoint model_21999.pt \
+  --load_model_only \
+  --run_name stand_attached_from_21999 \
+  --max_iterations 1500
+```
