@@ -1094,6 +1094,8 @@ The next diagnostic is `Unitree-G1-29dof-Wheelchair-Fixed-Relaxed-Stand-Attached
 
 Early fixed-base relaxed status is significantly better than the free-chair relaxed run. At iteration `9668`, `bad_orientation` was about `0.455`, `base_height` was near zero, timeout was about `0.545`, mean episode length was about `365` steps, and mean reward was positive at about `29.1`. This is not a final transferable solution because the chair root is fixed, but it is a useful bridge checkpoint candidate if it continues improving.
 
+While reviewing the fixed-base preview, we noticed a visible two-step startup: the hands appear off the handles at the start of the clip, then snap onto the handles shortly after physics begins. That points to startup/reset preload in the hand-handle constraint path. The attachment helper now supports anchoring the joint frames directly at the robot hand and wheelchair handle body origins, and the attached-wheelchair tasks enable that mode. The intent is to avoid deriving a joint offset from the transient pose visible during Isaac startup. Any already-running training process must be restarted before it picks up this code change.
+
 Plain standing launch:
 
 ```bash
