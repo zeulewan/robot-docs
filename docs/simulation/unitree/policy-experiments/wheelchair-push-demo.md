@@ -1331,6 +1331,8 @@ isaac_clip_watch_wheelchair_straight_startup_12300
 isaac_clip_watch_wheelchair_straight_startup_250
 ```
 
+The `model_12300.pt` startup-joint preview completed and replaced the latest-video page at `2026-05-17 01:40 EDT`. It is an early diagnostic, not a solved gait. The obvious left-circle failure from `model_13350.pt` is no longer the immediate visual mode, but the live scalars still show large straightness and invalid-contact penalties once the policy starts pushing. The active interval watcher is waiting for `model_12500.pt`.
+
 Plain standing launch:
 
 ```bash
