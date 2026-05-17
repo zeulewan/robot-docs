@@ -1428,6 +1428,10 @@ logs/demos/unitree-wheelchair-relaxed-push-attached-upright-constrained_model_12
 
 Training continued during this render because the `isaac-clip` auto guard reported enough GPU headroom. Around iteration `12852`, the scalar picture was still: full-length episodes, near-zero `bad_orientation`, near-zero chair tilt/wheel lift, positive wheelchair forward-velocity reward, and still-high invalid wheelchair contact. So the chair-planting part is working; the unresolved issue is still robot/chair contact and whether the walking gait is visually useful enough to continue this scaffold.
 
+The later `model_12900.pt` and `model_13000.pt` previews made the failure mode clear: the rendered policy is effectively stationary. The run was stopped after `model_13000.pt`, and the recurring watcher was stopped too. A raw playback diagnostic on `model_13000.pt` reported `command_x_mean=0.1400 m/s` but `forward_mean=-0.0357 m/s`, with `0.0%` of samples within `0.05 m/s` of the target and only `0.8%` within `0.10 m/s`. So the positive training scalar was not translating into a usable deterministic checkpoint policy.
+
+The same playback also kept printing PhysX warnings that the hand-handle joints were created with disjoint body transforms and may snap objects together. Treat this upright rail branch as a failed scaffold: it plants the chair, but the deployable policy is not pushing. The next attempt should fix the hand/handle joint alignment and contact geometry first, or use a less artificial chair stabilizer that does not let the training reward look good while the mean policy stays still.
+
 Plain standing launch:
 
 ```bash
