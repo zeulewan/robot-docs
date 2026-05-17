@@ -1414,6 +1414,20 @@ isaac_clip_watch_wheelchair_upright_lean_250
 
 At startup, the reward table shows the planted-chair terms doing what they are supposed to do: `wheelchair_tilt` and `wheelchair_wheel_ground_height` are effectively zero. The early thing to watch is visual gait quality and `wheelchair_invalid_contact`; if invalid contact stays high, the next fix should target robot-chair collision geometry or attachment placement rather than making the torso upright penalty stronger again.
 
+The `model_12800.pt` preview finished at `2026-05-17 03:57 EDT` and replaced the latest-video page:
+
+```text
+logs/demos/latest-site/latest.mp4
+```
+
+Archive:
+
+```text
+logs/demos/unitree-wheelchair-relaxed-push-attached-upright-constrained_model_12800_fixed_chase_20260517_035530/model_12800_fixed_chase.mp4
+```
+
+Training continued during this render because the `isaac-clip` auto guard reported enough GPU headroom. Around iteration `12852`, the scalar picture was still: full-length episodes, near-zero `bad_orientation`, near-zero chair tilt/wheel lift, positive wheelchair forward-velocity reward, and still-high invalid wheelchair contact. So the chair-planting part is working; the unresolved issue is still robot/chair contact and whether the walking gait is visually useful enough to continue this scaffold.
+
 Plain standing launch:
 
 ```bash
