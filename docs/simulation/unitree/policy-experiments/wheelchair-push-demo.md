@@ -1233,6 +1233,7 @@ A visual check was rendered with a stronger symmetric handle push so the motion 
 conda run --no-capture-output -n isaaclab python scripts/diagnostics/wheelchair_force_check.py \
   --headless \
   --video \
+  --show-wheelchair-urdf-proxy \
   --force 15 0 0 \
   --force-body '.*handle_frame' \
   --steps 400 \
@@ -1246,6 +1247,20 @@ https://workstation.tailee9084.ts.net:8002/
 ```
 
 The video run applied `15 N` to each handle frame. It produced mean forward velocity `0.112 m/s`, lateral absolute velocity `0.0028 m/s`, yaw absolute velocity `0.0071 rad/s`, and final displacement `0.926 m` with about `0.024 m` lateral drift.
+
+On May 17, 2026, the latest policy playback was also rendered with the URDF proxy visible and the downloaded Free3D visual mesh removed from the inspection path:
+
+```bash
+isaac-clip send unitree-wheelchair-relaxed-push-attached --training-policy auto
+```
+
+The rendered checkpoint was `model_13250.pt`, using the `two_orbit` view and `--show-wheelchair-urdf-proxy`. The latest-video page was updated at:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
+The video looked mechanically reasonable compared with earlier attempts, but the chair still veered left. A one-env reset check showed the palm grip points were aligned with the handle frames to about `5e-6 m`, so the immediate issue is more likely learned push/contact asymmetry and insufficient heading/centerline correction than the downloaded visual mesh.
 
 Plain standing launch:
 
