@@ -1507,17 +1507,17 @@ isaac_clip_watch_wheelchair_minimal_straight_every250
 
 First straight-reward preview: `model_12300.pt` replaced the latest-video page at `2026-05-17 05:03 EDT`. The result was still not good enough. A raw playback diagnostic with the command fixed at `0.14 m/s` reported `forward_mean=-0.0617 m/s`, `yaw_abs_mean=0.4063 rad/s`, final mean centerline offset about `-0.0686 m`, and only `9.1%` of samples within `0.05 m/s` of the target. The useful difference from the pure-velocity run is that the scalar reward is now explicitly punishing the circular solution: the line, yaw, root-heading, and forward-heading terms are strongly negative while the forward velocity term is positive. Continue to the next checkpoint before deciding whether this reward-only correction is enough.
 
-## Minimal Yaw-Locked Velocity Push
+## Minimal X-Rail Velocity Push
 
 Started on May 17, 2026 after the minimal straight-reward run still preferred the circular/left-turning exploit.
 
-This branch locks the wheelchair to a forward rail instead of trying to teach straightness through reward terms. The interval event `constrain_wheelchair_to_forward_rail` runs every environment step, fixing the wheelchair's lateral position and yaw while preserving its forward position and forward velocity. Robot-side shaping is still removed: the only nonzero rewards are wheelchair forward velocity and wheelchair forward progress. The robot also gets larger joint action authority and very loose fall/orientation reset guards, so it can discover any crude forward-pushing strategy before we add back gait quality, contact cleanliness, or chair-free-yaw behavior.
+This branch locks the wheelchair to an X-axis rail instead of trying to teach straightness through reward terms. The interval event `constrain_wheelchair_to_forward_rail` runs every environment step, fixing the wheelchair's lateral position, root height, roll, pitch, and yaw while zeroing lateral, vertical, roll/pitch, and yaw velocity. That leaves only forward/backward root translation free. Robot-side shaping is still removed: the only nonzero rewards are wheelchair forward velocity and wheelchair forward progress. The robot also gets larger joint action authority and very loose fall/orientation reset guards, so it can discover any crude forward-pushing strategy before we add back gait quality, contact cleanliness, or chair-free-yaw behavior.
 
 | Item | Value |
 |---|---|
 | Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-Yaw-Locked-Velocity-Push-Attached` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/` |
-| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/2026-05-17_14-38-52_minimal_yaw_locked_loose_guard_1024env_from_fixed_stand_12250/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/2026-05-17_17-26-18_minimal_x_rail_loose_guard_1024env_from_fixed_stand_12250/` |
 | Training env count | `1024` |
 | Warm start | fixed attached-stand checkpoint `model_12250.pt` |
 | Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/warmstart_palm_grip_fixed_stand_12250/model_12250.pt` |
@@ -1536,7 +1536,7 @@ conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
   --load_run warmstart_palm_grip_fixed_stand_12250 \
   --checkpoint model_12250.pt \
   --load_model_only \
-  --run_name minimal_yaw_locked_loose_guard_1024env_from_fixed_stand_12250
+  --run_name minimal_x_rail_loose_guard_1024env_from_fixed_stand_12250
 ```
 
 Active nonzero rewards:
