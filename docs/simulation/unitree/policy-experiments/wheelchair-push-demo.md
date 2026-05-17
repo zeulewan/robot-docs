@@ -1153,6 +1153,14 @@ At setup time the new walking run had produced `model_12300.pt`, so the first au
 https://workstation.tailee9084.ts.net:8002/
 ```
 
+On May 16, 2026, the walking continuation stopped at `model_12650.pt` before reaching the next watcher target. The trainer failed with `RuntimeError: normal expects all elements of std >= 0.0`, so the auto-preview watcher was stopped instead of waiting forever for `model_12750.pt`.
+
+The same review found that the G1 `left_rubber_hand` and `right_rubber_hand` links from the Unitree ROS URDF had visuals and inertials but no collision geometry. That made the task look like the wrists were doing the physical work: the spherical joints targeted the rubber-hand body names, but the hand link origin is at the palm joint and the rubber hand itself had no collider. The fix generates a temporary G1 URDF under `/tmp/IsaacLab/unitree_rl_lab/g1_29dof_hand_collision/` with small palm collision boxes added to both rubber-hand links, without modifying the upstream `unitree_ros` checkout.
+
+The attachment point was also moved from the hand body origin to a measured palm grip offset. `HAND_GRIP_LOCAL_POSITIONS` is now approximately `[0.05414, +/-0.00372, 0.00502]` in each rubber-hand frame, and the wheelchair root x offset moved from `0.728` to `0.782` so the handle frames line up with those palm points. The policy observation and hand/handle reward helpers were updated to use the same palm grip point instead of the raw rubber-hand origin. A one-env playback diagnostic reported about `5e-6 m` handle-to-grip error after reset, while the raw handle-to-hand-origin offset remained about `0.0545 m`; that confirms the visible attachment point is now the palm/hand, not the wrist-side body origin.
+
+The continuation PPO settings were also made more conservative for the next walking run: learning rate `1e-5`, desired KL `5e-4`, entropy coefficient `0.001`, and max grad norm `0.1`. The one-iteration smoke run constructs the task and reaches `Learning iteration 0/1`; PhysX still prints a hand-handle joint warning during reset, so preview videos should continue to be checked for startup snap, but the measured reset alignment is now at the palm grip point rather than the wrist/link origin.
+
 Plain standing launch:
 
 ```bash
