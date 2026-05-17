@@ -1306,7 +1306,30 @@ isaac-clip watch unitree-wheelchair-relaxed-push-attached-straight \
   --training-policy auto
 ```
 
-At launch it was waiting for `model_12500.pt`, then it will update the latest-video site and email after each rendered interval.
+At launch it was waiting for `model_12500.pt`, then it would update the latest-video site and email after each rendered interval.
+
+That first straight restart was stopped after checking the logs more closely. Even though the palm grip points were aligned with the handle frames to about `5e-6 m`, the hand-handle USD joints were still being recreated as reset events. That meant every failed episode could recreate the constraint while the robot/chair were already in a disturbed pose. Commit `c14eb0d` changes the hand-handle attachment event from reset-time creation to startup-time creation, so each environment gets persistent hand-handle joints and resets only reset the robot/chair states.
+
+The active clean restart is now:
+
+```text
+logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached_straight/2026-05-17_01-34-56_straight_startup_joint_from_fixed_stand_12250/
+```
+
+Training tmux:
+
+```text
+unitree_g1_wheelchair_straight_startup_joint_train
+```
+
+The early metrics looked materially better than the stopped straight run: by `model_12253` equivalent progress, `wheelchair_forward_line` was still near zero, `wheelchair_root_heading` was much smaller, and `bad_orientation` was about `0.05` instead of immediately heading into the prior circular behavior.
+
+Two preview watchers are active for this clean restart. The first renders and emails the initial `model_12300.pt` diagnostic, and the second continues with the normal `250`-iteration interval updates:
+
+```text
+isaac_clip_watch_wheelchair_straight_startup_12300
+isaac_clip_watch_wheelchair_straight_startup_250
+```
 
 Plain standing launch:
 
