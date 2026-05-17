@@ -1178,9 +1178,24 @@ python scripts/rsl_rl/train.py \
 
 Active run:
 
-`logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/2026-05-16_22-40-57_relaxed_push_attached_palm_grip_from_fixed_stand_12250/`
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/2026-05-16_22-40-59_relaxed_push_attached_palm_grip_from_fixed_stand_12250/`
 
 Early status is better than the `12500` restart but not solved: by about iteration `12258`, `bad_orientation` was about `0.125` and `wheelchair_invalid_contact` was about `-128`. The preview watcher now targets `model_12500.pt` for this new run.
+
+By `model_12650.pt`, the reward scalars still looked superficially encouraging for forward tracking, with `Episode_Reward/wheelchair_track_forward_velocity` staying around `1.0`, but a raw Isaac playback diagnostic showed the chair was not actually moving forward well. The diagnostic sampled `400` steps across `10` environments with the playback command fixed at `0.18 m/s`; the wheelchair forward velocity averaged `-0.033 m/s`, ranged from `-0.512` to `0.374 m/s`, and was within `0.10 m/s` of the command only about `9%` of the time. Lateral absolute velocity averaged `0.058 m/s` and yaw absolute velocity averaged `0.425 rad/s`. Treat this run as unstable/poor for actual pushing speed despite the reward printout.
+
+Raw velocity diagnostic command:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached \
+  --num_envs 10 \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/2026-05-16_22-40-59_relaxed_push_attached_palm_grip_from_fixed_stand_12250/model_12650.pt \
+  --print-wheelchair-speed-stats \
+  --speed-stats-steps 400 \
+  --show-wheelchair-urdf-proxy
+```
 
 Plain standing launch:
 
