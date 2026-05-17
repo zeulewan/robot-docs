@@ -1473,6 +1473,38 @@ The startup reward table confirmed the intended simplification: `wheelchair_trac
 
 A pre-training playback diagnostic on the warm-start checkpoint confirmed the command source was not the issue. With the playback command fixed at `0.14 m/s`, raw chair speed was still poor: `command_x_mean=0.1400 m/s`, `forward_mean=-0.0519 m/s`, only `7.2%` of samples were within `0.05 m/s`, and yaw absolute velocity was about `0.425 rad/s`. Early training metrics then started from a very small velocity reward and began rising, which is the expected behavior for this stripped-down diagnostic.
 
+The `model_12300.pt` preview showed the expected exploit: the wheelchair still twirled/circled instead of going straight forward. That does not mean the raw velocity reward was disconnected; it means the reward was underspecified. `wheelchair_track_forward_velocity` only looks at instantaneous world-X velocity, so it does not care if the chair is yawing, drifting sideways, or tracing a circle while sometimes producing useful X velocity.
+
+That pure-velocity run was stopped after the first preview. The replacement is `Unitree-G1-29dof-Wheelchair-Minimal-Straight-Velocity-Push-Attached`, added in commits `e570e2f` and `f99aebb`. It still avoids robot posture/gait/contact shaping, but adds only the chair terms needed to make "forward" mean straight forward: forward progress, lateral velocity, centerline error, yaw velocity, lateral heading error, and forward-axis heading error.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-Straight-Velocity-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_straight_velocity_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_straight_velocity_push_attached/2026-05-17_04-57-19_minimal_straight_velocity_from_fixed_stand_12250/` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt` |
+| Training tmux | `unitree_g1_wheelchair_minimal_straight_velocity_train` |
+| Preview project | `unitree-wheelchair-minimal-straight-velocity-push-attached` |
+
+Active reward weights in this replacement:
+
+| Reward | Weight |
+|---|---:|
+| `wheelchair_track_forward_velocity` | `6.0` |
+| `wheelchair_forward_progress` | `2.0` |
+| `wheelchair_lateral_velocity` | `-3.0` |
+| `wheelchair_forward_line` | `-15.0` |
+| `wheelchair_yaw_velocity` | `-2.0` |
+| `wheelchair_root_heading` | `-8.0` |
+| `wheelchair_forward_heading` | `-4.0` |
+
+Preview watchers:
+
+```text
+isaac_clip_watch_wheelchair_minimal_straight_12300
+isaac_clip_watch_wheelchair_minimal_straight_every250
+```
+
 Plain standing launch:
 
 ```bash
