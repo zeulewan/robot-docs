@@ -1197,6 +1197,36 @@ conda run --no-capture-output -n isaaclab python scripts/rsl_rl/play.py \
   --show-wheelchair-urdf-proxy
 ```
 
+The next check separated wheelchair physics from the learned policy. `scripts/diagnostics/wheelchair_force_check.py` creates the same task, disables the hand-handle attachment event, resets the robot `5 m` behind the chair, disables robot fall resets, applies a constant world-X force to selected wheelchair bodies, and prints raw chair motion. This checks whether the wheelchair asset itself can roll straight before tuning rewards or arm constraints.
+
+Base-link force check:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/diagnostics/wheelchair_force_check.py \
+  --headless \
+  --force 10 0 0 \
+  --force-body base_link \
+  --steps 400 \
+  --num-envs 10
+```
+
+Result: the wheelchair rolled forward and stayed straight. A `10 N` push on `base_link` produced mean forward velocity `0.0367 m/s`, lateral absolute velocity `0.0002 m/s`, yaw absolute velocity `0.0007 rad/s`, and final mean displacement `0.303 m` with only `0.0009 m` mean lateral drift.
+
+Symmetric handle force check:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/diagnostics/wheelchair_force_check.py \
+  --headless \
+  --force 5 0 0 \
+  --force-body '.*handle_frame' \
+  --steps 400 \
+  --num-envs 10
+```
+
+Result: applying `5 N` to each handle frame, for the same `10 N` total forward force, produced essentially the same motion: mean forward velocity `0.0366 m/s`, lateral absolute velocity `0.0002 m/s`, yaw absolute velocity `0.0007 rad/s`, and final mean displacement `0.303 m`.
+
+This means the passive wheelchair asset can roll straight when pushed cleanly. The poor policy result is therefore more likely from the two-hand closed-chain attachment, robot-chair collisions, and reward balance than from a basic wheel/caster physics failure.
+
 Plain standing launch:
 
 ```bash
