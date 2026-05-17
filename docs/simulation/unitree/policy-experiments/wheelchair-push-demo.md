@@ -1163,6 +1163,25 @@ The continuation PPO settings were also made more conservative for the next walk
 
 The first palm-grip walking restart from `model_12500.pt` was stopped around iteration `12516`: `bad_orientation` was climbing toward `0.18` and `wheelchair_invalid_contact` had grown past `-200`. That pointed to a new collision-proxy issue after adding palm collisions. Commit `f295fc7` shrinks the generated rubber-hand collision box from `0.090 x 0.060 x 0.040 m` to `0.070 x 0.035 x 0.030 m` and centers it at the measured palm area, reducing accidental contact with the wheelchair side-frame/base proxy while keeping an actual hand collider.
 
+After that, the `model_12500.pt` continuation was abandoned because it had already adapted to the old hand-origin attachment. The active replacement resumes from the cleaner fixed-base relaxed attached standing checkpoint:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250 \
+  --checkpoint model_12250.pt \
+  --load_model_only \
+  --run_name relaxed_push_attached_palm_grip_from_fixed_stand_12250
+```
+
+Active run:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached/2026-05-16_22-40-57_relaxed_push_attached_palm_grip_from_fixed_stand_12250/`
+
+Early status is better than the `12500` restart but not solved: by about iteration `12258`, `bad_orientation` was about `0.125` and `wheelchair_invalid_contact` was about `-128`. The preview watcher now targets `model_12500.pt` for this new run.
+
 Plain standing launch:
 
 ```bash
