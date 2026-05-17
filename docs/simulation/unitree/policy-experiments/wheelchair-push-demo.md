@@ -1391,6 +1391,29 @@ isaac_clip_watch_wheelchair_upright_250
 
 Early scalar check: the new constraint drives `wheelchair_tilt` and `wheelchair_wheel_ground_height` near zero and greatly reduces `base_height`/`bad_orientation` terminations compared with the yaw-only branch. The remaining thing to watch is whether invalid wheelchair contact stays high and whether the visual gait is actually pushing rather than leaning into the constrained chair.
 
+The first upright-constrained preview showed the chair staying planted, but the robot looked too conservative and stopped producing useful walking motion. Commit `9c22ca9` keeps the wheelchair height/roll/pitch rail and wheel-ground bias, but relaxes the robot side of the scaffold: the G1 may lean farther forward, the flat-orientation/base-height posture penalties are lighter, the fall cutoffs are less aggressive, and waist/arm action authority is increased. The point is to make the chair stay on all wheels without teaching the robot that its torso must remain perfectly upright.
+
+The lean-allowed restart uses the same yaw `model_12750.pt` warm start with `--load_model_only`:
+
+```text
+logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached_upright_constrained/2026-05-17_03-50-43_upright_lean_allowed_from_yaw_12750/
+```
+
+Training tmux:
+
+```text
+unitree_g1_wheelchair_upright_lean_allowed_train
+```
+
+Preview watchers:
+
+```text
+isaac_clip_watch_wheelchair_upright_lean_12800
+isaac_clip_watch_wheelchair_upright_lean_250
+```
+
+At startup, the reward table shows the planted-chair terms doing what they are supposed to do: `wheelchair_tilt` and `wheelchair_wheel_ground_height` are effectively zero. The early thing to watch is visual gait quality and `wheelchair_invalid_contact`; if invalid contact stays high, the next fix should target robot-chair collision geometry or attachment placement rather than making the torso upright penalty stronger again.
+
 Plain standing launch:
 
 ```bash
