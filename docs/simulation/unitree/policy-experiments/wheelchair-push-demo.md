@@ -1333,6 +1333,35 @@ isaac_clip_watch_wheelchair_straight_startup_250
 
 The `model_12300.pt` startup-joint preview completed and replaced the latest-video page at `2026-05-17 01:40 EDT`. It is an early diagnostic, not a solved gait. The obvious left-circle failure from `model_13350.pt` is no longer the immediate visual mode, but the live scalars still show large straightness and invalid-contact penalties once the policy starts pushing. The active interval watcher is waiting for `model_12500.pt`.
 
+The startup-joint straight run was paused after later previews still showed the wheelchair preferring a left-turning path. The next scaffold is a yaw-constrained forward-push curriculum added in commit `4d6a67b`:
+
+```text
+Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached-Yaw-Constrained
+```
+
+This task keeps the same attached-palm setup and forward-only command target, but adds an interval event that rails the wheelchair lateral position and yaw every environment step while preserving forward position, forward velocity, roll, and pitch. The point is to remove the easy circular solution temporarily so the policy has to learn a usable forward push primitive first. Once that is working, the rail should be relaxed or removed so yaw/line keeping becomes part of the real free-chair policy again.
+
+The yaw-constrained run warm-starts from the same fixed-standing `model_12250.pt` with `--load_model_only`:
+
+```text
+logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached_yaw_constrained/2026-05-17_02-48-58_yaw_constrained_from_fixed_stand_12250/
+```
+
+Training tmux:
+
+```text
+unitree_g1_wheelchair_yaw_constrained_train
+```
+
+Preview watchers:
+
+```text
+isaac_clip_watch_wheelchair_yaw_12300
+isaac_clip_watch_wheelchair_yaw_250
+```
+
+The preview preset is `unitree-wheelchair-relaxed-push-attached-yaw-constrained` and defaults to a fixed chase camera. That is intentional for this scaffold: the camera should not orbit while judging whether the chair is actually moving forward. The watcher updates the latest-video page and sends a notification email after each rendered checkpoint.
+
 Plain standing launch:
 
 ```bash
