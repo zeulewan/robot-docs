@@ -1432,6 +1432,47 @@ The later `model_12900.pt` and `model_13000.pt` previews made the failure mode c
 
 The same playback also kept printing PhysX warnings that the hand-handle joints were created with disjoint body transforms and may snap objects together. Treat this upright rail branch as a failed scaffold: it plants the chair, but the deployable policy is not pushing. The next attempt should fix the hand/handle joint alignment and contact geometry first, or use a less artificial chair stabilizer that does not let the training reward look good while the mean policy stays still.
 
+## Minimal Velocity-Only Attached Push
+
+Started on May 17, 2026 after the upright-constrained branch looked too stationary.
+
+This branch deliberately removes almost all shaping so the next failure mode is easy to read. The task keeps the free dynamic wheelchair, the palm hand-to-handle attachment, the wheelchair observations, and loose fall terminations, but sets every reward weight to zero except `wheelchair_track_forward_velocity`. It also removes lateral/yaw commands and uses a slow forward command range around `0.08-0.18 m/s`. The goal is not a final policy; it is a diagnostic: first see what the policy does when only chair forward velocity matters, then add back only the penalties needed to stop crawling, falling, yawing, or bad contact.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-Velocity-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_velocity_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_velocity_push_attached/2026-05-17_04-41-42_minimal_velocity_from_fixed_stand_12250/` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_velocity_push_attached/warmstart_palm_grip_fixed_stand_12250/model_12250.pt` |
+| Code commit | `71c3ce0 Add minimal velocity wheelchair push task` |
+| Training tmux | `unitree_g1_wheelchair_minimal_velocity_train` |
+| Preview project | `unitree-wheelchair-minimal-velocity-push-attached` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-Velocity-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250 \
+  --checkpoint model_12250.pt \
+  --load_model_only \
+  --run_name minimal_velocity_from_fixed_stand_12250
+```
+
+Preview watchers:
+
+```text
+isaac_clip_watch_wheelchair_minimal_velocity_12300
+isaac_clip_watch_wheelchair_minimal_velocity_every250
+```
+
+The startup reward table confirmed the intended simplification: `wheelchair_track_forward_velocity` has weight `6.0`, and all posture, gait, contact, yaw, lateral, wheel-ground, line, action-rate, and invalid-contact rewards have weight `0.0`. The only active terminations are timeout, base height, and bad orientation.
+
+A pre-training playback diagnostic on the warm-start checkpoint confirmed the command source was not the issue. With the playback command fixed at `0.14 m/s`, raw chair speed was still poor: `command_x_mean=0.1400 m/s`, `forward_mean=-0.0519 m/s`, only `7.2%` of samples were within `0.05 m/s`, and yaw absolute velocity was about `0.425 rad/s`. Early training metrics then started from a very small velocity reward and began rising, which is the expected behavior for this stripped-down diagnostic.
+
 Plain standing launch:
 
 ```bash
