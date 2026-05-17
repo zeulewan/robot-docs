@@ -1505,6 +1505,8 @@ isaac_clip_watch_wheelchair_minimal_straight_12300
 isaac_clip_watch_wheelchair_minimal_straight_every250
 ```
 
+First straight-reward preview: `model_12300.pt` replaced the latest-video page at `2026-05-17 05:03 EDT`. The result was still not good enough. A raw playback diagnostic with the command fixed at `0.14 m/s` reported `forward_mean=-0.0617 m/s`, `yaw_abs_mean=0.4063 rad/s`, final mean centerline offset about `-0.0686 m`, and only `9.1%` of samples within `0.05 m/s` of the target. The useful difference from the pure-velocity run is that the scalar reward is now explicitly punishing the circular solution: the line, yaw, root-heading, and forward-heading terms are strongly negative while the forward velocity term is positive. Continue to the next checkpoint before deciding whether this reward-only correction is enough.
+
 Plain standing launch:
 
 ```bash
