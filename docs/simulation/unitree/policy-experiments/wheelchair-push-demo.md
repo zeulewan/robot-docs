@@ -1550,20 +1550,20 @@ Startup smoke test confirmed the rail event is active in the Event Manager at `(
 
 ## Minimal X-Rail Progress Push
 
-Started on May 17, 2026 after the X-rail velocity/progress run still had too much target-velocity shaping for this diagnostic. This run removes the velocity-tracking reward entirely and leaves only direct forward progress of the wheelchair root along world X. The chair is still locked to the X rail, so it can translate forward/back but cannot drift sideways, yaw, roll, pitch, or lift off the rail. This is intentionally crude: the goal is to see whether the policy can discover any behavior that moves the collidable chair forward before adding gait, posture, contact, and free-chair terms back in.
+Started on May 17, 2026 after the X-rail velocity/progress run still had too much target-velocity shaping for this diagnostic. This run removes the velocity-tracking reward entirely and leaves only direct forward progress of the wheelchair root along world X. The chair is still locked to the X rail, so it can translate forward/back but cannot drift sideways, yaw, roll, pitch, or lift off the rail. This version also disables wheelchair collisions so the robot can intersect the chair while we test whether the progress objective is wired correctly.
 
 | Item | Value |
 |---|---|
 | Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Progress-Push-Attached` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/` |
-| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/2026-05-17_17-53-00_minimal_x_rail_progress_1024env_from_fixed_stand_12250/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/2026-05-17_17-59-57_minimal_x_rail_progress_no_collision_1024env_from_fixed_stand_12250/` |
 | Training env count | `1024` |
 | Warm start | fixed attached-stand checkpoint `model_12250.pt` |
 | Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/warmstart_palm_grip_fixed_stand_12250/model_12250.pt` |
-| Code commit | `40ace2e Add progress-only x-rail wheelchair push task` |
-| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_progress_train` |
+| Code commits | `40ace2e Add progress-only x-rail wheelchair push task`; `fb1f710 Disable wheelchair collisions for progress-only scaffold` |
+| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_progress_no_collision_train` |
 | Preview project | `unitree-wheelchair-minimal-x-rail-progress-push-attached` |
-| Preview watcher | `isaac_clip_watch_wheelchair_minimal_x_rail_progress_every250` |
+| Preview watcher | `isaac_clip_watch_wheelchair_minimal_x_rail_progress_no_collision_every250` |
 
 Launch:
 
@@ -1576,7 +1576,7 @@ conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
   --load_run warmstart_palm_grip_fixed_stand_12250 \
   --checkpoint model_12250.pt \
   --load_model_only \
-  --run_name minimal_x_rail_progress_1024env_from_fixed_stand_12250
+  --run_name minimal_x_rail_progress_no_collision_1024env_from_fixed_stand_12250
 ```
 
 Active nonzero reward:
@@ -1587,7 +1587,7 @@ Active nonzero reward:
 
 The startup metrics confirmed `Episode_Reward/wheelchair_track_forward_velocity: 0.0000`, while `Episode_Reward/wheelchair_forward_progress` was the only nonzero reward term. The command manager still provides the forward command observation, but no reward compares the chair speed to that target in this task.
 
-Collision state: the training wheelchair is the URDF articulation from `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair.urdf`. It has primitive collision bodies for the seat, backrest, side/front frame, rear wheels, front casters, and handle boxes, with contact sensors enabled. The hand-to-handle attachment masks only the attached hand/handle collision pair so the spherical joint does not fight its own contact pair; the rest of the chair remains collidable.
+Collision state: this progress-only scaffold uses `ACTIVE_MANUAL_WHEELCHAIR_NO_COLLISION_CFG`, which applies `CollisionPropertiesCfg(collision_enabled=False)` to the wheelchair spawn config and disables gravity on the chair. The URDF links, handles, joints, mass properties, and visual/proxy geometry are still present so the hand-handle attachment and wheelchair root state still work, but chair collisions are disabled for this run.
 
 Preview:
 
