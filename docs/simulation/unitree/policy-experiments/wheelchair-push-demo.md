@@ -1362,6 +1362,35 @@ isaac_clip_watch_wheelchair_yaw_250
 
 The preview preset is `unitree-wheelchair-relaxed-push-attached-yaw-constrained` and defaults to a fixed chase camera. That is intentional for this scaffold: the camera should not orbit while judging whether the chair is actually moving forward. The watcher updates the latest-video page and sends a notification email after each rendered checkpoint.
 
+The yaw-constrained run produced and emailed the `model_12750.pt` preview successfully after `gog` was reauthorized. At that point the chair was moving straighter, but the remaining concern was that the policy could still exploit chair pitch/roll and caster lift. Commit `acbe380` adds the stricter upright-constrained branch:
+
+```text
+Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached-Upright-Constrained
+```
+
+This uses the same policy shape and warm-starts from yaw `model_12750.pt`, but the interval rail also fixes the wheelchair root height, roll, and pitch while preserving forward x motion. This is a nonphysical curriculum scaffold: it is meant to force the robot to learn the forward hand/leg coordination without using front-wheel lift as a shortcut. The rail should later be relaxed back to yaw-only, then removed.
+
+Active run:
+
+```text
+logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached_upright_constrained/2026-05-17_03-38-03_upright_constrained_from_yaw_12750/
+```
+
+Training tmux:
+
+```text
+unitree_g1_wheelchair_upright_constrained_train
+```
+
+Preview watchers:
+
+```text
+isaac_clip_watch_wheelchair_upright_12800
+isaac_clip_watch_wheelchair_upright_250
+```
+
+Early scalar check: the new constraint drives `wheelchair_tilt` and `wheelchair_wheel_ground_height` near zero and greatly reduces `base_height`/`bad_orientation` terminations compared with the yaw-only branch. The remaining thing to watch is whether invalid wheelchair contact stays high and whether the visual gait is actually pushing rather than leaning into the constrained chair.
+
 Plain standing launch:
 
 ```bash
