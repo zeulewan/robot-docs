@@ -179,6 +179,19 @@ cd /home/zeul/GIT/unitree_rl_lab
 ./tools/latest_video_site.py --host 127.0.0.1 --port 8002 --title "Latest Isaac Demo Video"
 ```
 
+For the active wheelchair push run, start it with the render button wired to the current `isaac-clip` project:
+
+```bash
+cd /home/zeul/GIT/unitree_rl_lab
+./tools/latest_video_site.py \
+  --host 127.0.0.1 \
+  --port 8002 \
+  --title "Latest Isaac Demo Video" \
+  --render-project unitree-wheelchair-minimal-x-rail-progress-push-attached \
+  --render-view two_orbit \
+  --render-training-policy auto
+```
+
 Tailscale Serve exposes that local port:
 
 ```bash
@@ -187,6 +200,8 @@ tailscale serve status
 ```
 
 The page scans `/home/zeul/GIT/unitree_rl_lab/logs/demos/**/*.mp4` at request time and embeds only the newest MP4. It also shows the video creation time, exposes `/latest.mp4` for direct playback/download, supports byte-range requests for browser seeking, and auto-refreshes when a newer archived render appears.
+
+When `--render-project` is set, the page also shows a **New Video** button. That button runs `isaac-clip send <project> --provider site` on the workstation, using the latest checkpoint selected by the project preset. The status panel shows whether the render is idle/running/succeeded/failed, elapsed time, exit code, and recent `isaac-clip` output. The **Refresh** button reloads the page immediately; the page also polls status and reloads itself after a successful render updates `latest.mp4`.
 
 To update what the page shows, put the desired MP4 under `logs/demos` with a newer timestamp than the previous videos. The current diagnostic wheelchair-URDF proxy clip was archived as:
 
