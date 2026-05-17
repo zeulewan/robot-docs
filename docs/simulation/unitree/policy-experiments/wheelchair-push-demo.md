@@ -1227,6 +1227,26 @@ Result: applying `5 N` to each handle frame, for the same `10 N` total forward f
 
 This means the passive wheelchair asset can roll straight when pushed cleanly. The poor policy result is therefore more likely from the two-hand closed-chain attachment, robot-chair collisions, and reward balance than from a basic wheel/caster physics failure.
 
+A visual check was rendered with a stronger symmetric handle push so the motion is easy to see on the latest-video page:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/diagnostics/wheelchair_force_check.py \
+  --headless \
+  --video \
+  --force 15 0 0 \
+  --force-body '.*handle_frame' \
+  --steps 400 \
+  --num-envs 1
+```
+
+The rendered clip is served through the latest-video site:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
+The video run applied `15 N` to each handle frame. It produced mean forward velocity `0.112 m/s`, lateral absolute velocity `0.0028 m/s`, yaw absolute velocity `0.0071 rad/s`, and final displacement `0.926 m` with about `0.024 m` lateral drift.
+
 Plain standing launch:
 
 ```bash
