@@ -89,6 +89,17 @@ The current fixed-base relaxed attached wheelchair preset uses `provider = "site
 https://workstation.tailee9084.ts.net:8002/
 ```
 
+Site delivery can also compress the stable page copy before publishing it. Configure the project send block with:
+
+```toml
+compress_site_video = true
+site_crf = 30
+site_preset = "veryfast"
+site_max_width = 1280
+```
+
+This keeps the archived render unchanged under `logs/demos/<render>/`, but transcodes `logs/demos/latest-site/latest.mp4` with `ffmpeg` so the browser page loads faster. The site JSON records the original and compressed byte sizes.
+
 To wait for a future checkpoint and update the page automatically:
 
 ```bash
