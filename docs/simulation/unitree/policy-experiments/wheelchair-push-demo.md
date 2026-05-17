@@ -1262,6 +1262,16 @@ https://workstation.tailee9084.ts.net:8002/
 
 The video looked mechanically reasonable compared with earlier attempts, but the chair still veered left. A one-env reset check showed the palm grip points were aligned with the handle frames to about `5e-6 m`, so the immediate issue is more likely learned push/contact asymmetry and insufficient heading/centerline correction than the downloaded visual mesh.
 
+The next preview, `model_13350.pt`, made that diagnosis clearer: the wheelchair was not just slightly drifting, it was rolling left in a circle. The run was stopped around iteration `13398` instead of spending more training time reinforcing that behavior. At stop time the metrics still showed high timeout rate and only moderate `bad_orientation`, but the wheelchair-specific terms were poor for straight travel: `wheelchair_forward_line` was about `-1.16`, `wheelchair_yaw_velocity` about `-0.31`, and `wheelchair_invalid_contact` around `-309`.
+
+Commit `fbcbec3` adds a straight-line correction task:
+
+```text
+Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached-Straight
+```
+
+This task keeps the same attached-palm wheelchair setup but changes the objective to learn straight rolling first. It lowers the initial command range to about `0.06-0.16 m/s`, adds an active `wheelchair_root_heading` penalty, tightens the centerline tolerance from `0.05 m` to `0.02 m`, and increases penalties for lateral velocity, yaw velocity, and line error. The restart should warm-start from the stable fixed-stand `model_12250.pt`, not from the circular `model_13350.pt`.
+
 Plain standing launch:
 
 ```bash
