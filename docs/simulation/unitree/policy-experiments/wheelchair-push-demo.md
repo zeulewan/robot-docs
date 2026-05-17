@@ -1642,6 +1642,8 @@ Active nonzero rewards:
 
 Startup metrics confirmed those are the only active reward terms. The first few iterations still showed negative `Episode_Reward/wheelchair_backward_velocity`, which is expected from the fixed-stand warm start and is the signal this run is meant to remove.
 
+Latest preview update on May 17, 2026: `model_12350.pt` was rendered from the latest-video site button with the `two_orbit` view. The site provider compressed the browser-facing copy from about `3.9 MB` to about `510 KB` using `ffmpeg` (`CRF 38`, `veryfast`, max width `960`), while keeping the archived render unchanged under `logs/demos/`.
+
 Plain standing launch:
 
 ```bash
