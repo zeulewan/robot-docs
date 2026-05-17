@@ -1598,6 +1598,8 @@ isaac-clip send unitree-wheelchair-minimal-x-rail-progress-push-attached \
   --training-policy auto
 ```
 
+Latest preview update on May 17, 2026: `model_12450.pt` was rendered with the fixed-chase view and published to the latest-video site. The site provider compressed the browser-facing copy from about `2.0 MB` to about `545 KB` using `ffmpeg` (`CRF 30`, `veryfast`, max width `1280`), while keeping the archived render unchanged under `logs/demos/`.
+
 Plain standing launch:
 
 ```bash
