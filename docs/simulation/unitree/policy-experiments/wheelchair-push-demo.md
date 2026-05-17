@@ -1272,6 +1272,42 @@ Unitree-G1-29dof-Wheelchair-Relaxed-Push-Attached-Straight
 
 This task keeps the same attached-palm wheelchair setup but changes the objective to learn straight rolling first. It lowers the initial command range to about `0.06-0.16 m/s`, adds an active `wheelchair_root_heading` penalty, tightens the centerline tolerance from `0.05 m` to `0.02 m`, and increases penalties for lateral velocity, yaw velocity, and line error. The restart should warm-start from the stable fixed-stand `model_12250.pt`, not from the circular `model_13350.pt`.
 
+The straight-line correction run was launched from `model_12250.pt` with `--load_model_only`, so the policy weights come from the fixed-standing scaffold and the new run gets the straight-push reward stack:
+
+```text
+logs/rsl_rl/unitree_g1_29dof_wheelchair_relaxed_push_attached_straight/2026-05-17_01-23-04_straight_from_fixed_stand_12250/
+```
+
+Training tmux:
+
+```text
+unitree_g1_wheelchair_straight_push_attached_train
+```
+
+The first diagnostic preview from this corrected run was rendered from `model_12300.pt` and replaced the latest-video site:
+
+```text
+https://workstation.tailee9084.ts.net:8002/
+```
+
+This first checkpoint is still early. The training log shows the new straightness terms are active but still large: around `model_12300.pt`, `wheelchair_forward_line`, `wheelchair_yaw_velocity`, and `wheelchair_root_heading` were all strongly negative, while the forward velocity term was positive. That is the intended immediate signal: the previous policy was rewarded enough to move the chair while exploiting a left-turning orbit, and this correction run now punishes the accumulated line error and chair heading directly.
+
+The active watcher is now on the straight task and waits for the next `250`-iteration boundary:
+
+```bash
+isaac-clip watch unitree-wheelchair-relaxed-push-attached-straight \
+  --every-iterations 250 \
+  --view two_orbit \
+  --render \
+  --notify \
+  --notify-attach-video \
+  --account zeul@mordasiewicz.com \
+  --to zeul@mordasiewicz.com \
+  --training-policy auto
+```
+
+At launch it was waiting for `model_12500.pt`, then it will update the latest-video site and email after each rendered interval.
+
 Plain standing launch:
 
 ```bash
