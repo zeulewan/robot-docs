@@ -1593,12 +1593,14 @@ Preview:
 
 ```bash
 isaac-clip send unitree-wheelchair-minimal-x-rail-progress-push-attached \
-  --view fixed_chase \
+  --view two_orbit \
   --provider site \
   --training-policy auto
 ```
 
-Latest preview update on May 17, 2026: `model_12450.pt` was rendered with the fixed-chase view and published to the latest-video site. The site provider compressed the browser-facing copy from about `2.0 MB` to about `545 KB` using `ffmpeg` (`CRF 30`, `veryfast`, max width `1280`), while keeping the archived render unchanged under `logs/demos/`.
+Latest preview update on May 17, 2026: `model_12650.pt` was rendered with the `two_orbit` view from the latest-video site button and published to the latest-video site. The site provider compressed the browser-facing copy from about `3.9 MB` to about `1.7 MB` using `ffmpeg` (`CRF 30`, `veryfast`, max width `1280`), while keeping the archived render unchanged under `logs/demos/`.
+
+Playback diagnostic: the chair frame points forward along positive world X, with the front casters at positive X and rear wheels/handles at negative X. A raw deterministic playback check on `model_12550.pt` used a fixed `+0.14 m/s` command but measured wheelchair root forward velocity at `-0.201 m/s` mean over `300` steps across `10` environments. That confirmed the visible backward motion was real playback behavior, not camera rotation or a flipped URDF front. The current progress-only objective is therefore still too underspecified for a useful pushing policy, even though train-time scalar progress can look positive.
 
 Plain standing launch:
 
