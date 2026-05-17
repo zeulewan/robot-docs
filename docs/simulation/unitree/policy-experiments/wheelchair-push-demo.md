@@ -1602,6 +1602,46 @@ Latest preview update on May 17, 2026: `model_12650.pt` was rendered with the `t
 
 Playback diagnostic: the chair frame points forward along positive world X, with the front casters at positive X and rear wheels/handles at negative X. A raw deterministic playback check on `model_12550.pt` used a fixed `+0.14 m/s` command but measured wheelchair root forward velocity at `-0.201 m/s` mean over `300` steps across `10` environments. That confirmed the visible backward motion was real playback behavior, not camera rotation or a flipped URDF front. The current progress-only objective is therefore still too underspecified for a useful pushing policy, even though train-time scalar progress can look positive.
 
+## Minimal X-Rail Velocity + Progress Push
+
+Started on May 17, 2026 after the progress-only X-rail run failed to produce reliable forward motion in deterministic playback. This run keeps the same no-collision wheelchair scaffold and X-rail constraint, but adds the commanded wheelchair velocity reward back and adds an explicit penalty for negative wheelchair X velocity.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Velocity-Progress-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_velocity_progress_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_velocity_progress_push_attached/2026-05-17_18-43-52_minimal_x_rail_velocity_progress_backward_penalty_1024env_from_fixed_stand_12250/` |
+| Training env count | `1024` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt` |
+| Code commit | `90fdbaf Add x-rail velocity progress wheelchair task` |
+| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_velocity_progress_train` |
+| Preview project | `unitree-wheelchair-minimal-x-rail-velocity-progress-push-attached` |
+| Preview watcher | `isaac_clip_watch_wheelchair_minimal_x_rail_velocity_progress_every250` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 1024 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Velocity-Progress-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250 \
+  --checkpoint model_12250.pt \
+  --load_model_only \
+  --run_name minimal_x_rail_velocity_progress_backward_penalty_1024env_from_fixed_stand_12250
+```
+
+Active nonzero rewards:
+
+| Reward | Weight | Notes |
+|---|---:|---|
+| `wheelchair_track_forward_velocity` | `6.0` | Matches wheelchair root X velocity to the commanded `base_velocity` X command, with `std=0.08`. |
+| `wheelchair_forward_progress` | `1.0` | Positive world-X wheelchair root velocity, clipped at `0.35 m/s`. |
+| `wheelchair_backward_velocity` | `-10.0` | Squared penalty on negative world-X wheelchair root velocity. |
+
+Startup metrics confirmed those are the only active reward terms. The first few iterations still showed negative `Episode_Reward/wheelchair_backward_velocity`, which is expected from the fixed-stand warm start and is the signal this run is meant to remove.
+
 Plain standing launch:
 
 ```bash
