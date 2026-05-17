@@ -93,12 +93,12 @@ Site delivery can also compress the stable page copy before publishing it. Confi
 
 ```toml
 compress_site_video = true
-site_crf = 30
+site_crf = 38
 site_preset = "veryfast"
-site_max_width = 1280
+site_max_width = 960
 ```
 
-This keeps the archived render unchanged under `logs/demos/<render>/`, but transcodes `logs/demos/latest-site/latest.mp4` with `ffmpeg` so the browser page loads faster. The site JSON records the original and compressed byte sizes.
+This keeps the archived render unchanged under `logs/demos/<render>/`, but transcodes `logs/demos/latest-site/latest.mp4` with `ffmpeg` so the browser page loads faster. The current wheelchair preview target is roughly `500 KB` per `12 s` clip; tune `site_crf` and `site_max_width` per project if a different balance is needed. The site JSON records the original and compressed byte sizes.
 
 To wait for a future checkpoint and update the page automatically:
 
