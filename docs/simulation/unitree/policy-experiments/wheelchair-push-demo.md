@@ -1161,6 +1161,8 @@ The attachment point was also moved from the hand body origin to a measured palm
 
 The continuation PPO settings were also made more conservative for the next walking run: learning rate `1e-5`, desired KL `5e-4`, entropy coefficient `0.001`, and max grad norm `0.1`. The one-iteration smoke run constructs the task and reaches `Learning iteration 0/1`; PhysX still prints a hand-handle joint warning during reset, so preview videos should continue to be checked for startup snap, but the measured reset alignment is now at the palm grip point rather than the wrist/link origin. Follow-up commit `a5c4bce` adds `play.py --print-hand-handle-offsets` output for the actual USD joint `localPos0`, which should match the measured palm offset instead of a wrist-side or off-hand location.
 
+The first palm-grip walking restart from `model_12500.pt` was stopped around iteration `12516`: `bad_orientation` was climbing toward `0.18` and `wheelchair_invalid_contact` had grown past `-200`. That pointed to a new collision-proxy issue after adding palm collisions. Commit `f295fc7` shrinks the generated rubber-hand collision box from `0.090 x 0.060 x 0.040 m` to `0.070 x 0.035 x 0.030 m` and centers it at the measured palm area, reducing accidental contact with the wheelchair side-frame/base proxy while keeping an actual hand collider.
+
 Plain standing launch:
 
 ```bash
