@@ -1507,6 +1507,47 @@ isaac_clip_watch_wheelchair_minimal_straight_every250
 
 First straight-reward preview: `model_12300.pt` replaced the latest-video page at `2026-05-17 05:03 EDT`. The result was still not good enough. A raw playback diagnostic with the command fixed at `0.14 m/s` reported `forward_mean=-0.0617 m/s`, `yaw_abs_mean=0.4063 rad/s`, final mean centerline offset about `-0.0686 m`, and only `9.1%` of samples within `0.05 m/s` of the target. The useful difference from the pure-velocity run is that the scalar reward is now explicitly punishing the circular solution: the line, yaw, root-heading, and forward-heading terms are strongly negative while the forward velocity term is positive. Continue to the next checkpoint before deciding whether this reward-only correction is enough.
 
+## Minimal Yaw-Locked Velocity Push
+
+Started on May 17, 2026 after the minimal straight-reward run still preferred the circular/left-turning exploit.
+
+This branch locks the wheelchair to a forward rail instead of trying to teach straightness through reward terms. The interval event `constrain_wheelchair_to_forward_rail` runs every environment step, fixing the wheelchair's lateral position and yaw while preserving its forward position and forward velocity. Robot-side shaping is still removed: the only nonzero rewards are wheelchair forward velocity and wheelchair forward progress. The robot also gets larger joint action authority and no fall/orientation termination, so it can discover any crude forward-pushing strategy before we add back gait quality, contact cleanliness, or chair-free-yaw behavior.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-Yaw-Locked-Velocity-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/2026-05-17_14-32-52_minimal_yaw_locked_no_fall_512env_from_fixed_stand_12250/` |
+| Training env count | `512` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_yaw_locked_velocity_push_attached/warmstart_palm_grip_fixed_stand_12250/model_12250.pt` |
+| Training tmux | `unitree_g1_wheelchair_minimal_yaw_locked_train` |
+| Preview project | `unitree-wheelchair-minimal-yaw-locked-velocity-push-attached` |
+| Preview watcher | `isaac_clip_watch_wheelchair_minimal_yaw_locked_every250` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 512 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-Yaw-Locked-Velocity-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250 \
+  --checkpoint model_12250.pt \
+  --load_model_only \
+  --run_name minimal_yaw_locked_no_fall_512env_from_fixed_stand_12250
+```
+
+Active nonzero rewards:
+
+| Reward | Weight |
+|---|---:|
+| `wheelchair_track_forward_velocity` | `6.0` |
+| `wheelchair_forward_progress` | `1.0` |
+
+Startup smoke test confirmed the rail event is active in the Event Manager at `(0.02, 0.02)` seconds, and the Reward Manager shows all posture, gait, contact, yaw, line, wheel-ground, and wrist terms at `0.0`. The no-fall-termination restart shows only `time_out` in the termination table. A full `2048`-env run exited after the first iteration without a Python traceback, likely because removing fall resets lets too many bad physics states accumulate at once. The active `512`-env run was stable through multiple printed iterations, reaching `12267/13250` with rising reward before the recurring preview watcher was attached. The PhysX hand-handle joint warning about disjoint body transforms still appears and remains a known concern.
+
 Plain standing launch:
 
 ```bash
