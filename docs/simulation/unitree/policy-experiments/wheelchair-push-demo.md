@@ -1548,6 +1548,56 @@ Active nonzero rewards:
 
 Startup smoke test confirmed the rail event is active in the Event Manager at `(0.02, 0.02)` seconds, and the Reward Manager shows all posture, gait, contact, yaw, line, wheel-ground, and wrist terms at `0.0`. A fully no-fall-termination version was tested first, but both the `2048`-env and `512`-env runs exited before the next checkpoint without a Python traceback, likely because removing reset guards lets too many bad physics states accumulate at once. The active version restores only very loose reset guards: base height below `0.08 m` and orientation above `2.40 rad`. The PhysX hand-handle joint warning about disjoint body transforms still appears and remains a known concern.
 
+## Minimal X-Rail Progress Push
+
+Started on May 17, 2026 after the X-rail velocity/progress run still had too much target-velocity shaping for this diagnostic. This run removes the velocity-tracking reward entirely and leaves only direct forward progress of the wheelchair root along world X. The chair is still locked to the X rail, so it can translate forward/back but cannot drift sideways, yaw, roll, pitch, or lift off the rail. This is intentionally crude: the goal is to see whether the policy can discover any behavior that moves the collidable chair forward before adding gait, posture, contact, and free-chair terms back in.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Progress-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/2026-05-17_17-53-00_minimal_x_rail_progress_1024env_from_fixed_stand_12250/` |
+| Training env count | `1024` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt` |
+| Warm-start copy | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_progress_push_attached/warmstart_palm_grip_fixed_stand_12250/model_12250.pt` |
+| Code commit | `40ace2e Add progress-only x-rail wheelchair push task` |
+| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_progress_train` |
+| Preview project | `unitree-wheelchair-minimal-x-rail-progress-push-attached` |
+| Preview watcher | `isaac_clip_watch_wheelchair_minimal_x_rail_progress_every250` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 1024 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Progress-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250 \
+  --checkpoint model_12250.pt \
+  --load_model_only \
+  --run_name minimal_x_rail_progress_1024env_from_fixed_stand_12250
+```
+
+Active nonzero reward:
+
+| Reward | Weight | Notes |
+|---|---:|---|
+| `wheelchair_forward_progress` | `6.0` | Positive world-X wheelchair root velocity, clipped at `0.8 m/s`. |
+
+The startup metrics confirmed `Episode_Reward/wheelchair_track_forward_velocity: 0.0000`, while `Episode_Reward/wheelchair_forward_progress` was the only nonzero reward term. The command manager still provides the forward command observation, but no reward compares the chair speed to that target in this task.
+
+Collision state: the training wheelchair is the URDF articulation from `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair.urdf`. It has primitive collision bodies for the seat, backrest, side/front frame, rear wheels, front casters, and handle boxes, with contact sensors enabled. The hand-to-handle attachment masks only the attached hand/handle collision pair so the spherical joint does not fight its own contact pair; the rest of the chair remains collidable.
+
+Preview:
+
+```bash
+isaac-clip send unitree-wheelchair-minimal-x-rail-progress-push-attached \
+  --view fixed_chase \
+  --provider site \
+  --training-policy auto
+```
+
 Plain standing launch:
 
 ```bash
