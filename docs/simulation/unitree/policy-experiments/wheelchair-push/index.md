@@ -189,7 +189,8 @@ Conclusion: the stiffer bounded spring made the attachment more violent without 
 | Standing bridge runs, May 16, 2026 | Tried to make the robot stand with the chair/handles before walking; several startup/ragdoll diagnostics were captured. |
 | Minimal X-rail runs, May 17, 2026 | Simplified the problem to forward/back chair motion; exposed backward-walking and off-center pushing exploits. |
 | PhysX rail diagnostic, May 18, 2026 | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
-| PhysX rail soft-attachment run, May 18, 2026 | Current stable large-env setup; not yet learning strong forward pushing. |
+| PhysX rail soft-attachment run, May 18, 2026 | Stable large-env setup, but deterministic playback remained stationary. |
+| PhysX rail SoftObs and SoftObs-Stiff, May 18, 2026 | Exposed attachment/load state and tested a stiffer bounded spring. Neither produced reliable deterministic forward motion; the stiff version worsened force/yaw spikes. |
 
 Detailed run commands, old checkpoints, asset turntables, and startup/ragdoll videos are kept in the [chronological archive](archive.md).
 
@@ -211,9 +212,13 @@ Do not treat a single train-time reward scalar as proof of success. For this tas
 
 ## Next Fixes To Discuss
 
-The next likely changes should expose or reduce the hidden attachment dynamics before adding more reward shaping:
+The current evidence says this is not just a reward-weight problem. The policy can keep the attachment numerically stable, but it is not discovering a repeatable way to convert arm motion into forward rail motion.
 
-1. Add observations for relative hand-handle velocity, relative hand-handle orientation, soft-attachment force norm, left/right force balance, and rail reaction torque.
-2. Add explicit TensorBoard metrics for physical values: wheelchair `vx_mps`, rail yaw torque, hand-handle position error, hand-handle orientation error, and soft-attachment force.
-3. Run a controlled comparison between the hard joint, the current soft attachment, and a stiffer bounded spring using the same checkpoint and deterministic playback.
-4. Only after that, tune rewards such as hand-handle axis alignment, force symmetry, or yaw-torque penalty.
+Best next structural tests:
+
+1. Run a one-hand rigid or spherical attachment probe on the PhysX rail. This removes the two-arm closed loop while testing whether a hard constraint gives learnable forward coupling.
+2. Add direct rail-force / rail-joint observation and TensorBoard metrics. We already print rail wrench in playback, but the policy does not observe that reaction load during training.
+3. Add a short force-shaping stage only after the above diagnostics. A forward rail-force reward could teach the robot to load the chair before asking for velocity, but it should be capped and monitored because it can also reward pushing against the rail without motion.
+4. If both-hand attachment is required, consider a better physical handle coupling than the current spring-damper, such as a properly configured pair of spherical joints with collision masks and solver limits, or a purpose-built articulated handle/grip proxy.
+
+Do not keep running the plain SoftObs or SoftObs-Stiff branches without changing the task structure; both failed deterministic validation.
