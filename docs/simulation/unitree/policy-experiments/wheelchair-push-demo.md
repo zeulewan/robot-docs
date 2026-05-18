@@ -1684,7 +1684,50 @@ Active nonzero rewards:
 | `wheelchair_forward_progress` | `3.0` | Positive world-X wheelchair root velocity, clipped at `2.5 m/s`. |
 | `wheelchair_backward_velocity` | `-10.0` | Squared penalty on negative world-X wheelchair root velocity. |
 
-No lean reward was added. The action scale was widened for legs, waist, shoulders, and elbows to let the policy make larger motions under the faster command.
+No lean reward was added. The action scale was widened for legs, waist, shoulders, and elbows to let the policy make larger motions under the faster command. This run was stopped after the user requested an explicit forward-lean bias; keep its previews as no-lean diagnostics only.
+
+## Minimal X-Rail Fast Forward-Lean Velocity + Progress Push
+
+Started on May 17, 2026 as the active replacement for the no-lean `2.0 m/s` run. The task keeps the same no-collision X-rail wheelchair scaffold and the same fixed-stand/palm-grip warm start with actor action `std=0.35`, but adds one robot-side shaping term: `robot_forward_lean`.
+
+The lean term is intentionally signed from world forward, not guessed from a visual pitch angle. It applies the robot root quaternion to the local up axis `[0, 0, 1]` and rewards that up axis having a positive world-X component. Since the wheelchair rail and velocity/progress rewards also use positive world X as forward, this biases the robot to lean into the chair, not backward. The target is `0.17`, roughly a `10 degree` forward lean, with `std=0.20` so PPO gets a useful gradient from an upright start.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Fast-Lean-Velocity-Progress-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-17_22-50-39_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/` |
+| Training env count | `1024` |
+| Warm start | `warmstart_palm_grip_fixed_stand_12250_std035/model_12250_std035.pt` |
+| Code commit | `998dd5a Add forward-lean x-rail wheelchair push task` |
+| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_fast_lean_2ms_train` |
+| Preview project | `unitree-wheelchair-minimal-x-rail-fast-lean-velocity-progress-push-attached` |
+| Preview watchers | `isaac_clip_watch_wheelchair_minimal_x_rail_fast_lean_2ms_12300`, `isaac_clip_watch_wheelchair_minimal_x_rail_fast_lean_2ms_every250` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 1024 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Fast-Lean-Velocity-Progress-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250_std035 \
+  --checkpoint model_12250_std035.pt \
+  --load_model_only \
+  --run_name minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250
+```
+
+Active nonzero rewards:
+
+| Reward | Weight | Notes |
+|---|---:|---|
+| `wheelchair_track_forward_velocity` | `10.0` | Matches wheelchair root X velocity to a fixed `2.0 m/s` command, with `std=0.8`. |
+| `wheelchair_forward_progress` | `3.0` | Positive world-X wheelchair root velocity, clipped at `2.5 m/s`. |
+| `wheelchair_backward_velocity` | `-10.0` | Squared penalty on negative world-X wheelchair root velocity. |
+| `robot_forward_lean` | `1.0` | Rewards root local-up axis leaning toward positive world X, target `0.17`, `std=0.20`. |
+
+Early log check: after widening the lean reward from an initially too-sharp `std=0.08` to `std=0.20`, `Episode_Reward/robot_forward_lean` rose into the `0.20-0.26` range by learning iteration `12268-12273`, so the term is active and visible in TensorBoard. The chair is still showing backward-velocity penalty early in the run, so do not treat this as solved until the deterministic preview and speed stats confirm positive world-X wheelchair speed.
 
 Plain standing launch:
 

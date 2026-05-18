@@ -187,7 +187,7 @@ cd /home/zeul/GIT/unitree_rl_lab
   --host 127.0.0.1 \
   --port 8002 \
   --title "Latest Isaac Demo Video" \
-  --render-project unitree-wheelchair-minimal-x-rail-fast-velocity-progress-push-attached \
+  --render-project unitree-wheelchair-minimal-x-rail-fast-lean-velocity-progress-push-attached \
   --render-view two_orbit \
   --render-training-policy auto
 ```
