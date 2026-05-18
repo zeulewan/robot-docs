@@ -1811,6 +1811,8 @@ This run resumes the visually good `model_13250.pt` actor, resets the critic, an
 
 Overnight continuation on May 18, 2026: after rendering and emailing a `model_13300.pt` preview to the latest-video site, training continued to `model_13350.pt`. The run was then restarted from `2026-05-18_05-21-18_soft_attach_adapt_12288env_actor13250_resetcritic/model_13350.pt` with `--max_iterations 100000` and run name `soft_attach_overnight_12288env_from_13350`, so the configured task cap will not stop the overnight training window.
 
+Later on May 18, `model_15400.pt` from `2026-05-18_05-36-36_soft_attach_overnight_12288env_from_13350` was rendered to the latest-video site and emailed. The site video was current, but the site's New Video button was still wired to an older x-rail `isaac-clip` project; the server was restarted with `unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-push-attached`, and the preset `run_glob` was changed to `2026-*soft_attach_overnight_12288env_from_*` so future one-click renders target the overnight PhysX-rail run family. Training then resumed from `model_15400.pt` with run name `soft_attach_overnight_12288env_from_15400` and `--max_iterations 100000`. Early resumed metrics around iteration `15403` showed the chair-forward terms were still very small (`wheelchair_track_forward_velocity` about `0.0033`, `wheelchair_forward_progress` about `0.0002`), so the `model_15400` preview should be treated as an in-progress adaptation checkpoint, not a clean forward-walking success.
+
 Plain standing launch:
 
 ```bash
