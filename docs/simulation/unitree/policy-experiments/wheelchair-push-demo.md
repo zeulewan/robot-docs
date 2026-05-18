@@ -1809,6 +1809,8 @@ tmux new-session -d -s unitree_wheelchair_physx_12288_train \
 
 This run resumes the visually good `model_13250.pt` actor, resets the critic, and adapts it to the new soft hand-handle attachment. The default runner target is `model_14250`, about `1000` new PPO iterations. The important distinction is that the task objective stayed the same: forward wheelchair velocity/progress plus backward and rail-yaw-torque penalties. The fix changes how the hands are physically held at the handles, not what the robot is being rewarded for.
 
+Overnight continuation on May 18, 2026: after rendering and emailing a `model_13300.pt` preview to the latest-video site, training continued to `model_13350.pt`. The run was then restarted from `2026-05-18_05-21-18_soft_attach_adapt_12288env_actor13250_resetcritic/model_13350.pt` with `--max_iterations 100000` and run name `soft_attach_overnight_12288env_from_13350`, so the configured task cap will not stop the overnight training window.
+
 Plain standing launch:
 
 ```bash
