@@ -11,10 +11,10 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Reference checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt` |
-| Current run | none; latest-video site renders the recovered `model_13249.pt` hard-reference playback |
-| Summary last updated | May 18, 2026, 18:55 Toronto |
-| Training tmux | none |
-| Training env count | none currently |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249` |
+| Summary last updated | May 18, 2026, 19:49 Toronto |
+| Training tmux | `wheelchair_hard_train` |
+| Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
@@ -63,6 +63,17 @@ Final verification from `model_13249.pt` on `Unitree-G1-29dof-Wheelchair-Minimal
 Training smoke log:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_18-52-06_hard_stage_runtime_sync_final_1iter_smoke`
+
+Remaining warning audit:
+
+| Message | Status |
+|---|---|
+| `CreateJoint - found a joint with disjointed body transforms` | Fixed by syncing the hand/handle USD stage xforms to the reset runtime pose before authoring the hard joints. |
+| `FabricManager::initializePointInstancer mismatched prototypes` | Removed for the PhysX rail push tasks by disabling command debug markers in headless training. |
+| `Unresolved reference prim path ... /visuals/<link>` from the wheelchair USD | Known URDF-import visual-reference noise. The X-rail wheelchair URDF only has a real detailed visual on `base_link`; the importer still authors visual references for no-visual helper links such as rail, casters, and handle frames. Smoke training verifies this is not blocking physics. A clean long-term fix is a pre-converted/patched training USD or placeholder visuals on those helper links. |
+| `Not all actuators are configured! 0 != 7` for the wheelchair | Expected for the passive wheelchair articulation. The chair joints are not actuated by the policy. |
+
+One real training issue remained after the joint fix: a few hard-attach envs could produce enormous finite robot velocities, which poisoned the critic even though the values were not NaN/Inf. Commit `4500d7d` added task-local unstable-state terminations and observation clips for the PhysX rail branch. The first guard thresholds were too tight and reset too much of the rollout, so commit `9a9c2d4` loosened them to catch only catastrophic runaway states. The 2048-env loose-guard smoke no longer showed the earlier huge velocity metric or exploding critic loss; the live run now logs `Episode_Termination/unstable_robot_state`, which should be monitored alongside the forward rewards.
 
 The hard-reference playback is visually useful, but speed alone is not a success metric. The latest diagnostic for `model_13249.pt` on the hard fast-lean task reported a `2.0 m/s` command, `1.1268 m/s` mean wheelchair forward speed, and `0.000` of samples within `0.10 m/s` of the command. Treat that as chair-motion telemetry, not proof of command tracking or gait quality.
 
@@ -257,7 +268,7 @@ Conclusion: this `model_15900.pt` retest was the wrong comparison point for the 
 | PhysX rail diagnostic, May 18, 2026 | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
 | PhysX rail soft-attachment run, May 18, 2026 | Stable large-env setup, but deterministic playback remained stationary. |
 | PhysX rail SoftObs and SoftObs-Stiff, May 18, 2026 | Exposed attachment/load state and tested a stiffer bounded spring. Neither produced reliable deterministic forward motion; the stiff version worsened force/yaw spikes. |
-| PhysX rail hard-attach retest, May 18, 2026 | Both hand-handle hard joints moved the chair in playback despite joint-snap warnings, but the visual gait was bad; 1024-env smoke started learning but ended before checkpointing. |
+| PhysX rail hard-attach retest, May 18, 2026 | Both hand-handle hard joints moved the chair in playback. The joint-snap warning was fixed, command debug marker noise was removed, and a 2048-env guarded continuation from `model_13249.pt` is running. |
 
 Detailed run commands, old checkpoints, asset turntables, and startup/ragdoll videos are kept in the [chronological archive](archive.md).
 
@@ -274,6 +285,8 @@ Use the focused TensorBoard on port `6007` for the current comparison set.
 | `Episode_Termination/base_height` | Robot falling or collapsing low. |
 | `Episode_Termination/non_finite_wheelchair` | Physics failure in the wheelchair articulation. Should stay `0.0`. |
 | `Episode_Termination/non_finite_robot` | Physics failure in the robot articulation. Should stay `0.0`. |
+| `Episode_Termination/unstable_robot_state` | Guard for finite but runaway robot root state. Nonzero is acceptable while exploring, but sustained high values mean the hard attachment is still destabilizing envs. |
+| `Episode_Termination/unstable_wheelchair_state` | Guard for finite but runaway wheelchair `base_link` state. Should stay near `0.0`. |
 
 Do not treat a single train-time reward scalar as proof of success. For this task, the useful validation is deterministic playback from a fixed reset with measured wheelchair forward velocity and rail reaction torque.
 
@@ -283,8 +296,8 @@ The current evidence says this is not just a reward-weight problem. The policy c
 
 Best next structural tests:
 
-1. Fix the hard-attach reset geometry so hands and handles start coincident before the joints are created. This directly targets the PhysX snap warning without losing hard coupling.
-2. Try hard attach at lower env count first, then scale up only after non-finite terminations stay near zero.
+1. Let the guarded hard-attach run reach at least the first saved checkpoint, then validate with deterministic playback before changing rewards.
+2. Watch `unstable_robot_state`; if it stays high or rises, split the guard into linear/angular terms so the failure mode is easier to diagnose.
 3. Add direct rail-force / rail-joint observation and TensorBoard metrics. We already print rail wrench in playback, but the policy does not observe that reaction load during training.
 4. Add a capped yaw/side-load penalty only after the hard attachment can train long enough to checkpoint. The current hard playback has real forward motion but high rail reaction torque.
 5. If both-hand hard attachment keeps producing bad simulator states, try a one-hand rigid or spherical probe to remove the two-arm closed loop while preserving hard force transfer.
