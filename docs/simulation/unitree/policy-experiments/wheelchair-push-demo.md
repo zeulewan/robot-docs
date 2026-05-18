@@ -1789,6 +1789,26 @@ TERM=xterm timeout 300s conda run --no-capture-output -n isaaclab python scripts
 
 Result: the run completed and saved `model_13254.pt` under `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_04-44-46_smoke_2048_soft_attach_actor13250_resetcritic/`. The new log had `0` `CreateJoint` warnings, `non_finite_wheelchair=0.0000`, `non_finite_robot=0.0000`, and value loss stayed around `0.0002-0.0003`. This validates the stability fix, but it does not mean the old actor is still good under the softer attachment: the short smoke reward was near zero because the attachment dynamics changed. Continue from this version as a new adaptation run, not as proof that the previous gait is preserved unchanged.
 
+Env-count sweep on the RTX 3090:
+
+| Envs | Result |
+|---:|---|
+| `4096` | Completed a short probe cleanly at about `34k` steps/s, with no non-finite robot or wheelchair terminations. |
+| `8192` | Completed cleanly at about `45k` steps/s. |
+| `12288` | Completed cleanly at about `50k` steps/s and became the selected training count. |
+| `16384` | Reached PPO update but failed with CUDA out-of-memory during backward, with only about `388 MB` free. |
+
+Active adaptation run, started May 18, 2026:
+
+Run folder: `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_05-05-14_soft_attach_adapt_12288env_actor13250_resetcritic/`
+
+```bash
+tmux new-session -d -s unitree_wheelchair_physx_12288_train \
+  'cd /home/zeul/GIT/unitree_rl_lab && TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py --headless --num_envs 12288 --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached --resume --load_run 2026-05-18_03-27-41_1mps_yawtorque_256env_finite_oldcritic_std002_from_model_13249 --checkpoint model_13250.pt --load_model_only --reset_critic --policy_std 0.015 --run_name soft_attach_adapt_12288env_actor13250_resetcritic'
+```
+
+This run resumes the visually good `model_13250.pt` actor, resets the critic, and adapts it to the new soft hand-handle attachment. The default runner target is `model_14250`, about `1000` new PPO iterations. The important distinction is that the task objective stayed the same: forward wheelchair velocity/progress plus backward and rail-yaw-torque penalties. The fix changes how the hands are physically held at the handles, not what the robot is being rewarded for.
+
 Plain standing launch:
 
 ```bash
