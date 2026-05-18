@@ -12,13 +12,15 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/` |
 | Current run | `2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video` |
-| Summary last updated | May 18, 2026 |
+| Summary last updated | May 18, 2026, 16:20 Toronto |
 | Training tmux | `unitree_wheelchair_physx_12288_train` |
 | Training env count | `12288` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The current run is numerically stable, but the behavior is not solved. Around iteration `15681`, training was still producing weak chair-forward terms: `wheelchair_track_forward_velocity` about `0.084`, `wheelchair_forward_progress` about `0.035`, `wheelchair_backward_velocity` about `-0.089`, and `wheelchair_rail_yaw_torque` about `-0.020`. That means the policy is staying mostly stable, but it is not yet producing a clean forward push.
+
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the next experiment branch.
 
 ## Current Task Shape
 
@@ -52,6 +54,37 @@ The hard hand-handle joint version looked better in short visual playback, but i
 The tradeoff is learnability. The spring-damper introduces small hidden motions and loads between the rubber hands and handles. From the policy's point of view, two states can look almost identical in observation space while the chair reacts differently because the spring load, relative handle orientation, or contact mode is different. The useful names for this failure mode are `contact-rich hybrid dynamics`, `stiff non-smooth dynamics`, `partial observability`, and `state aliasing`.
 
 That makes reward-only tuning unreliable. PPO can see low or noisy returns, but it cannot cleanly assign credit if the important attachment/load state is not observable. The current low `wheelchair_forward_progress` and low `wheelchair_track_forward_velocity` after the soft-attachment restart are consistent with this issue.
+
+## May 18 Soft-Observation Branch
+
+Commit `8037cc8` adds two things:
+
+| Change | Purpose |
+|---|---|
+| `--print-soft-attachment-stats` in `scripts/rsl_rl/play.py` | Playback-only diagnostic for hand-handle spring position error, relative velocity, force, force imbalance, and axis alignment. |
+| `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs` | New task ID that exposes soft-attachment state to the policy and critic. |
+
+The new observation term is `wheelchair_soft_attachment_state`. It adds relative hand-handle velocity, handle axes in the hand frames, capped spring force, and spring force norm. Because observations use history stacking, this increases policy observation shape from `(585,)` to `(745,)` and critic observation shape from `(600,)` to `(760,)`.
+
+The baseline checkpoint was expanded with zero-initialized input weights:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/from_physx_yawtorque_model_15900_softobs/model_15900.pt`
+
+Baseline deterministic playback from the original `model_15900.pt` over `300` steps and `10` envs:
+
+| Metric | Value |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.0007 m/s` |
+| Within `0.10 m/s` of command | `0.000` |
+| Rail yaw torque abs mean | `49.38 Nm` |
+| Rail yaw torque abs p95 | `72.92 Nm` |
+| Soft attachment position error mean | `0.0423 m` |
+| Soft attachment position error p95 | `0.0456 m` |
+| Soft attachment force norm mean | `103.75 N` |
+| Soft attachment force imbalance mean | `45.24 N` |
+
+Expanded SoftObs playback before training still matched the old actor behavior, as expected: the added observation weights start at zero, so the actor cannot use the new signal until PPO updates it.
 
 ## Run Lineage
 
