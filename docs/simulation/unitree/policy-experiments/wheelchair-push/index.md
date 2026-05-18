@@ -12,8 +12,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_stiff_push_attached/` |
 | Current run | `2026-05-18_17-07-46_stiff_softobs_4096_smoke_from_15900` |
-| Summary last updated | May 18, 2026, 17:08 Toronto |
-| Training tmux | `unitree_wheelchair_softobs_stiff_4096_smoke` |
+| Summary last updated | May 18, 2026, 17:16 Toronto |
+| Training tmux | none, stiff smoke completed |
 | Training env count | `4096` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -159,6 +159,25 @@ Active smoke run:
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_stiff_push_attached/2026-05-18_17-07-46_stiff_softobs_4096_smoke_from_15900`
 
 This run starts from the expanded `model_15900.pt` actor, resets the critic, sets policy std to `0.015`, uses `4096` envs, and targets a `50`-iteration smoke gate before any longer continuation.
+
+Final deterministic playback from the stiff smoke `model_15949.pt` did not improve the result:
+
+| Metric | SoftObs-Stiff `model_15949.pt` |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.0003 m/s` |
+| Forward max | `0.2011 m/s` |
+| Within `0.10 m/s` of command | `0.000` |
+| Rail yaw torque abs mean | `50.99 Nm` |
+| Rail yaw torque abs p95 | `79.81 Nm` |
+| Rail yaw torque abs max | `986.59 Nm` |
+| Soft attachment position error mean | `0.0468 m` |
+| Soft attachment relative velocity mean | `0.7238 m/s` |
+| Soft attachment force norm mean | `217.55 N` |
+| Soft attachment force max | `500.00 N` |
+| Soft attachment force imbalance mean | `99.30 N` |
+
+Conclusion: the stiffer bounded spring made the attachment more violent without producing deterministic forward motion. It hit the force cap and worsened yaw/imbalance metrics. Do not extend this branch as-is.
 
 ## Run Lineage
 
