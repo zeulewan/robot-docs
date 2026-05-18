@@ -6,14 +6,14 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs` |
+| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs-Stiff` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/` |
-| Current run | `2026-05-18_16-31-49_softobs_4096_250_from_15949` |
-| Summary last updated | May 18, 2026, 17:03 Toronto |
-| Training tmux | none, 250-gate completed |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_stiff_push_attached/` |
+| Current run | `2026-05-18_17-07-46_stiff_softobs_4096_smoke_from_15900` |
+| Summary last updated | May 18, 2026, 17:08 Toronto |
+| Training tmux | `unitree_wheelchair_softobs_stiff_4096_smoke` |
 | Training env count | `4096` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -127,6 +127,38 @@ Final deterministic playback from `model_16198.pt` did not validate the train-ti
 | Soft attachment force imbalance mean | `37.02 N` |
 
 Conclusion: adding soft-attachment observations improved some attachment diagnostics, but it did not produce a reliable deterministic forward push. The train-time reward spikes were likely exploratory/stochastic behavior rather than a usable policy. Do not extend this exact branch without changing the attachment model or the state/action structure.
+
+## May 18 Stiff Soft-Observation Branch
+
+Commit `d1c0d47` adds `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs-Stiff`.
+
+This branch keeps the same reward terms and same `(745,)` policy observation shape as SoftObs, but changes the bounded hand-handle spring-damper:
+
+| Parameter | SoftObs | SoftObs-Stiff |
+|---|---:|---:|
+| Stiffness | `2500` | `5000` |
+| Damping | `75` | `150` |
+| Max force | `350 N` | `500 N` |
+| Observation force scale | `350 N` | `500 N` |
+
+Baseline deterministic playback from the same expanded `model_15900.pt` actor was stable but still stationary:
+
+| Metric | SoftObs-Stiff baseline |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.0003 m/s` |
+| Forward max | `0.1229 m/s` |
+| Within `0.10 m/s` of command | `0.000` |
+| Rail yaw torque abs mean | `48.48 Nm` |
+| Soft attachment position error mean | `0.0411 m` |
+| Soft attachment force norm mean | `202.17 N` |
+| Soft attachment force imbalance mean | `52.91 N` |
+
+Active smoke run:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_stiff_push_attached/2026-05-18_17-07-46_stiff_softobs_4096_smoke_from_15900`
+
+This run starts from the expanded `model_15900.pt` actor, resets the critic, sets policy std to `0.015`, uses `4096` envs, and targets a `50`-iteration smoke gate before any longer continuation.
 
 ## Run Lineage
 
