@@ -6,38 +6,36 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard` |
+| Active reference playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/` |
-| Current run | `2026-05-18_17-28-47_hardattach_spherical_1024_smoke_from_15900` |
-| Summary last updated | May 18, 2026, 17:55 Toronto |
-| Training tmux | none, hard-attach smoke ended |
-| Training env count | `1024` smoke |
+| Reference checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt` |
+| Current run | none; latest-video site renders the recovered `model_13249.pt` hard-reference playback |
+| Summary last updated | May 18, 2026, 18:11 Toronto |
+| Training tmux | none |
+| Training env count | none currently |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
-The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch.
-
-The first SoftObs smoke run completed cleanly at `model_15949.pt`. It is safe enough to continue, but deterministic playback still does not show meaningful chair motion: measured forward speed was `0.0016 m/s` against the `1.0 m/s` command. A `250`-iteration continuation is now running from that checkpoint.
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually good reference is the older hard-attachment fast-lean checkpoint, `model_13249.pt`.
 
 ## Current Task Shape
 
-The current wheelchair is not free in all directions. It uses the PhysX rail URDF:
+The current reference wheelchair is not free in all directions. It uses the PhysX rail URDF:
 
 `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair_x_rail.urdf`
 
 That asset fixes `rail_world` and connects the moving `base_link` through a prismatic `rail_x_joint`. The chair can move forward/back along X; yaw, lateral motion, roll, and pitch are constrained by physics instead of the older kinematic root-pose clamp.
 
-The active nonzero reward terms are intentionally small:
+The active nonzero reward terms in the recovered fast-lean hard-reference task are:
 
 | Reward | Weight | Purpose |
 |---|---:|---|
-| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `1.0 m/s` command. |
-| `wheelchair_forward_progress` | `2.0` | Reward positive world-X wheelchair movement. |
-| `wheelchair_backward_velocity` | `-3.0` | Penalize moving the chair backward. |
-| `wheelchair_rail_yaw_torque` | `-0.05` | Penalize twisting the constrained rail/chair instead of pushing straight. |
+| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `2.0 m/s` command. |
+| `wheelchair_forward_progress` | `3.0` | Reward positive world-X wheelchair movement. |
+| `wheelchair_backward_velocity` | `-10.0` | Penalize moving the chair backward. |
+| `robot_forward_lean` | `1.0` | Bias the robot to lean forward while pushing. |
 
 Inherited locomotion, pose, contact, hand-position, and wrist terms are currently set to `0.0` for this task unless explicitly listed above.
 
@@ -45,15 +43,15 @@ Inherited locomotion, pose, contact, hand-position, and wrist terms are currentl
 
 The policy observes the robot state plus wheelchair-relative state through `wheelchair_root_state_b` and `wheelchair_handle_state_b`. The wheelchair observation includes relative chair position, relative chair velocity, chair forward direction, relative yaw rate, and centerline error. The handle observation includes handle positions in the robot-root frame and hand-to-handle position error.
 
-The policy does not currently observe the full soft-attachment state. Missing pieces include relative hand-handle orientation, relative hand-handle velocity, spring force, attachment force balance between left/right hands, and rail reaction force/torque as an observation. This matters because the current physical attachment is compliant.
+The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The soft-attachment branch additionally exposed spring state, but that branch did not reproduce the good gait.
 
 ## Current Issue
 
-The hard hand-handle joint version looked better in short visual playback, but it produces PhysX joint snap warnings because the hand bodies and handle bodies start apart and are snapped together by the joint. The bounded spring-damper attachment fixed that specific warning and allowed high-env probes up to `12288` environments, but it did not learn a deterministic forward push.
+The hard hand-handle joint version is now the best visual reference. The earlier diagnosis overstated the startup snap problem. A startup diagnostic on the hard fast-lean task measured the intended palm-grip anchor error at about `0.000005 m`, not centimeters. The hand body origins are about `0.0545 m` from the handles, but the local joint anchor is intentionally offset to the palm grip point.
 
-The current evidence favors the hard attachment for learnability and the spring-damper for numerical cleanliness. The spring-damper introduces small hidden motions and loads between the rubber hands and handles. From the policy's point of view, two states can look almost identical in observation space while the chair reacts differently because the spring load, relative handle orientation, or contact mode is different. The useful names for this failure mode are `contact-rich hybrid dynamics`, `stiff non-smooth dynamics`, `partial observability`, and `state aliasing`.
+The actual code issue was the USD authoring order in `attach_wheelchair_hands_to_handles`: the joint body targets were authored before the local grip offsets. PhysX could briefly see an origin-to-origin joint and report `CreateJoint - found a joint with disjointed body transforms`. `events.py` now authors the local joint frame first, then binds `body0` and `body1`. A 10-env startup diagnostic after this change produced no `CreateJoint` disjoint-body warning, and the grip error remained about `5e-6 m`.
 
-That makes reward-only tuning unreliable. PPO can see low or noisy returns, but it cannot cleanly assign credit if the important attachment/load state is not observable. The current low `wheelchair_forward_progress` and low `wheelchair_track_forward_velocity` after the soft-attachment restart are consistent with this issue.
+The hard-reference playback is visually useful, but speed alone is not a success metric. The latest diagnostic for `model_13249.pt` on the hard fast-lean task reported a `2.0 m/s` command, `1.1268 m/s` mean wheelchair forward speed, and `0.000` of samples within `0.10 m/s` of the command. Treat that as chair-motion telemetry, not proof of command tracking or gait quality.
 
 ## May 18 Soft-Observation Branch
 
@@ -185,17 +183,19 @@ Task added:
 
 `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard`
 
-This variant returns to both hand-handle hard USD joints on the current PhysX rail setup. It disables the soft hand-handle spring events and restores `attach_wheelchair_hands_to_handles` with both `left_rubber_hand -> left_handle_frame` and `right_rubber_hand -> right_handle_frame` spherical joints. The observation shape stays compatible with the old non-SoftObs actor: policy `(585,)`, critic `(600,)`.
+This variant returned to both hand-handle hard USD joints on the 1 m/s yaw-torque PhysX rail setup. It disabled the soft hand-handle spring events and restored `attach_wheelchair_hands_to_handles` with both `left_rubber_hand -> left_handle_frame` and `right_rubber_hand -> right_handle_frame` spherical joints. The observation shape stayed compatible with the old non-SoftObs actor: policy `(585,)`, critic `(600,)`.
 
 Baseline deterministic playback used:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video/model_15900.pt`
 
-Playback still emits the expected PhysX warning:
+Before the joint-authoring-order fix, playback emitted:
 
 `CreateJoint - found a joint with disjointed body transforms, the simulation will most likely snap objects together`
 
-Despite that, deterministic playback did work and moved the chair:
+That warning should not be interpreted as proof that the palm grip was centimeters away from the handle. The measured grip anchor was already close; the body origins are offset by design. After changing `events.py` to author `localPos0/localPos1` before the body targets, the hard fast-lean startup diagnostic produced no `CreateJoint` disjoint-body warning.
+
+The old `model_15900.pt` deterministic playback moved the chair but did not show a good walking push:
 
 | Metric | Hard attach playback |
 |---|---:|
@@ -230,7 +230,7 @@ This smoke used `1024` envs, loaded the old actor from `model_15900.pt`, reset t
 | `Episode_Termination/non_finite_wheelchair` | `0.0000` | `0.0040` |
 | `Episode_Termination/non_finite_robot` | `0.0000` | `0.0050` |
 
-Conclusion: the both-hand hard attachment is worth revisiting as a coupling mechanism, but the current playback is not a successful walking policy. It is not physically clean, the reaction torque is high, and the useful forward speed appears partly driven by hard-joint coupling/snap rather than clean locomotion. The next version should try to keep the hard coupling learnability while reducing the snap/stress at reset, then require visual gait validation before calling it progress.
+Conclusion: this `model_15900.pt` retest was the wrong comparison point for the visually good behavior. The branch to preserve is the older fast-lean hard-reference checkpoint, `model_13249.pt`, not the later soft-adapted/yaw-torque lineage.
 
 ## Run Lineage
 
