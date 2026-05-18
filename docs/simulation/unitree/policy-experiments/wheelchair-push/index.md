@@ -12,7 +12,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/` |
 | Current run | `2026-05-18_16-31-49_softobs_4096_250_from_15949` |
-| Summary last updated | May 18, 2026, 16:33 Toronto |
+| Summary last updated | May 18, 2026, 16:43 Toronto |
 | Training tmux | `unitree_wheelchair_softobs_4096_250` |
 | Training env count | `4096` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -106,6 +106,8 @@ This is a useful smoke result, not a success result. It suggests the added obser
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/2026-05-18_16-31-49_softobs_4096_250_from_15949`
 
 That continuation starts at iteration `15949` and targets `16199`. Keep rewards unchanged during this gate so the comparison stays clean.
+
+Interim trend at about iteration `16044`: the run is still numerically stable and non-finite terminations are `0.0`, but the chair-forward signal is weak. Recent `wheelchair_track_forward_velocity` values are mostly around `0.02` to `0.04`, `wheelchair_forward_progress` is still only a few thousandths to about `0.01`, and backward-velocity penalty is starting to appear. Let the gate finish, but do not treat the current trend as evidence that SoftObs has solved the forward-push problem.
 
 ## Run Lineage
 
