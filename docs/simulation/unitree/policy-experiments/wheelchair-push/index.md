@@ -12,7 +12,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Reference checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt` |
 | Current run | none; latest-video site renders the recovered `model_13249.pt` hard-reference playback |
-| Summary last updated | May 18, 2026, 18:27 Toronto |
+| Summary last updated | May 18, 2026, 18:55 Toronto |
 | Training tmux | none |
 | Training env count | none currently |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -47,15 +47,22 @@ The hard-reference policy observes the robot state plus wheelchair-relative stat
 
 ## Current Issue
 
-The hard hand-handle joint version is now the best visual reference. The earlier diagnosis overstated the startup snap problem. A startup diagnostic on the hard fast-lean task measured the intended palm-grip anchor error at about `0.000005 m`, not centimeters. The hand body origins are about `0.0545 m` from the handles, but the local joint anchor is intentionally offset to the palm grip point.
+The hard hand-handle joint version is still the best visual reference. The warning root cause is now understood: the imported G1 USD stage has the arms in its authored/default pose, while the reset event moves the arms into the wheelchair-handle pose before the hard hand-handle joints are created. Runtime palm-grip alignment was already good at about `5e-6 m`, but the authored USD joint frames were about `0.128 m` apart, so PhysX reported the joints as disjoint and warned that the bodies may snap together.
 
-The actual code issue was the USD authoring order in `attach_wheelchair_hands_to_handles`: the joint body targets were authored before the local grip offsets. `events.py` now authors the local joint frame first, then binds `body0` and `body1`. A 10-env offset diagnostic measured the palm-grip error at about `5e-6 m`.
+`events.py` now mirrors the reset runtime poses for the relevant hand and handle bodies into the USD stage before creating those cross-asset joints, preserves existing USD xform precision, authors the local joint frame before binding the body targets, and only performs the stage sync for envs where the joints still need to be created.
 
-A one-iteration training smoke completed from `model_13249.pt` using `16` envs:
+Final verification from `model_13249.pt` on `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`:
 
-`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_18-21-58_hard_startup_fix_1iter_smoke`
+| Check | Result |
+|---|---:|
+| Runtime palm-grip error | about `5e-6 m` |
+| USD stage joint-frame error | about `5e-6 m` |
+| `CreateJoint - found a joint with disjointed body transforms` | not present |
+| 16-env one-iteration training smoke | completed |
 
-That smoke had no Python/RSL-RL crash, no base-height terminations, and no bad-orientation terminations. It still emitted the PhysX `CreateJoint - found a joint with disjointed body transforms` warning, so the warning is not fully eliminated. Treat the hard-joint setup as trainable but not numerically clean.
+Training smoke log:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_18-52-06_hard_stage_runtime_sync_final_1iter_smoke`
 
 The hard-reference playback is visually useful, but speed alone is not a success metric. The latest diagnostic for `model_13249.pt` on the hard fast-lean task reported a `2.0 m/s` command, `1.1268 m/s` mean wheelchair forward speed, and `0.000` of samples within `0.10 m/s` of the command. Treat that as chair-motion telemetry, not proof of command tracking or gait quality.
 
@@ -195,11 +202,11 @@ Baseline deterministic playback used:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video/model_15900.pt`
 
-Before the joint-authoring-order fix, playback emitted:
+Before the stage-pose sync fix, playback emitted:
 
 `CreateJoint - found a joint with disjointed body transforms, the simulation will most likely snap objects together`
 
-That warning should not be interpreted as proof that the palm grip was centimeters away from the handle. The measured grip anchor was already close; the body origins are offset by design. After changing `events.py` to author `localPos0/localPos1` before the body targets, the hard fast-lean startup diagnostic produced no `CreateJoint` disjoint-body warning.
+That warning should not be interpreted as proof that the palm grip was centimeters away from the handle at runtime. The measured runtime grip anchor was already close; the body origins are offset by design. The actual mismatch was between the reset runtime pose and the authored USD stage pose. After syncing the relevant body xforms to the reset pose before joint creation, the hard fast-lean startup diagnostic and a 16-env training smoke produced no `CreateJoint` disjoint-body warning.
 
 The old `model_15900.pt` deterministic playback moved the chair but did not show a good walking push:
 
