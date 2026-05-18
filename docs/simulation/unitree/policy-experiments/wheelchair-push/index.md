@@ -12,7 +12,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/` |
 | Current run | `2026-05-18_17-28-47_hardattach_spherical_1024_smoke_from_15900` |
-| Summary last updated | May 18, 2026, 17:35 Toronto |
+| Summary last updated | May 18, 2026, 17:55 Toronto |
 | Training tmux | none, hard-attach smoke ended |
 | Training env count | `1024` smoke |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -212,6 +212,8 @@ A slow-orbit playback video was published to the latest-video site using the new
 
 `unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-hard-attach-push-attached`
 
+A second site render used `--video-follow-best-robot` to rule out a bad fixed env-0 camera choice. The visual result still is not a good walking push. The chair moves in the rollout, but the robot posture/gait is poor and the motion looks like hard-joint forcing rather than a learned stable forward walk. Treat the speed table above as a coupling diagnostic, not a success metric.
+
 Training smoke:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_17-28-47_hardattach_spherical_1024_smoke_from_15900`
@@ -228,7 +230,7 @@ This smoke used `1024` envs, loaded the old actor from `model_15900.pt`, reset t
 | `Episode_Termination/non_finite_wheelchair` | `0.0000` | `0.0040` |
 | `Episode_Termination/non_finite_robot` | `0.0000` | `0.0050` |
 
-Conclusion: the both-hand hard attachment is worth revisiting. It is not physically clean, and the reaction torque is high, but it produces real forward motion with the existing actor while the soft and stiff SoftObs variants stayed stationary. The next version should try to keep the hard coupling learnability while reducing the snap/stress at reset.
+Conclusion: the both-hand hard attachment is worth revisiting as a coupling mechanism, but the current playback is not a successful walking policy. It is not physically clean, the reaction torque is high, and the useful forward speed appears partly driven by hard-joint coupling/snap rather than clean locomotion. The next version should try to keep the hard coupling learnability while reducing the snap/stress at reset, then require visual gait validation before calling it progress.
 
 ## Run Lineage
 
@@ -242,7 +244,7 @@ Conclusion: the both-hand hard attachment is worth revisiting. It is not physica
 | PhysX rail diagnostic, May 18, 2026 | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
 | PhysX rail soft-attachment run, May 18, 2026 | Stable large-env setup, but deterministic playback remained stationary. |
 | PhysX rail SoftObs and SoftObs-Stiff, May 18, 2026 | Exposed attachment/load state and tested a stiffer bounded spring. Neither produced reliable deterministic forward motion; the stiff version worsened force/yaw spikes. |
-| PhysX rail hard-attach retest, May 18, 2026 | Both hand-handle hard joints moved the chair in playback despite joint-snap warnings; 1024-env smoke started learning but ended before checkpointing. |
+| PhysX rail hard-attach retest, May 18, 2026 | Both hand-handle hard joints moved the chair in playback despite joint-snap warnings, but the visual gait was bad; 1024-env smoke started learning but ended before checkpointing. |
 
 Detailed run commands, old checkpoints, asset turntables, and startup/ragdoll videos are kept in the [chronological archive](archive.md).
 
