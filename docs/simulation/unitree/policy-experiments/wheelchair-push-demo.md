@@ -1644,6 +1644,48 @@ Startup metrics confirmed those are the only active reward terms. The first few 
 
 Latest preview update on May 17, 2026: `model_12350.pt` was rendered from the latest-video site button with the `two_orbit` view. The site provider compressed the browser-facing copy from about `3.9 MB` to about `510 KB` using `ffmpeg` (`CRF 38`, `veryfast`, max width `960`), while keeping the archived render unchanged under `logs/demos/`.
 
+Final deterministic playback diagnostic: `model_13249.pt` did not learn the intended forward push. With the play command fixed at `+0.14 m/s`, raw wheelchair root speed over `300` steps across `10` environments measured `forward_mean=-0.1320 m/s`, `forward_min=-0.8713 m/s`, `forward_max=0.4623 m/s`, and only `16%` of samples were within `0.10 m/s` of the command. Treat this run as failed for actual forward motion despite some positive train-time reward terms.
+
+## Minimal X-Rail Fast Velocity + Progress Push
+
+Started on May 17, 2026 after the `0.14 m/s` velocity-progress run still moved backward in deterministic playback. This run targets `2.0 m/s`, keeps the no-collision X-rail scaffold, does not add any forward-lean reward or pose bias, and increases the warm-start action standard deviation from about `0.02` to `0.35` so PPO can explore larger motions instead of replaying the cautious standing policy.
+
+| Item | Value |
+|---|---|
+| Task ID | `Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Fast-Velocity-Progress-Push-Attached` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_velocity_progress_push_attached/` |
+| Active run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_velocity_progress_push_attached/2026-05-17_22-37-19_minimal_x_rail_fast_2ms_no_lean_bias_std035_1024env_from_fixed_stand_12250/` |
+| Training env count | `1024` |
+| Warm start | fixed attached-stand checkpoint `model_12250.pt`, copied with actor action `std=0.35` |
+| Code commit | `dda8ce8 Add 2ms x-rail wheelchair push task` |
+| Training tmux | `unitree_g1_wheelchair_minimal_x_rail_fast_2ms_train` |
+| Preview project | `unitree-wheelchair-minimal-x-rail-fast-velocity-progress-push-attached` |
+| Preview watcher | `isaac_clip_watch_wheelchair_minimal_x_rail_fast_2ms_every250` |
+
+Launch:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 1024 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-X-Rail-Fast-Velocity-Progress-Push-Attached \
+  --resume \
+  --load_run warmstart_palm_grip_fixed_stand_12250_std035 \
+  --checkpoint model_12250_std035.pt \
+  --load_model_only \
+  --run_name minimal_x_rail_fast_2ms_no_lean_bias_std035_1024env_from_fixed_stand_12250
+```
+
+Active nonzero rewards:
+
+| Reward | Weight | Notes |
+|---|---:|---|
+| `wheelchair_track_forward_velocity` | `10.0` | Matches wheelchair root X velocity to a fixed `2.0 m/s` command, with `std=0.8`. |
+| `wheelchair_forward_progress` | `3.0` | Positive world-X wheelchair root velocity, clipped at `2.5 m/s`. |
+| `wheelchair_backward_velocity` | `-10.0` | Squared penalty on negative world-X wheelchair root velocity. |
+
+No lean reward was added. The action scale was widened for legs, waist, shoulders, and elbows to let the policy make larger motions under the faster command.
+
 Plain standing launch:
 
 ```bash
