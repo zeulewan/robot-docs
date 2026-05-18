@@ -11,16 +11,16 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/` |
-| Current run | `2026-05-18_16-22-37_softobs_4096_smoke_from_15900` |
-| Summary last updated | May 18, 2026, 16:30 Toronto |
-| Training tmux | none, smoke completed |
-| Training env count | `4096` for smoke |
+| Current run | `2026-05-18_16-31-49_softobs_4096_250_from_15949` |
+| Summary last updated | May 18, 2026, 16:33 Toronto |
+| Training tmux | `unitree_wheelchair_softobs_4096_250` |
+| Training env count | `4096` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch.
 
-The first SoftObs smoke run completed cleanly at `model_15949.pt`. It is safe enough to continue, but deterministic playback still does not show meaningful chair motion: measured forward speed was `0.0016 m/s` against the `1.0 m/s` command.
+The first SoftObs smoke run completed cleanly at `model_15949.pt`. It is safe enough to continue, but deterministic playback still does not show meaningful chair motion: measured forward speed was `0.0016 m/s` against the `1.0 m/s` command. A `250`-iteration continuation is now running from that checkpoint.
 
 ## Current Task Shape
 
@@ -101,7 +101,11 @@ The first `4096`-env smoke run trained from `15900` to `15949` with no base-heig
 | Soft attachment force norm mean | `106.87 N` |
 | Soft attachment force imbalance mean | `50.95 N` |
 
-This is a useful smoke result, not a success result. It suggests the added observations did not destabilize the run, but `50` iterations were not enough to turn the hidden load signal into a working push. The next branch should continue from `model_15949.pt` for a longer controlled run before changing the reward again.
+This is a useful smoke result, not a success result. It suggests the added observations did not destabilize the run, but `50` iterations were not enough to turn the hidden load signal into a working push. The active continuation is:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/2026-05-18_16-31-49_softobs_4096_250_from_15949`
+
+That continuation starts at iteration `15949` and targets `16199`. Keep rewards unchanged during this gate so the comparison stays clean.
 
 ## Run Lineage
 
