@@ -2,6 +2,38 @@
 
 This is the chronological archive for the wheelchair-push work. It intentionally keeps old commands, old checkpoint paths, early videos, and startup/ragdoll diagnostics for traceability. For current tuning decisions, use the shorter [working summary](index.md).
 
+## Date Index
+
+| Date | Section | Notes |
+|---|---|---|
+| May 15, 2026 | Setup / Command / Caveat | First visual-only walking-policy wheelchair demo. |
+| May 15, 2026 | Handle-Grip Training Task | First trainable proxy with hand-handle target rewards. |
+| May 15, 2026 | Passive Manual Chair Asset | Free3D visual and URDF collision proxy added. |
+| May 15, 2026 | Training Collision Proxy Turntable | URDF training proxy rendered for inspection. |
+| May 15, 2026 | Free3D Asset Turntable | Downloaded visual mesh rendered by itself. |
+| May 15, 2026 | First Handle-Grip Run | Warm-started from the walking checkpoint. |
+| May 15, 2026 | Model 7300 Preview | First handle-grip checkpoint playback. |
+| May 15, 2026 | Stage-One Free3D Hand-Handle Playback | Visual hand-handle attachment demo. |
+| May 15, 2026 | Dynamic Wheelchair Push Training | First passive-chair physics task. |
+| May 15, 2026 | Model 18000 / 18100 Rubber-Hand Previews | Rubber-hand-only contact restart previews. |
+| May 15, 2026 | Wrist Alignment Restart / Model 18700 Preview | Added wrist alignment after bent-wrist behavior. |
+| May 15, 2026 | Model 10100 / 11800 / 14999 Dynamic Previews | Dynamic push checkpoints and hidden-helper render cleanup. |
+| May 15, 2026 | Four-Wheel Ground Bias / Model 15200 Preview | Added chair contact-point ground bias. |
+| May 15, 2026 | Straight-Line Bias / Model 15800 Preview | Tried to reduce left veering. |
+| May 15, 2026 | Soft Straight-Line Continuation / Model 16000 Preview | Softer straightness restart. |
+| May 15, 2026 | Observed Dynamic Push Variant / Model 16200 / 16300 Previews | Added wheelchair observations after reward-only straightness failed. |
+| May 15, 2026 | Attached-Hands Variant | Anchored hands to handles with spherical joints. |
+| May 16, 2026 | Attached Start-Pose Tuning | Reduced startup preload at the handles. |
+| May 16, 2026 | Standing-First Attached Pretrain | Standing bridge, fixed/free chair attempts, and ragdoll diagnostics. |
+| May 17, 2026 | Minimal Velocity-Only Attached Push | Reduced reward stack to test command velocity. |
+| May 17, 2026 | Minimal X-Rail Velocity Push | Locked chair to forward/back rail to remove turning exploit. |
+| May 17, 2026 | Minimal X-Rail Progress Push | Removed velocity tracking and tested progress-only reward. |
+| May 17, 2026 | Minimal X-Rail Velocity + Progress Push | Added velocity reward and backward penalty back. |
+| May 17, 2026 | Minimal X-Rail Fast Velocity + Progress Push | Tried `2.0 m/s` target with wider exploration. |
+| May 17, 2026 | Minimal X-Rail Fast Forward-Lean Velocity + Progress Push | Added forward-lean shaping. |
+| May 18, 2026 | PhysX Rail Diagnostic | Added real prismatic rail articulation and rail-wrench measurement. |
+| May 18, 2026 | PhysX Rail Training Stabilization | Replaced hard hand-handle joints with bounded soft attachments. |
+
 Quick demo requested on May 15, 2026: use the existing walking policy, put a wheelchair-like prop in front of the G1, and make the pair move forward.
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">

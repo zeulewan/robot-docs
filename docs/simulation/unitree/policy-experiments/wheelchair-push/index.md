@@ -12,6 +12,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/` |
 | Current run | `2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video` |
+| Summary last updated | May 18, 2026 |
 | Training tmux | `unitree_wheelchair_physx_12288_train` |
 | Training env count | `12288` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -56,13 +57,13 @@ That makes reward-only tuning unreliable. PPO can see low or noisy returns, but 
 
 | Family | Result |
 |---|---|
-| Kinematic visual demo | Good-looking demo only; no physical chair dynamics. |
-| Handle-grip walking | Taught the walking policy to keep hands near handle targets. |
-| Dynamic free-chair attempts | Added passive wheelchair dynamics, contact rewards, and invalid-contact penalties; tended to veer or collapse. |
-| Standing bridge runs | Tried to make the robot stand with the chair/handles before walking; several startup/ragdoll diagnostics were captured. |
-| Minimal X-rail runs | Simplified the problem to forward/back chair motion; exposed backward-walking and off-center pushing exploits. |
-| PhysX rail diagnostic | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
-| PhysX rail soft-attachment run | Current stable large-env setup; not yet learning strong forward pushing. |
+| Kinematic visual demo, May 15, 2026 | Good-looking demo only; no physical chair dynamics. |
+| Handle-grip walking, May 15, 2026 | Taught the walking policy to keep hands near handle targets. |
+| Dynamic free-chair attempts, May 15, 2026 | Added passive wheelchair dynamics, contact rewards, and invalid-contact penalties; tended to veer or collapse. |
+| Standing bridge runs, May 16, 2026 | Tried to make the robot stand with the chair/handles before walking; several startup/ragdoll diagnostics were captured. |
+| Minimal X-rail runs, May 17, 2026 | Simplified the problem to forward/back chair motion; exposed backward-walking and off-center pushing exploits. |
+| PhysX rail diagnostic, May 18, 2026 | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
+| PhysX rail soft-attachment run, May 18, 2026 | Current stable large-env setup; not yet learning strong forward pushing. |
 
 Detailed run commands, old checkpoints, asset turntables, and startup/ragdoll videos are kept in the [chronological archive](archive.md).
 
