@@ -1756,6 +1756,39 @@ conda run -n isaaclab python scripts/rsl_rl/play.py \
 
 First diagnostic playback showed the wheelchair body moving forward but leaning hard into the rail: over `600` samples, `body=base_link`, `command_x_mean=2.0000 m/s`, `forward_mean=0.5610 m/s`, `yaw_abs_mean=0.0000 rad/s` because the rail locks yaw, and `yaw_torque_abs_mean=88.5102 Nm` with `yaw_torque_abs_p95=458.5056 Nm` and `yaw_torque_abs_max=1242.2025 Nm`. This supports the visual suspicion that the policy is partly exploiting the rail by pushing the chair off-center/sideways while the rail constraint forces the chair to remain straight.
 
+## PhysX Rail Training Stabilization
+
+On May 18, 2026, the PhysX-rail task was changed from a hard USD hand-handle joint to a bounded soft attachment. The hard joint setup worked visually at small scale, but large parallel training runs still produced PhysX `CreateJoint` snap warnings and unstable rollouts: the previous `2048`-env smoke log had `4096` `CreateJoint` warnings, huge value loss spikes, and occasional bad physics states. More GPU memory was not the fix; after stopping idle desktop/streaming processes, a `2048`-env run only used about `6.8 GB` of the `24 GB` RTX 3090. The issue was solver stability from the robot, chair rail, and hand-handle constraints.
+
+Commit `2c11e86` changes the current PhysX-rail training task:
+
+| Change | Purpose |
+|---|---|
+| `apply_soft_hand_handle_attachment` | Applies a spring-damper between the two rubber-hand grip points and the two wheelchair handle frames. |
+| `max_force=350 N` per hand | Caps attachment force so a bad policy rollout cannot inject unbounded joint impulses. |
+| Hard `attach_wheelchair_hands` disabled for the PhysX-rail task | Removes USD joint creation during training and eliminates the snap warnings. |
+| Rail joint effort/velocity/damping limited | Changes `rail_x_joint` from effectively unbounded to `effort=500`, `velocity=4`, `damping=20`, `friction=0.5`. |
+| Wheelchair and robot rigid-body velocity caps | Prevents extreme velocities from poisoning later simulation steps. |
+
+Validation smoke:
+
+```bash
+TERM=xterm timeout 300s conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached \
+  --resume \
+  --load_run 2026-05-18_03-27-41_1mps_yawtorque_256env_finite_oldcritic_std002_from_model_13249 \
+  --checkpoint model_13250.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.015 \
+  --run_name smoke_2048_soft_attach_actor13250_resetcritic \
+  --max_iterations 5
+```
+
+Result: the run completed and saved `model_13254.pt` under `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_04-44-46_smoke_2048_soft_attach_actor13250_resetcritic/`. The new log had `0` `CreateJoint` warnings, `non_finite_wheelchair=0.0000`, `non_finite_robot=0.0000`, and value loss stayed around `0.0002-0.0003`. This validates the stability fix, but it does not mean the old actor is still good under the softer attachment: the short smoke reward was near zero because the attachment dynamics changed. Continue from this version as a new adaptation run, not as proof that the previous gait is preserved unchanged.
+
 Plain standing launch:
 
 ```bash
