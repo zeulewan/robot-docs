@@ -1729,6 +1729,33 @@ Active nonzero rewards:
 
 Early log check: after widening the lean reward from an initially too-sharp `std=0.08` to `std=0.20`, `Episode_Reward/robot_forward_lean` rose into the `0.20-0.26` range by learning iteration `12268-12273`, so the term is active and visible in TensorBoard. The chair is still showing backward-velocity penalty early in the run, so do not treat this as solved until the deterministic preview and speed stats confirm positive world-X wheelchair speed.
 
+On May 18, 2026, a playback-only PhysX rail diagnostic was added so yaw abuse can be measured as a real constraint reaction instead of inferred visually. The previous X-rail task used `constrain_wheelchair_to_forward_rail`, which kinematically overwrote the wheelchair root pose/velocity each environment step. That is useful for scaffold training, but it cannot report a physical rail reaction torque.
+
+The diagnostic adds a second wheelchair URDF with `rail_world -> base_link` connected by a prismatic `rail_x_joint`, then fixes `rail_world` as the articulation root. The moving wheelchair body is therefore `Wheelchair/base_link`; the rail reaction wrench is read from `wheelchair.data.body_incoming_joint_wrench_b` for that body. Because the fixed rail root is no longer the chair, the wheelchair observations and reward helpers were updated to support `SceneEntityCfg("wheelchair", body_names="base_link")`.
+
+| Item | Value |
+|---|---|
+| Diagnostic task ID | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached` |
+| Diagnostic URDF | `assets/objects/wheelchair/free3d_active_wheelchair/urdf/active_manual_wheelchair_x_rail.urdf` |
+| Code commit | `bddae25 Add PhysX rail wheelchair diagnostics` |
+| Policy checkpoint tested | `model_13249.pt` from the forward-lean X-rail run |
+
+Command:
+
+```bash
+conda run -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached \
+  --num_envs 10 \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt \
+  --print-wheelchair-speed-stats \
+  --print-wheelchair-rail-wrench-stats \
+  --speed-stats-steps 60 \
+  --rail-wrench-stats-steps 60
+```
+
+First diagnostic playback showed the wheelchair body moving forward but leaning hard into the rail: over `600` samples, `body=base_link`, `command_x_mean=2.0000 m/s`, `forward_mean=0.5610 m/s`, `yaw_abs_mean=0.0000 rad/s` because the rail locks yaw, and `yaw_torque_abs_mean=88.5102 Nm` with `yaw_torque_abs_p95=458.5056 Nm` and `yaw_torque_abs_max=1242.2025 Nm`. This supports the visual suspicion that the policy is partly exploiting the rail by pushing the chair off-center/sideways while the rail constraint forces the chair to remain straight.
+
 Plain standing launch:
 
 ```bash
