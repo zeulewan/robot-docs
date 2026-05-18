@@ -12,8 +12,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/` |
 | Current run | `2026-05-18_16-31-49_softobs_4096_250_from_15949` |
-| Summary last updated | May 18, 2026, 16:51 Toronto |
-| Training tmux | `unitree_wheelchair_softobs_4096_250` |
+| Summary last updated | May 18, 2026, 17:03 Toronto |
+| Training tmux | none, 250-gate completed |
 | Training env count | `4096` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -105,11 +105,28 @@ This is a useful smoke result, not a success result. It suggests the added obser
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/2026-05-18_16-31-49_softobs_4096_250_from_15949`
 
-That continuation starts at iteration `15949` and targets `16199`. Keep rewards unchanged during this gate so the comparison stays clean.
+That continuation started at iteration `15949` and saved `model_16198.pt`. Rewards were kept unchanged during this gate so the comparison stayed clean.
 
 Interim trend at about iteration `16044`: the run is still numerically stable and non-finite terminations are `0.0`, but the chair-forward signal is weak. Recent `wheelchair_track_forward_velocity` values are mostly around `0.02` to `0.04`, `wheelchair_forward_progress` is still only a few thousandths to about `0.01`, and backward-velocity penalty is starting to appear. Let the gate finish, but do not treat the current trend as evidence that SoftObs has solved the forward-push problem.
 
 Interim trend at about iteration `16109`: the run has started showing intermittent forward signal. Some recent iterations reached `wheelchair_track_forward_velocity` around `0.10` to `0.12` and `wheelchair_forward_progress` around `0.03`, but the signal is noisy. Backward-velocity penalty and base-height terminations are also rising, so this may be unstable/exploratory motion rather than a reliable push. The final deterministic playback is required before deciding whether to extend this branch.
+
+Final deterministic playback from `model_16198.pt` did not validate the train-time spikes:
+
+| Metric | `model_16198.pt` |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.0004 m/s` |
+| Forward max | `0.0982 m/s` |
+| Within `0.10 m/s` of command | `0.000` |
+| Rail yaw torque abs mean | `47.59 Nm` |
+| Rail yaw torque abs p95 | `73.24 Nm` |
+| Soft attachment position error mean | `0.0416 m` |
+| Soft attachment relative velocity mean | `0.0484 m/s` |
+| Soft attachment force norm mean | `102.29 N` |
+| Soft attachment force imbalance mean | `37.02 N` |
+
+Conclusion: adding soft-attachment observations improved some attachment diagnostics, but it did not produce a reliable deterministic forward push. The train-time reward spikes were likely exploratory/stochastic behavior rather than a usable policy. Do not extend this exact branch without changing the attachment model or the state/action structure.
 
 ## Run Lineage
 
