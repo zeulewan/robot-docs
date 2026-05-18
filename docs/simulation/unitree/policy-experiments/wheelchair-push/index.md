@@ -6,15 +6,15 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs-Stiff` |
+| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
-| Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_stiff_push_attached/` |
-| Current run | `2026-05-18_17-07-46_stiff_softobs_4096_smoke_from_15900` |
-| Summary last updated | May 18, 2026, 17:16 Toronto |
-| Training tmux | none, stiff smoke completed |
-| Training env count | `4096` |
+| Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/` |
+| Current run | `2026-05-18_17-28-47_hardattach_spherical_1024_smoke_from_15900` |
+| Summary last updated | May 18, 2026, 17:35 Toronto |
+| Training tmux | none, hard-attach smoke ended |
+| Training env count | `1024` smoke |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
@@ -49,9 +49,9 @@ The policy does not currently observe the full soft-attachment state. Missing pi
 
 ## Current Issue
 
-The hard hand-handle joint version looked better in short visual playback, but it was not stable enough for large parallel training. It produced PhysX joint snap warnings, value-loss spikes, and occasional bad simulator states. The bounded spring-damper attachment fixed that stability problem: high-env probes reached `12288` environments cleanly, and `CreateJoint` warnings disappeared.
+The hard hand-handle joint version looked better in short visual playback, but it produces PhysX joint snap warnings because the hand bodies and handle bodies start apart and are snapped together by the joint. The bounded spring-damper attachment fixed that specific warning and allowed high-env probes up to `12288` environments, but it did not learn a deterministic forward push.
 
-The tradeoff is learnability. The spring-damper introduces small hidden motions and loads between the rubber hands and handles. From the policy's point of view, two states can look almost identical in observation space while the chair reacts differently because the spring load, relative handle orientation, or contact mode is different. The useful names for this failure mode are `contact-rich hybrid dynamics`, `stiff non-smooth dynamics`, `partial observability`, and `state aliasing`.
+The current evidence favors the hard attachment for learnability and the spring-damper for numerical cleanliness. The spring-damper introduces small hidden motions and loads between the rubber hands and handles. From the policy's point of view, two states can look almost identical in observation space while the chair reacts differently because the spring load, relative handle orientation, or contact mode is different. The useful names for this failure mode are `contact-rich hybrid dynamics`, `stiff non-smooth dynamics`, `partial observability`, and `state aliasing`.
 
 That makes reward-only tuning unreliable. PPO can see low or noisy returns, but it cannot cleanly assign credit if the important attachment/load state is not observable. The current low `wheelchair_forward_progress` and low `wheelchair_track_forward_velocity` after the soft-attachment restart are consistent with this issue.
 
@@ -179,6 +179,57 @@ Final deterministic playback from the stiff smoke `model_15949.pt` did not impro
 
 Conclusion: the stiffer bounded spring made the attachment more violent without producing deterministic forward motion. It hit the force cap and worsened yaw/imbalance metrics. Do not extend this branch as-is.
 
+## May 18 Hard-Attach Retest
+
+Task added:
+
+`Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard`
+
+This variant returns to both hand-handle hard USD joints on the current PhysX rail setup. It disables the soft hand-handle spring events and restores `attach_wheelchair_hands_to_handles` with both `left_rubber_hand -> left_handle_frame` and `right_rubber_hand -> right_handle_frame` spherical joints. The observation shape stays compatible with the old non-SoftObs actor: policy `(585,)`, critic `(600,)`.
+
+Baseline deterministic playback used:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video/model_15900.pt`
+
+Playback still emits the expected PhysX warning:
+
+`CreateJoint - found a joint with disjointed body transforms, the simulation will most likely snap objects together`
+
+Despite that, deterministic playback did work and moved the chair:
+
+| Metric | Hard attach playback |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.6810 m/s` |
+| Forward min | `-0.1955 m/s` |
+| Forward max | `1.2117 m/s` |
+| Within `0.10 m/s` of command | `0.295` |
+| Rail yaw torque abs mean | `83.06 Nm` |
+| Rail yaw torque abs p95 | `212.25 Nm` |
+| Rail yaw torque abs max | `1108.07 Nm` |
+
+A slow-orbit playback video was published to the latest-video site using the new `isaac-clip` project preset:
+
+`unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-hard-attach-push-attached`
+
+Training smoke:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_17-28-47_hardattach_spherical_1024_smoke_from_15900`
+
+This smoke used `1024` envs, loaded the old actor from `model_15900.pt`, reset the critic, and set policy std to `0.015`. It started training and showed useful forward reward, but it ended at iteration `15921` without saving a new checkpoint. TensorBoard event summary:
+
+| Scalar | First logged | Last logged |
+|---|---:|---:|
+| `Train/mean_reward` | `0.14` at `15900` | `12.70` at `15921` |
+| `Episode_Reward/wheelchair_track_forward_velocity` | `0.0051` | `0.2901` |
+| `Episode_Reward/wheelchair_forward_progress` | `0.0054` | `0.1151` |
+| `Episode_Reward/wheelchair_backward_velocity` | `-0.0001` | `-0.0147` |
+| `Episode_Reward/wheelchair_rail_yaw_torque` | `-0.0009` | `-0.0068` |
+| `Episode_Termination/non_finite_wheelchair` | `0.0000` | `0.0040` |
+| `Episode_Termination/non_finite_robot` | `0.0000` | `0.0050` |
+
+Conclusion: the both-hand hard attachment is worth revisiting. It is not physically clean, and the reaction torque is high, but it produces real forward motion with the existing actor while the soft and stiff SoftObs variants stayed stationary. The next version should try to keep the hard coupling learnability while reducing the snap/stress at reset.
+
 ## Run Lineage
 
 | Family | Result |
@@ -191,6 +242,7 @@ Conclusion: the stiffer bounded spring made the attachment more violent without 
 | PhysX rail diagnostic, May 18, 2026 | Replaced kinematic rail clamp with real prismatic articulation so yaw reaction torque could be measured. |
 | PhysX rail soft-attachment run, May 18, 2026 | Stable large-env setup, but deterministic playback remained stationary. |
 | PhysX rail SoftObs and SoftObs-Stiff, May 18, 2026 | Exposed attachment/load state and tested a stiffer bounded spring. Neither produced reliable deterministic forward motion; the stiff version worsened force/yaw spikes. |
+| PhysX rail hard-attach retest, May 18, 2026 | Both hand-handle hard joints moved the chair in playback despite joint-snap warnings; 1024-env smoke started learning but ended before checkpointing. |
 
 Detailed run commands, old checkpoints, asset turntables, and startup/ragdoll videos are kept in the [chronological archive](archive.md).
 
@@ -216,9 +268,10 @@ The current evidence says this is not just a reward-weight problem. The policy c
 
 Best next structural tests:
 
-1. Run a one-hand rigid or spherical attachment probe on the PhysX rail. This removes the two-arm closed loop while testing whether a hard constraint gives learnable forward coupling.
-2. Add direct rail-force / rail-joint observation and TensorBoard metrics. We already print rail wrench in playback, but the policy does not observe that reaction load during training.
-3. Add a short force-shaping stage only after the above diagnostics. A forward rail-force reward could teach the robot to load the chair before asking for velocity, but it should be capped and monitored because it can also reward pushing against the rail without motion.
-4. If both-hand attachment is required, consider a better physical handle coupling than the current spring-damper, such as a properly configured pair of spherical joints with collision masks and solver limits, or a purpose-built articulated handle/grip proxy.
+1. Fix the hard-attach reset geometry so hands and handles start coincident before the joints are created. This directly targets the PhysX snap warning without losing hard coupling.
+2. Try hard attach at lower env count first, then scale up only after non-finite terminations stay near zero.
+3. Add direct rail-force / rail-joint observation and TensorBoard metrics. We already print rail wrench in playback, but the policy does not observe that reaction load during training.
+4. Add a capped yaw/side-load penalty only after the hard attachment can train long enough to checkpoint. The current hard playback has real forward motion but high rail reaction torque.
+5. If both-hand hard attachment keeps producing bad simulator states, try a one-hand rigid or spherical probe to remove the two-arm closed loop while preserving hard force transfer.
 
 Do not keep running the plain SoftObs or SoftObs-Stiff branches without changing the task structure; both failed deterministic validation.
