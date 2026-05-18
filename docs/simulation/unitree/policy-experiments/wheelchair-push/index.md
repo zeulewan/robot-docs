@@ -6,21 +6,21 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached` |
+| Active task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-SoftObs` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Soft attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_push_attached/` |
-| Current run | `2026-05-18_14-15-04_soft_attach_overnight_12288env_from_15400_after_video` |
-| Summary last updated | May 18, 2026, 16:20 Toronto |
-| Training tmux | `unitree_wheelchair_physx_12288_train` |
-| Training env count | `12288` |
+| Experiment root | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_softobs_push_attached/` |
+| Current run | `2026-05-18_16-22-37_softobs_4096_smoke_from_15900` |
+| Summary last updated | May 18, 2026, 16:30 Toronto |
+| Training tmux | none, smoke completed |
+| Training env count | `4096` for smoke |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
-The current run is numerically stable, but the behavior is not solved. Around iteration `15681`, training was still producing weak chair-forward terms: `wheelchair_track_forward_velocity` about `0.084`, `wheelchair_forward_progress` about `0.035`, `wheelchair_backward_velocity` about `-0.089`, and `wheelchair_rail_yaw_torque` about `-0.020`. That means the policy is staying mostly stable, but it is not yet producing a clean forward push.
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch.
 
-The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the next experiment branch.
+The first SoftObs smoke run completed cleanly at `model_15949.pt`. It is safe enough to continue, but deterministic playback still does not show meaningful chair motion: measured forward speed was `0.0016 m/s` against the `1.0 m/s` command.
 
 ## Current Task Shape
 
@@ -85,6 +85,23 @@ Baseline deterministic playback from the original `model_15900.pt` over `300` st
 | Soft attachment force imbalance mean | `45.24 N` |
 
 Expanded SoftObs playback before training still matched the old actor behavior, as expected: the added observation weights start at zero, so the actor cannot use the new signal until PPO updates it.
+
+The first `4096`-env smoke run trained from `15900` to `15949` with no base-height, wheelchair non-finite, or robot non-finite terminations in the logged iterations. Train-time forward rewards rose slightly, but deterministic playback still showed almost no useful chair movement:
+
+| Metric | `model_15949.pt` |
+|---|---:|
+| Commanded wheelchair X velocity | `1.0000 m/s` |
+| Measured forward mean | `0.0016 m/s` |
+| Within `0.10 m/s` of command | `0.000` |
+| Rail yaw torque abs mean | `46.67 Nm` |
+| Rail yaw torque abs p95 | `69.85 Nm` |
+| Soft attachment position error mean | `0.0428 m` |
+| Soft attachment position error p95 | `0.0532 m` |
+| Soft attachment relative velocity mean | `0.1193 m/s` |
+| Soft attachment force norm mean | `106.87 N` |
+| Soft attachment force imbalance mean | `50.95 N` |
+
+This is a useful smoke result, not a success result. It suggests the added observations did not destabilize the run, but `50` iterations were not enough to turn the hidden load signal into a working push. The next branch should continue from `model_15949.pt` for a longer controlled run before changing the reward again.
 
 ## Run Lineage
 
