@@ -6,17 +6,17 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | Paused; diagnostic task is `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard-Robust` |
-| Last rendered playback | Conservative 2 m/s continuation: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13350.pt` |
+| Active training task | Paused; exact hard-attach reproduction tests completed |
+| Last rendered playback | Reproduced 2 m/s hard-attach reference: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13300.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | Stopped diagnostics under `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_robust_push_attached/`; do not continue from the diagnostic `model_13324.pt` checkpoints |
+| Current run | No active run. Exact repro artifacts are `2026-05-19_02-08-33_hard_attach_repro_13300_from_13249_may19` and `2026-05-19_02-22-02_hard_attach_repro_13350_from_13249_may19`. |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13350_slow_revolve_best_20260519_004627/model_13350_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 01:52 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13300_slow_revolve_best_20260519_021951/model_13300_slow_revolve_best.mp4` |
+| Summary last updated | May 19, 2026, 02:35 Toronto |
 | Training tmux | Stopped; no `wheelchair_hard_train` session currently running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -24,7 +24,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
 
-Important correction from the May 19 git-history audit: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The behavior changed after the environment/training guard changes, and the deeper problem is hard-attach PhysX instability producing extreme finite velocities and occasional non-finite states.
+Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
 ## Current Task Shape
 
@@ -57,9 +57,27 @@ The 1 m/s yaw-torque hard branch was stopped after the `model_15000.pt` playback
 
 Training was rolled back to the 2 m/s fast-lean hard task from the preserved `model_13300.pt` checkpoint. The latest-video site was also restored to that 2 m/s reference playback before the conservative continuation test, so it is not showing the failed 1 m/s branch.
 
-The immediate PPO continuation from `model_13300.pt` was stopped after a few minutes because it started destabilizing again: episode length dropped sharply, `unstable_robot_state` rose above `0.6`, and forward reward stayed weak. Treat `model_13300.pt` as the known-good reference checkpoint. The next training attempt should change the update setup, not simply continue the same PPO settings from that checkpoint.
+The immediate PPO restart from `model_13300.pt` was stopped after a few minutes because it did not follow the same trajectory as the original uninterrupted run: episode length dropped sharply, `unstable_robot_state` rose above `0.6`, and forward reward stayed weak. Treat `model_13300.pt` as the known-good reference checkpoint, but do not treat a fresh process launched from that checkpoint as an exact continuation of the original training path.
 
-A conservative continuation was started from `model_13300.pt` on the same 2 m/s fast-lean hard task using `--policy_std 0.005 --freeze_policy_std`. This kept the reward/task shape from the good run but reduced exploration noise so the policy would drift less aggressively. It was stopped at the first new checkpoint, `model_13350.pt`, because the metrics still degraded: by about iteration `13341`, `unstable_robot_state` was about `0.65`, `bad_orientation` was about `0.26`, and forward rewards were weak. The site now shows `model_13350.pt` for visual review, but `model_13300.pt` remains the known-good reference checkpoint unless the video review says otherwise.
+A conservative continuation was started from `model_13300.pt` on the same 2 m/s fast-lean hard task using `--policy_std 0.005 --freeze_policy_std`. This kept the reward/task shape from the good run but reduced exploration noise so the policy would drift less aggressively. It was stopped at the first new checkpoint, `model_13350.pt`, because the metrics still degraded: by about iteration `13341`, `unstable_robot_state` was about `0.65`, `bad_orientation` was about `0.26`, and forward rewards were weak.
+
+The stronger May 19 check was to reproduce the original path from the earlier X-rail fast-lean checkpoint rather than continuing from `model_13300.pt`. Two short runs used the original command shape:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.02
+```
+
+`2026-05-19_02-08-33_hard_attach_repro_13300_from_13249_may19/model_13300.pt` hashes exactly the same as the May 18 `model_13300.pt`: `46921180444f62957a9236f84654adad5b10ec0583c60883d1f0b4cecefeb248`. `2026-05-19_02-22-02_hard_attach_repro_13350_from_13249_may19/model_13350.pt` also hashes exactly the same as the May 18 `model_13350.pt`: `68636d72d464fb2d4ab8b78797363a878eb6753e46b57889d5ca54445663f819`.
+
+Practical takeaway: we have not lost the original good training path. If the goal is to train "like before," start again from the `model_13249.pt` source with the old command shape and let it run uninterrupted past the known checkpoints. Restarting from `model_13300.pt` is still useful for experiments, but it does not preserve the same rollout/environment state as the uninterrupted run and should not be treated as an exact continuation of that path.
 
 ## May 19 Git-History Audit
 

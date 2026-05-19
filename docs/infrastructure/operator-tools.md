@@ -187,8 +187,8 @@ cd /home/zeul/GIT/unitree_rl_lab
   --host 127.0.0.1 \
   --port 8002 \
   --title "Latest Isaac Demo Video" \
-  --render-project unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-push-attached \
-  --render-view two_orbit \
+  --render-project unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached \
+  --render-view slow_revolve_best \
   --render-training-policy auto
 ```
 
@@ -201,7 +201,7 @@ tailscale serve status
 
 The page scans `/home/zeul/GIT/unitree_rl_lab/logs/demos/**/*.mp4` at request time and embeds only the newest MP4. It also shows the video creation time, exposes `/latest.mp4` for direct playback/download, supports byte-range requests for browser seeking, and auto-refreshes when a newer archived render appears.
 
-When `--render-project` is set, the page also shows a **New Video** button. That button runs `isaac-clip send <project> --provider site` on the workstation, using the latest checkpoint selected by the project preset. The active wheelchair preset includes `--show-wheelchair-urdf-proxy`; without that playback flag, the PhysX-rail visual path can take much longer or hang before writing a video. The status panel shows whether the render is idle/running/succeeded/failed, elapsed time, exit code, and recent `isaac-clip` output. The **Refresh** button reloads the page immediately; the page also polls status and reloads itself after a successful render updates `latest.mp4`.
+When `--render-project` is set, the page also shows a **New Video** button. That button runs `isaac-clip send <project> --provider site` on the workstation, using the latest checkpoint selected by the project preset. For the current 2 m/s hard-attach reference, the site button is wired to `unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached` and the `slow_revolve_best` view. The status panel shows whether the render is idle/running/succeeded/failed, elapsed time, exit code, and recent `isaac-clip` output. The **Refresh** button reloads the page immediately; the page also polls status and reloads itself after a successful render updates `latest.mp4`.
 
 `--render-training-policy auto` stops an active Isaac training process when GPU telemetry says there is not enough free memory for the render. Pausing is not enough for the 12,288-env wheelchair run because paused CUDA processes keep their VRAM allocation. After the render completes, restart training from the latest checkpoint if the overnight run should continue.
 
