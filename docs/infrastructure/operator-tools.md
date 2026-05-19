@@ -156,6 +156,19 @@ isaac-clip send unitree-wheelchair-attached --training-policy fail
 
 The pause uses process signals, not checkpointing. It avoids compute contention but does not free training VRAM.
 
+For long wheelchair runs where training should not be interrupted, use `--training-policy continue`. The current 1 m/s hard-attach continuation has enough GPU headroom for 10-env playback renders while the 2048-env training process keeps running.
+
+Views that use `follow_best_robot = true` can intentionally change the camera target after a configured delay. If `follow_best_after_steps = 80`, the camera follows the default env briefly and then jumps to the best-moving env after about `1.6 s` at 50 Hz. That can look like the video splits or new instances appear. For stable review clips, set the delay to zero:
+
+```bash
+isaac-clip send unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached \
+  --view slow_revolve_best \
+  --training-policy continue \
+  --follow-best-after-steps 0
+```
+
+The 1 m/s hard-attach project preset now uses `follow_best_after_steps = 0`, so the latest-video page's **New Video** button selects the best env at frame zero instead of switching mid-clip.
+
 Do not document or commit local email/keyring credentials. If the `gog` provider cannot unlock in a non-interactive shell, unlock the local keyring/session first or run the command from an interactive workstation shell.
 
 ## Latest Video Website
@@ -201,7 +214,7 @@ tailscale serve status
 
 The page scans `/home/zeul/GIT/unitree_rl_lab/logs/demos/**/*.mp4` at request time and embeds only the newest MP4. It also shows the video creation time, exposes `/latest.mp4` for direct playback/download, supports byte-range requests for browser seeking, and auto-refreshes when a newer archived render appears.
 
-When `--render-project` is set, the page also shows a **New Video** button. That button runs `isaac-clip send <project> --provider site` on the workstation, using the latest checkpoint selected by the project preset. For the current 1 m/s hard-attach run, the site button is wired to `unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached` and the `slow_revolve_best` view. The status panel shows whether the render is idle/running/succeeded/failed, elapsed time, exit code, and recent `isaac-clip` output. The **Refresh** button reloads the page immediately; the page also polls status and reloads itself after a successful render updates `latest.mp4`.
+When `--render-project` is set, the page also shows a **New Video** button. That button runs `isaac-clip send <project> --provider site` on the workstation, using the latest checkpoint selected by the project preset. For the current 1 m/s hard-attach run, the site button is wired to `unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached` and the `slow_revolve_best` view. The local preset's `run_glob` includes the current continuation run and `follow_best_after_steps = 0`, so the button renders the latest continuation checkpoint without a mid-video target jump. The status panel shows whether the render is idle/running/succeeded/failed, elapsed time, exit code, and recent `isaac-clip` output. The **Refresh** button reloads the page immediately; the page also polls status and reloads itself after a successful render updates `latest.mp4`.
 
 `--render-training-policy auto` stops an active Isaac training process when GPU telemetry says there is not enough free memory for the render. Pausing is not enough for the 12,288-env wheelchair run because paused CUDA processes keep their VRAM allocation. After the render completes, restart training from the latest checkpoint if the overnight run should continue.
 

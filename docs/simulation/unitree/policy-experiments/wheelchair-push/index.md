@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
-| Last rendered playback | 1 m/s full-resume continuation: `model_18300.pt` |
+| Last rendered playback | 1 m/s full-resume continuation: `model_18650.pt`, rendered with no delayed best-env switch |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -15,14 +15,16 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18300_slow_revolve_best_20260519_152859/model_18300_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 15:35 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18650_slow_revolve_best_20260519_161706/model_18650_slow_revolve_best.mp4` |
+| Summary last updated | May 19, 2026, 17:10 Toronto |
 | Training tmux | `wheelchair_1mps_continue18248` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
+
+Current status: deterministic playback from the 1 m/s full-resume continuation still shows the robot walking forward while pushing the wheelchair. This means the true resume path is usable and did not immediately destroy the behavior. The gait is not final: it still needs refinement for cleaner foot motion, less awkward pushing posture, and later a broader command space for left/right turning instead of only straight-ahead forward motion.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
@@ -96,13 +98,22 @@ python scripts/rsl_rl/train.py \
   --run_name hard_attach_1mps_continue_full_from_18248_may19
 ```
 
-The resume correctly continued at `Learning iteration 18251/19248`, confirming that `--max_iterations 1000` extended the target by 1000 iterations rather than restarting from zero. The first clean-reset rollouts were optimistic: `wheelchair_track_forward_velocity` briefly reached about `0.41`, `wheelchair_forward_progress` about `0.19`, and `unstable_robot_state` stayed near zero. After a few minutes, metrics returned toward the previous regime; by `model_18300.pt`, `wheelchair_forward_progress` was about `0.02` and `unstable_robot_state` was about `0.65`.
+The resume correctly continued at `Learning iteration 18251/19248`, confirming that `--max_iterations 1000` extended the target by 1000 iterations rather than restarting from zero. The first clean-reset rollouts were optimistic: `wheelchair_track_forward_velocity` briefly reached about `0.41`, `wheelchair_forward_progress` about `0.19`, and `unstable_robot_state` stayed near zero. After a few minutes, metrics returned toward the previous regime; by `model_18300.pt`, `wheelchair_forward_progress` was about `0.02` and `unstable_robot_state` was about `0.65`. At `model_18650.pt`, playback still showed useful forward walking/pushing behavior even though the train-time scalar tail remained noisy and low.
 
 Latest validation playback:
 
-`logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18300_slow_revolve_best_20260519_152859/model_18300_slow_revolve_best.mp4`
+`logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18650_slow_revolve_best_20260519_161706/model_18650_slow_revolve_best.mp4`
 
-Interpretation: the full resume works mechanically and should be allowed to run long enough for comparison checkpoints, but the early scalar trend does not yet show an obvious improvement over the completed `model_18248.pt` parent. Continue using videos, not scalar rewards alone, to decide whether the continuation is preserving useful gait quality.
+Interpretation: the full resume works mechanically and preserved the useful forward-push behavior. Continue using videos, not scalar rewards alone, to decide whether the continuation is improving gait quality, because the train-time episode reward values are still dominated by reset distribution and instability terms.
+
+There are now two resume modes worth keeping separate:
+
+| Mode | Use | Command shape |
+|---|---|---|
+| Actor warm start | Start a new branch/task from a good actor while discarding old critic/optimizer state. This was used for the original 1 m/s speed-scaled run from the 2 m/s lineage. | `--resume --checkpoint <model.pt> --load_model_only --reset_critic --policy_std 0.02` |
+| True RSL-RL continuation | Continue the exact same run lineage from a checkpoint, preserving actor, critic, optimizer, and exploration standard deviation. This was tested from `model_18248.pt` and still worked. | `--resume --checkpoint <model.pt>` |
+
+The slow-revolve validation view can look like the video "splits" if it starts on env `0` and then switches to the best-moving env after a delay. The first `model_18650.pt` render used `follow_best_after_steps = 80`; at a 50 Hz sim step this is about `1.6 s`, matching the visible mid-clip jump. The corrected render used `--follow-best-after-steps 0`, so the best env is selected at frame zero. Treat the old delayed-switch clip as a camera-target artifact, not a policy discontinuity.
 
 ## May 19 Rollback
 
