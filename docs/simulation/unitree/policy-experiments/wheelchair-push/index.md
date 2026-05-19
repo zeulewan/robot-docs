@@ -6,23 +6,23 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | Paused; exact hard-attach reproduction tests completed |
+| Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
 | Last rendered playback | Reproduced 2 m/s hard-attach reference: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13300.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | No active run. Exact repro artifacts are `2026-05-19_02-08-33_hard_attach_repro_13300_from_13249_may19` and `2026-05-19_02-22-02_hard_attach_repro_13350_from_13249_may19`. |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_03-18-18_hard_attach_1mps_fastlean_long_from_13249_may19` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13300_slow_revolve_best_20260519_021951/model_13300_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 02:35 Toronto |
-| Training tmux | Stopped; no `wheelchair_hard_train` session currently running |
+| Summary last updated | May 19, 2026, 03:20 Toronto |
+| Training tmux | `wheelchair_1mps_fastlean_hard_long` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
-The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
@@ -34,11 +34,11 @@ The current reference wheelchair is not free in all directions. It uses the Phys
 
 That asset fixes `rail_world` and connects the moving `base_link` through a prismatic `rail_x_joint`. The chair can move forward/back along X; yaw, lateral motion, roll, and pitch are constrained by physics instead of the older kinematic root-pose clamp.
 
-The active nonzero reward terms in the current 2 m/s fast-lean hard task are:
+The active nonzero reward terms in the current 1 m/s fast-lean hard task are:
 
 | Reward | Weight | Purpose |
 |---|---:|---|
-| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `2.0 m/s` command. |
+| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `1.0 m/s` command. |
 | `wheelchair_forward_progress` | `3.0` | Reward positive world-X wheelchair movement. |
 | `wheelchair_backward_velocity` | `-10.0` | Strongly penalize moving the chair backward. |
 | `robot_forward_lean` | `1.0` | Bias the robot root toward a small forward lean while pushing. |
@@ -49,7 +49,35 @@ Inherited locomotion, pose, contact, hand-position, and wrist terms are currentl
 
 The policy observes the robot state plus wheelchair-relative state through `wheelchair_root_state_b` and `wheelchair_handle_state_b`. The wheelchair observation includes relative chair position, relative chair velocity, chair forward direction, relative yaw rate, and centerline error. The handle observation includes handle positions in the robot-root frame and hand-to-handle position error.
 
-The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The current 2 m/s fast-lean task also does not penalize rail yaw torque; `wheelchair_rail_yaw_torque` remains at weight `0.0`. The failed 1 m/s yaw-torque task did penalize yaw torque, but that branch did not reproduce useful forward push behavior.
+The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The current 1 m/s fast-lean task also does not penalize rail yaw torque; `wheelchair_rail_yaw_torque` remains at weight `0.0`. The failed 1 m/s yaw-torque task did penalize yaw torque, but that branch did not reproduce useful forward push behavior.
+
+The May 19 1 m/s run keeps the same observation shape, hard hand-handle attachment, forward-lean bias, reward weights, and PPO defaults as the reproducible 2 m/s path. The deliberate changes are the fixed command speed (`1.0 m/s`), velocity reward standard deviation (`0.4`), and progress cap (`1.4 m/s`) so the reward target is scaled to the lower speed without adding yaw-torque penalties.
+
+## May 19 1 m/s Fast-Lean Hard Run
+
+Task added in `unitree_rl_lab` commit `cf15f8b`:
+
+`Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard`
+
+The smoke run used `16` envs, loaded the same `model_13249.pt` source checkpoint, reset the critic, and set `--policy_std 0.02`. It completed one iteration with the intended reward stack: `wheelchair_track_forward_velocity = 10.0`, `wheelchair_forward_progress = 3.0`, `wheelchair_backward_velocity = -10.0`, `robot_forward_lean = 1.0`, and `wheelchair_rail_yaw_torque = 0.0`.
+
+The long run is:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard \
+  --max_iterations 5000 \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.02 \
+  --run_name hard_attach_1mps_fastlean_long_from_13249_may19
+```
+
+Initial training trend around iteration `13252`: forward-progress reward rose to about `0.20`, `bad_orientation` stayed near zero, and `unstable_robot_state` was still zero. By the mid `13260`s, the same hard-attach guard pressure seen in the 2 m/s branch started appearing, so visual checkpoints are still required before calling the lower-speed branch better.
 
 ## May 19 Rollback
 
