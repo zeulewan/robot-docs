@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | Paused; reference task is `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
-| Last rendered playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13300.pt` |
+| Last rendered playback | Failed comparison: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard`, `model_15150.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -15,8 +15,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | Stopped continuation: `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-19_00-16-27_hard_fastlean_2mps_back_from_13300_may19` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13300_slow_revolve_best_20260519_001819/model_13300_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 00:22 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-hard-attach-push-attached_model_15150_two_orbit_20260519_003339/model_15150_two_orbit.mp4` |
+| Summary last updated | May 19, 2026, 00:35 Toronto |
 | Training tmux | Stopped |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
