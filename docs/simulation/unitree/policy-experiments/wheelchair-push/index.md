@@ -6,19 +6,20 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active reference playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
+| Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard` |
+| Last rendered playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Reference checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_x_rail_fast_lean_velocity_progress_push_attached/2026-05-18_00-37-49_minimal_x_rail_fast_2ms_forward_lean_rewardstd020_explorestd035_1024env_from_fixed_stand_12250/model_13249.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249` |
-| Summary last updated | May 18, 2026, 19:49 Toronto |
+| Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
+| Summary last updated | May 18, 2026, 20:37 Toronto |
 | Training tmux | `wheelchair_hard_train` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
-The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually good reference is the older hard-attachment fast-lean checkpoint, `model_13249.pt`.
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful hard-attachment fast-lean lineage is now only the warm-start source; active training has moved to the 1 m/s yaw-torque hard task.
 
 ## Current Task Shape
 
@@ -28,14 +29,14 @@ The current reference wheelchair is not free in all directions. It uses the Phys
 
 That asset fixes `rail_world` and connects the moving `base_link` through a prismatic `rail_x_joint`. The chair can move forward/back along X; yaw, lateral motion, roll, and pitch are constrained by physics instead of the older kinematic root-pose clamp.
 
-The active nonzero reward terms in the recovered fast-lean hard-reference task are:
+The active nonzero reward terms in the current 1 m/s yaw-torque hard task are:
 
 | Reward | Weight | Purpose |
 |---|---:|---|
-| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `2.0 m/s` command. |
-| `wheelchair_forward_progress` | `3.0` | Reward positive world-X wheelchair movement. |
-| `wheelchair_backward_velocity` | `-10.0` | Penalize moving the chair backward. |
-| `robot_forward_lean` | `1.0` | Bias the robot to lean forward while pushing. |
+| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `1.0 m/s` command. |
+| `wheelchair_forward_progress` | `2.0` | Reward positive world-X wheelchair movement. |
+| `wheelchair_backward_velocity` | `-3.0` | Penalize moving the chair backward. |
+| `wheelchair_rail_yaw_torque` | `-0.05` | Penalize twisting the rail/chair through yaw torque instead of pushing straight. |
 
 Inherited locomotion, pose, contact, hand-position, and wrist terms are currently set to `0.0` for this task unless explicitly listed above.
 
@@ -43,7 +44,7 @@ Inherited locomotion, pose, contact, hand-position, and wrist terms are currentl
 
 The policy observes the robot state plus wheelchair-relative state through `wheelchair_root_state_b` and `wheelchair_handle_state_b`. The wheelchair observation includes relative chair position, relative chair velocity, chair forward direction, relative yaw rate, and centerline error. The handle observation includes handle positions in the robot-root frame and hand-to-handle position error.
 
-The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The soft-attachment branch additionally exposed spring state, but that branch did not reproduce the good gait.
+The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The 1 m/s yaw-torque task penalizes rail yaw torque through the reward; it still does not expose rail wrench directly as an observation. The soft-attachment branch additionally exposed spring state, but that branch did not reproduce the good gait.
 
 ## Current Issue
 
