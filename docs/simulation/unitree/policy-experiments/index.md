@@ -11,7 +11,7 @@ This folder tracks policy experiments separately from the base Unitree training 
 | [G1 fast running](g1-running/fast-running.md) | `Unitree-G1-29dof-Running-Fast` | Completed fast pass to `model_5099.pt`; used as the sprint warm-start. |
 | [G1 sprint 10 m/s](g1-running/sprint-10ms.md) | `Unitree-G1-29dof-Sprint-10ms` | Paused at `model_20500.pt`; curriculum reached about `7.2 m/s`, gait needs tuning. |
 | [G1 sprint gait cleanup](g1-running/sprint-10ms.md#gait-cleanup-variant) | `Unitree-G1-29dof-Sprint-10ms-Gait` | New stability-gated sprint variant for improving the running gait. |
-| [G1 wheelchair push policy](wheelchair-push/index.md) | Multiple | Active wheelchair-push work. Current PhysX-rail soft-attachment run is stable at `12288` envs but has not learned a clean forward push. |
+| [G1 wheelchair push policy](wheelchair-push/index.md) | Multiple | Active wheelchair-push work. May 19 audit shows the 2 m/s hard-attach checkpoint is a real visual reference, but hard hand-handle PhysX constraints produce catastrophic outliers at training scale. |
 
 ## Wheelchair Archive
 
