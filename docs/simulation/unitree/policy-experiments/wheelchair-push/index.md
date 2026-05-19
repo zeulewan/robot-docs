@@ -6,22 +6,23 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard` |
-| Last rendered playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Yaw-Torque-Push-Attached-Hard`, `model_15000.pt` |
+| Active training task | Paused; reference task is `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
+| Last rendered playback | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13300.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-minimal-physx-rail-1mps-yaw-torque-hard-attach-push-attached_model_15000_two_orbit_20260518_235725/model_15000_two_orbit.mp4` |
-| Summary last updated | May 18, 2026, 23:59 Toronto |
-| Training tmux | `wheelchair_hard_train` |
+| Current run | Stopped continuation: `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-19_00-16-27_hard_fastlean_2mps_back_from_13300_may19` |
+| Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
+| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13300_slow_revolve_best_20260519_001819/model_13300_slow_revolve_best.mp4` |
+| Summary last updated | May 19, 2026, 00:22 Toronto |
+| Training tmux | Stopped |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
-The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source; active training has moved to the 1 m/s yaw-torque hard task.
+The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
 
 ## Current Task Shape
 
@@ -31,14 +32,14 @@ The current reference wheelchair is not free in all directions. It uses the Phys
 
 That asset fixes `rail_world` and connects the moving `base_link` through a prismatic `rail_x_joint`. The chair can move forward/back along X; yaw, lateral motion, roll, and pitch are constrained by physics instead of the older kinematic root-pose clamp.
 
-The active nonzero reward terms in the current 1 m/s yaw-torque hard task are:
+The active nonzero reward terms in the current 2 m/s fast-lean hard task are:
 
 | Reward | Weight | Purpose |
 |---|---:|---|
-| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `1.0 m/s` command. |
-| `wheelchair_forward_progress` | `2.0` | Reward positive world-X wheelchair movement. |
-| `wheelchair_backward_velocity` | `-3.0` | Penalize moving the chair backward. |
-| `wheelchair_rail_yaw_torque` | `-0.05` | Penalize twisting the rail/chair through yaw torque instead of pushing straight. |
+| `wheelchair_track_forward_velocity` | `10.0` | Match wheelchair `base_link` forward velocity to the fixed `2.0 m/s` command. |
+| `wheelchair_forward_progress` | `3.0` | Reward positive world-X wheelchair movement. |
+| `wheelchair_backward_velocity` | `-10.0` | Strongly penalize moving the chair backward. |
+| `robot_forward_lean` | `1.0` | Bias the robot root toward a small forward lean while pushing. |
 
 Inherited locomotion, pose, contact, hand-position, and wrist terms are currently set to `0.0` for this task unless explicitly listed above.
 
@@ -46,7 +47,15 @@ Inherited locomotion, pose, contact, hand-position, and wrist terms are currentl
 
 The policy observes the robot state plus wheelchair-relative state through `wheelchair_root_state_b` and `wheelchair_handle_state_b`. The wheelchair observation includes relative chair position, relative chair velocity, chair forward direction, relative yaw rate, and centerline error. The handle observation includes handle positions in the robot-root frame and hand-to-handle position error.
 
-The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The 1 m/s yaw-torque task penalizes rail yaw torque through the reward; it still does not expose rail wrench directly as an observation. The soft-attachment branch additionally exposed spring state, but that branch did not reproduce the good gait.
+The hard-reference policy observes the robot state plus wheelchair-relative state, but it does not observe rail reaction force/torque. The current 2 m/s fast-lean task also does not penalize rail yaw torque; `wheelchair_rail_yaw_torque` remains at weight `0.0`. The failed 1 m/s yaw-torque task did penalize yaw torque, but that branch did not reproduce useful forward push behavior.
+
+## May 19 Rollback
+
+The 1 m/s yaw-torque hard branch was stopped after the `model_15000.pt` playback showed poor behavior. Compared with the 2 m/s fast-lean reference, that branch lowered the command from `2.0 m/s` to `1.0 m/s`, removed the forward-lean reward, softened the backward-velocity penalty from `-10.0` to `-3.0`, added `wheelchair_rail_yaw_torque = -0.05`, and reset the critic from the `model_13300.pt` actor. In practice it produced short bad episodes with high `unstable_robot_state` and little useful forward progress.
+
+Training was rolled back to the 2 m/s fast-lean hard task from the preserved `model_13300.pt` checkpoint. The latest-video site was also restored to that 2 m/s reference playback so it is not showing the failed 1 m/s branch.
+
+The immediate PPO continuation from `model_13300.pt` was stopped after a few minutes because it started destabilizing again: episode length dropped sharply, `unstable_robot_state` rose above `0.6`, and forward reward stayed weak. Treat `model_13300.pt` as the known-good reference checkpoint. The next training attempt should change the update setup, not simply continue the same PPO settings from that checkpoint.
 
 ## Current Issue
 
