@@ -6,23 +6,25 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | Paused; reference task is `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
+| Active training task | Paused; diagnostic task is `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard-Robust` |
 | Last rendered playback | Conservative 2 m/s continuation: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13350.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | Stopped conservative continuation: `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-19_00-39-55_hard_fastlean_2mps_conservative_from_13300_may19` |
+| Current run | Stopped diagnostics under `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_robust_push_attached/`; do not continue from the diagnostic `model_13324.pt` checkpoints |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13350_slow_revolve_best_20260519_004627/model_13350_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 00:49 Toronto |
+| Summary last updated | May 19, 2026, 01:52 Toronto |
 | Training tmux | Stopped; no `wheelchair_hard_train` session currently running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
+
+Important correction from the May 19 git-history audit: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The behavior changed after the environment/training guard changes, and the deeper problem is hard-attach PhysX instability producing extreme finite velocities and occasional non-finite states.
 
 ## Current Task Shape
 
@@ -58,6 +60,43 @@ Training was rolled back to the 2 m/s fast-lean hard task from the preserved `mo
 The immediate PPO continuation from `model_13300.pt` was stopped after a few minutes because it started destabilizing again: episode length dropped sharply, `unstable_robot_state` rose above `0.6`, and forward reward stayed weak. Treat `model_13300.pt` as the known-good reference checkpoint. The next training attempt should change the update setup, not simply continue the same PPO settings from that checkpoint.
 
 A conservative continuation was started from `model_13300.pt` on the same 2 m/s fast-lean hard task using `--policy_std 0.005 --freeze_policy_std`. This kept the reward/task shape from the good run but reduced exploration noise so the policy would drift less aggressively. It was stopped at the first new checkpoint, `model_13350.pt`, because the metrics still degraded: by about iteration `13341`, `unstable_robot_state` was about `0.65`, `bad_orientation` was about `0.26`, and forward rewards were weak. The site now shows `model_13350.pt` for visual review, but `model_13300.pt` remains the known-good reference checkpoint unless the video review says otherwise.
+
+## May 19 Git-History Audit
+
+The hard-attach history matters because the good visual behavior was not imaginary. The relevant commits were:
+
+| Commit | Time | Change |
+|---|---|---|
+| `e6b04c9` | May 18, 17:37 | Added the hard-attach wheelchair rail task. |
+| `c267f5a` | May 18, 18:12 | Fixed hard wheelchair attachment startup. |
+| `08916ba` | May 18, 18:53 | Fixed hard attach USD joint-frame alignment. |
+| `53da64e` | May 18, 19:34 | Disabled PhysX rail command debug markers. |
+| `4500d7d` | May 18, 19:41 | Added observation clips and `unstable_*_state` runaway terminations. |
+| `9a9c2d4` | May 18, 19:47 | Loosened those runaway thresholds. |
+
+The good-looking run was started before `4500d7d`:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-34-44_hard_attach_clean_2048_from_13249`
+
+That pre-guard run reached early `Episode_Reward/wheelchair_forward_progress` values around `0.20` to `0.26`, with useful-looking chair motion. After `4500d7d`, forward progress collapsed into the `0.02` to `0.04` range while `Episode_Termination/unstable_robot_state` climbed rapidly. Loosening the thresholds in `9a9c2d4` reduced the immediate reset pressure but did not restore sustained learning.
+
+The conclusion is not "bad checkpoint." The conclusion is that the hard hand-handle joint setup can produce catastrophic PhysX outliers. The low runaway guard hid the crash by resetting those states, but it also reset enough of the rollout to destroy the forward-push training signal.
+
+## May 19 Hard-Attach Diagnostics
+
+Several diagnostic task variants were added to isolate the failure:
+
+| Task suffix | Purpose | Result |
+|---|---|---|
+| `Hard-NoGuard` | Match the pre-runaway-guard behavior by removing clips and unstable-state terminations. | Recovered good early forward-progress metrics, then crashed with invalid policy std after huge velocity/value spikes. |
+| `Hard-NoTerminate` | Keep observation clips but remove unstable-state early termination. | Still recovered forward progress, but PPO still blew up from extreme finite states. |
+| `Hard-Robust` | Keep no broad runaway termination, add non-finite resets, cap optional chair penalties, use fixed low-LR PPO with `value_loss_coef=0.0`. | 2048 envs hit PhysX GPU articulation kernel failures; 256 envs completed the short run but still produced extreme finite velocity metrics and later non-finite terminations. |
+
+The 2048-env robust reset-optimizer test failed below PPO with PhysX CUDA errors such as `GPU artiPropagateVelocity fail to launch kernel`, `PhysX Internal CUDA error`, and `Failed to get DOF velocities from backend`. The 256-env version avoided the immediate CUDA crash, but by the later iterations it logged huge finite velocity metrics, non-finite robot/chair terminations around `0.0117`, and poor forward reward. Its saved `model_13324.pt` is a diagnostic artifact only and should not be used as a new warm-start.
+
+Current diagnosis: both-hand hard spherical joints across the robot and wheelchair can work visually for playback and short windows, but at training scale they create rare unstable constraint states. At 2048 envs those states can break the GPU PhysX articulation solver; at lower env counts they still poison rollouts unless caught. This is why the old checkpoint looked good, why the broad guard made training look bad, and why simply continuing the same task is unreliable.
+
+Next useful experiments should change the physics interface, not just PPO knobs. Options are a catastrophic-only finite guard with much higher thresholds than `4500d7d`, fewer envs while debugging, a better hand-handle constraint that avoids a stiff closed-loop across two articulations, or a return to a compliant attachment where the policy observes the attachment load. Do not train overnight from the current hard-attach robust diagnostic checkpoints.
 
 ## Current Issue
 
