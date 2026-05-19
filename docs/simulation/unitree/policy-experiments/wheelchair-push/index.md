@@ -7,17 +7,17 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard` |
-| Last rendered playback | Reproduced 2 m/s hard-attach reference: `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `model_13300.pt` |
+| Last rendered playback | 1 m/s full-resume continuation: `model_18300.pt` |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_03-18-18_hard_attach_1mps_fastlean_long_from_13249_may19` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-fast-lean-hard-attach-push-attached_model_13300_slow_revolve_best_20260519_021951/model_13300_slow_revolve_best.mp4` |
-| Summary last updated | May 19, 2026, 03:20 Toronto |
-| Training tmux | `wheelchair_1mps_fastlean_hard_long` |
+| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18300_slow_revolve_best_20260519_152859/model_18300_slow_revolve_best.mp4` |
+| Summary last updated | May 19, 2026, 15:35 Toronto |
+| Training tmux | `wheelchair_1mps_continue18248` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -78,6 +78,31 @@ python scripts/rsl_rl/train.py \
 ```
 
 Initial training trend around iteration `13252`: forward-progress reward rose to about `0.20`, `bad_orientation` stayed near zero, and `unstable_robot_state` was still zero. By the mid `13260`s, the same hard-attach guard pressure seen in the 2 m/s branch started appearing, so visual checkpoints are still required before calling the lower-speed branch better.
+
+The run completed its requested 5000 additional iterations at `model_18248.pt`. The final scalar tail still showed weak train-time forward rewards, with `Episode_Reward/wheelchair_forward_progress` near `0.02`, `Episode_Termination/bad_orientation` around `0.26`, and `Episode_Termination/unstable_robot_state` around `0.68`. Deterministic playback remained useful enough to preserve the checkpoint for follow-up.
+
+## May 19 Full Resume From `model_18248.pt`
+
+A full optimizer-state resume was started from the completed 1 m/s checkpoint to test whether the policy can keep improving when continued directly from `model_18248.pt`. Unlike the original long 1 m/s run, this resume does not use `--load_model_only`, does not reset the critic, and does not override `policy_std`. It is therefore a true RSL-RL checkpoint continuation for actor, critic, optimizer, and exploration standard deviation.
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Velocity-Progress-Push-Attached-Hard \
+  --max_iterations 1000 \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_03-18-18_hard_attach_1mps_fastlean_long_from_13249_may19/model_18248.pt \
+  --run_name hard_attach_1mps_continue_full_from_18248_may19
+```
+
+The resume correctly continued at `Learning iteration 18251/19248`, confirming that `--max_iterations 1000` extended the target by 1000 iterations rather than restarting from zero. The first clean-reset rollouts were optimistic: `wheelchair_track_forward_velocity` briefly reached about `0.41`, `wheelchair_forward_progress` about `0.19`, and `unstable_robot_state` stayed near zero. After a few minutes, metrics returned toward the previous regime; by `model_18300.pt`, `wheelchair_forward_progress` was about `0.02` and `unstable_robot_state` was about `0.65`.
+
+Latest validation playback:
+
+`logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_18300_slow_revolve_best_20260519_152859/model_18300_slow_revolve_best.mp4`
+
+Interpretation: the full resume works mechanically and should be allowed to run long enough for comparison checkpoints, but the early scalar trend does not yet show an obvious improvement over the completed `model_18248.pt` parent. Continue using videos, not scalar rewards alone, to decide whether the continuation is preserving useful gait quality.
 
 ## May 19 Rollback
 
