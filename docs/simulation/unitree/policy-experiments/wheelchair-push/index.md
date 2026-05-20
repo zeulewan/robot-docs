@@ -154,6 +154,27 @@ Latest validation playback:
 
 Early status: `unstable_wheelchair_state` remained near `0.0`, and the new yaw-torque penalty was present but very small. Train-time robot instability rose quickly, though: by about iteration `19327`, `unstable_robot_state` was back around `0.66` and `wheelchair_forward_progress` was only around `0.02`. The branch was stopped after the `model_19300.pt` playback render rather than spending the full 500-iteration budget. Treat this as a likely weak branch unless the deterministic playback shows an unexpectedly cleaner gait.
 
+## May 20 Gait Sweep
+
+The next refinement pass is a six-variant sweep from the same `model_19247.pt` parent. Each run uses actor warm start, reset critic, `--policy_std 0.01`, `2048` envs, and a short `60`-iteration budget. The goal is to generate comparable videos, not to declare a winner from TensorBoard alone.
+
+Parent checkpoint:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19/model_19247.pt`
+
+| Variant | Task | Intended change |
+|---|---|---|
+| `smooth_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Light` | Very small `action_rate`, `joint_acc`, and `energy` penalties. |
+| `smooth_medium` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Medium` | Stronger smoothness penalties to see if twitch drops without killing push. |
+| `feet_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Feet-Light` | Light foot slide penalty plus small foot clearance reward. |
+| `gait_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Gait-Light` | Light alternating gait reward plus foot slide/clearance shaping. |
+| `posture_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Posture-Light` | Small base/waist/hip posture regularization while still allowing forward lean. |
+| `reduced_scale` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Reduced-Scale` | Smaller action scale for less aggressive stepping, plus tiny action-rate penalty. |
+
+The latest-video page has been changed into a recent-video gallery so the sweep clips can be reviewed together:
+
+`https://workstation.tailee9084.ts.net:8002/`
+
 ## May 19 Rollback
 
 The 1 m/s yaw-torque hard branch was stopped after the `model_15000.pt` playback showed poor behavior. Compared with the 2 m/s fast-lean reference, that branch lowered the command from `2.0 m/s` to `1.0 m/s`, removed the forward-lean reward, softened the backward-velocity penalty from `-10.0` to `-3.0`, added `wheelchair_rail_yaw_torque = -0.05`, and reset the critic from the `model_13300.pt` actor. In practice it produced short bad episodes with high `unstable_robot_state` and little useful forward progress.
