@@ -73,6 +73,10 @@ isaac-clip checkpoints unitree-wheelchair-relaxed-stand-attached
 # Older attached-push run
 isaac-clip send unitree-wheelchair-attached
 
+# Current 1 m/s small yaw-torque refinement run
+isaac-clip send unitree-wheelchair-physx-rail-1mps-fast-lean-small-yaw-torque-hard-attach-push-attached
+isaac-clip send unitree-wheelchair-physx-rail-1mps-fast-lean-small-yaw-torque-hard-attach-push-attached --training-policy continue
+
 # Inspect available views/checkpoints
 isaac-clip views unitree-wheelchair-attached
 isaac-clip checkpoints unitree-wheelchair-attached
