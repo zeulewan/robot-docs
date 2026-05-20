@@ -203,6 +203,34 @@ The quick scalar check that drove the video selection:
 
 Takeaway: the immediate warm-start behavior still looks useful, but the 60-iteration PPO continuations are too aggressive for these small shaping changes. Next refinement should test a much smaller learning rate, fewer update epochs, or a shorter checkpoint-selection cadence before adding stronger gait shaping.
 
+## May 20 Continuation Diagnosis
+
+The sweep result raised a basic question: was the gait shaping bad, or was continuing PPO from `model_19247.pt` bad even without reward changes? Three control runs were executed from the same parent checkpoint:
+
+| Test | Task/setup | Run directory |
+|---|---|---|
+| `baseline_same_task` | Same 1 m/s hard-attach task, actor-only warm start, reset critic, `--policy_std 0.01`. | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-20_06-36-08_baseline_same_task_from_19247_may20` |
+| `true_resume_same_task` | Same task with full checkpoint resume: actor, critic, optimizer, and checkpoint policy std loaded. | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-20_06-44-59_true_resume_same_task_from_19247_may20` |
+| `conservative_ppo` | Same task/rewards, but new conservative PPO runner with `learning_rate=1e-5`, `clip_param=0.03`, `num_learning_epochs=1`, `entropy_coef=0.0`, `desired_kl=0.002`, `max_grad_norm=0.5`; launched actor-only with reset critic, `--policy_std 0.005`, and `--freeze_policy_std`. | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_conservative_ppo_hard_attach_push_attached/2026-05-20_06-53-39_conservative_ppo_from_19247_may20` |
+
+The control metrics matched the sweep failure mode. All three were still good around `model_19250.pt`, then collapsed by the final `model_19306.pt`.
+
+| Test | `model_19250` forward progress / unstable robot | `model_19306` forward progress / unstable robot |
+|---|---:|---:|
+| `baseline_same_task` | `0.2150 / 0.0004` | `0.0229 / 0.6387` |
+| `true_resume_same_task` | `0.1787 / 0.0016` | `0.0209 / 0.6539` |
+| `conservative_ppo` | `0.2115 / 0.0007` | `0.0169 / 0.6520` |
+
+Control videos on the latest-video gallery:
+
+| Test | Early checkpoint | Final checkpoint |
+|---|---|---|
+| `baseline_same_task` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_19250_slow_revolve_best_20260520_070219/model_19250_slow_revolve_best.mp4` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_19306_slow_revolve_best_20260520_070355/model_19306_slow_revolve_best.mp4` |
+| `true_resume_same_task` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_19250_slow_revolve_best_20260520_070531/model_19250_slow_revolve_best.mp4` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_19306_slow_revolve_best_20260520_070707/model_19306_slow_revolve_best.mp4` |
+| `conservative_ppo` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-conservative-ppo-hard-attach-push-attached_model_19250_slow_revolve_best_20260520_070843/model_19250_slow_revolve_best.mp4` | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-conservative-ppo-hard-attach-push-attached_model_19306_slow_revolve_best_20260520_071019/model_19306_slow_revolve_best.mp4` |
+
+Conclusion: the collapse is not caused by the gait-sweep reward terms, and it is not fixed by true-resuming the optimizer state or by the first conservative PPO runner. The current best interpretation is that `model_19247.pt` is a useful playback/checkpoint-selection point but is fragile under more PPO updates on this rollout distribution. The next serious refinement should either continue from an earlier reproducible checkpoint path before the fragility appears, or switch to a guarded fine-tuning method that accepts/rejects checkpoints frequently instead of assuming a 60-iteration continuation is safe.
+
 ## May 19 Rollback
 
 The 1 m/s yaw-torque hard branch was stopped after the `model_15000.pt` playback showed poor behavior. Compared with the 2 m/s fast-lean reference, that branch lowered the command from `2.0 m/s` to `1.0 m/s`, removed the forward-lean reward, softened the backward-velocity penalty from `-10.0` to `-3.0`, added `wheelchair_rail_yaw_torque = -0.05`, and reset the critic from the `model_13300.pt` actor. In practice it produced short bad episodes with high `unstable_robot_state` and little useful forward progress.
