@@ -164,8 +164,8 @@ Parent checkpoint:
 
 | Variant | Task | Intended change |
 |---|---|---|
-| `smooth_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Light` | Very small `action_rate`, `joint_acc`, and `energy` penalties. |
-| `smooth_medium` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Medium` | Stronger smoothness penalties to see if twitch drops without killing push. |
+| `smooth_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Light` | Initial smoothness test with small `action_rate`, `joint_acc`, and `energy` penalties. |
+| `smooth_medium` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Smooth-Medium` | Stronger action-rate shaping with `joint_acc` disabled after the first branch showed large spikes. |
 | `feet_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Feet-Light` | Light foot slide penalty plus small foot clearance reward. |
 | `gait_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Gait-Light` | Light alternating gait reward plus foot slide/clearance shaping. |
 | `posture_light` | `Unitree-G1-29dof-Wheelchair-GaitSweep-Posture-Light` | Small base/waist/hip posture regularization while still allowing forward lean. |
@@ -174,6 +174,34 @@ Parent checkpoint:
 The latest-video page has been changed into a recent-video gallery so the sweep clips can be reviewed together:
 
 `https://workstation.tailee9084.ts.net:8002/`
+
+Completed sweep status, May 20:
+
+All six branches trained for the intended short pass and produced `model_19250.pt`, `model_19300.pt`, and `model_19306.pt` checkpoints. The final checkpoints were not the best review targets: every branch had useful forward-progress and low-instability scalars near `model_19250.pt`, then collapsed by `model_19300.pt`/`model_19306.pt` into short episodes with weak forward progress and high `unstable_robot_state`. The comparison videos on the latest-video site therefore use `model_19250.pt` for each branch.
+
+The first `smooth_light` run was started before the `joint_acc` term was patched out. Its train-time `joint_acc` reward showed very large spikes, so the smooth branches were changed to rely on action-rate and tiny energy terms instead of joint acceleration. `smooth_medium` and the later branches used the patched code.
+
+| Variant | Run directory | Best review video |
+|---|---|---|
+| `smooth_light` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_smooth_light/2026-05-20_03-40-38_gait_sweep_smooth_light_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-smooth-light_model_19250_slow_revolve_best_20260520_053112/model_19250_slow_revolve_best.mp4` |
+| `smooth_medium` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_smooth_medium/2026-05-20_03-48-10_gait_sweep_smooth_medium_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-smooth-medium_model_19250_slow_revolve_best_20260520_053249/model_19250_slow_revolve_best.mp4` |
+| `feet_light` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_feet_light/2026-05-20_03-55-52_gait_sweep_feet_light_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-feet-light_model_19250_slow_revolve_best_20260520_053426/model_19250_slow_revolve_best.mp4` |
+| `gait_light` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_gait_light/2026-05-20_04-39-42_gait_sweep_gait_light_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-gait-light_model_19250_slow_revolve_best_20260520_053604/model_19250_slow_revolve_best.mp4` |
+| `posture_light` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_posture_light/2026-05-20_04-48-57_gait_sweep_posture_light_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-posture-light_model_19250_slow_revolve_best_20260520_053742/model_19250_slow_revolve_best.mp4` |
+| `reduced_scale` | `logs/rsl_rl/unitree_g1_29dof_wheelchair_gait_sweep_reduced_scale/2026-05-20_04-58-15_gait_sweep_reduced_scale_from_19247_may20` | `logs/demos/unitree-wheelchair-gait-sweep-reduced-scale_model_19250_slow_revolve_best_20260520_053921/model_19250_slow_revolve_best.mp4` |
+
+The quick scalar check that drove the video selection:
+
+| Variant | `model_19250` forward progress / unstable robot | `model_19306` forward progress / unstable robot |
+|---|---:|---:|
+| `smooth_light` | `0.2080 / 0.0009` | `0.0280 / 0.6520` |
+| `smooth_medium` | `0.2290 / 0.0008` | `0.0195 / 0.6517` |
+| `feet_light` | `0.2213 / 0.0008` | `0.0254 / 0.6426` |
+| `gait_light` | `0.2050 / 0.0010` | `0.0231 / 0.6614` |
+| `posture_light` | `0.2255 / 0.0005` | `0.0224 / 0.6536` |
+| `reduced_scale` | `0.2097 / 0.0001` | `0.0249 / 0.6174` |
+
+Takeaway: the immediate warm-start behavior still looks useful, but the 60-iteration PPO continuations are too aggressive for these small shaping changes. Next refinement should test a much smaller learning rate, fewer update epochs, or a shorter checkpoint-selection cadence before adding stronger gait shaping.
 
 ## May 19 Rollback
 
