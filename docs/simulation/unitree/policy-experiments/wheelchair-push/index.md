@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Small-Yaw-Torque-Push-Attached-Hard` |
-| Last rendered playback | 1 m/s full-resume continuation: `model_19247.pt`, rendered with no delayed best-env switch |
+| Last rendered playback | small yaw-torque refinement: `model_19300.pt`, rendered with no delayed best-env switch |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -15,9 +15,9 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_small_yaw_torque_hard_attach_push_attached/2026-05-20_01-41-19_small_yawtorque_0005_from_19247_may20` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-attached_model_19247_slow_revolve_best_20260520_012933/model_19247_slow_revolve_best.mp4` |
-| Summary last updated | May 20, 2026, 01:43 Toronto |
-| Training tmux | `wheelchair_1mps_small_yaw_19247` |
+| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-small-yaw-torque-hard-attach-push-attached_model_19300_slow_revolve_best_20260520_014829/model_19300_slow_revolve_best.mp4` |
+| Summary last updated | May 20, 2026, 01:54 Toronto |
+| Training tmux | stopped after `model_19300.pt` comparison render |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -148,7 +148,11 @@ python scripts/rsl_rl/train.py \
 
 This is an actor warm start, not a true optimizer-state continuation, because the reward function changed. It should run from iteration `19248` through `19747`. The focused TensorBoard symlink `logs/tensorboard_focus/AAA_hard_attach_current` now points at this run.
 
-Early status at about iteration `19258`: the run is alive, `unstable_wheelchair_state` remains `0.0`, the new yaw-torque penalty is present but very small, and the forward reward is still nonzero. Do not judge gait quality until a new deterministic playback is rendered.
+Latest validation playback:
+
+`logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-small-yaw-torque-hard-attach-push-attached_model_19300_slow_revolve_best_20260520_014829/model_19300_slow_revolve_best.mp4`
+
+Early status: `unstable_wheelchair_state` remained near `0.0`, and the new yaw-torque penalty was present but very small. Train-time robot instability rose quickly, though: by about iteration `19327`, `unstable_robot_state` was back around `0.66` and `wheelchair_forward_progress` was only around `0.02`. The branch was stopped after the `model_19300.pt` playback render rather than spending the full 500-iteration budget. Treat this as a likely weak branch unless the deterministic playback shows an unexpectedly cleaner gait.
 
 ## May 19 Rollback
 
