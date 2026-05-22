@@ -64,6 +64,52 @@ Status after inspecting the playback and running raw speed stats: the policy doe
 
 Operational note: the first render attempt failed before environment creation because the workstation had an NVIDIA driver/library mismatch after an update (`580.126.09` kernel module loaded with `580.159.03` user-space libraries). The final successful render was made after rebooting into the matching `580.159.03` driver. Future whole-workstation reboots should be cleared with the team first.
 
+## Rail-Free Curriculum Task List
+
+Rule for this curriculum: each phase stops at its gate. Do not roll straight into the next phase. At each gate, render a playback to the latest-video site, send an email notification, write the status here, then wait for review before continuing.
+
+Use `isaac-clip` for the review gate. The normal shape is:
+
+```bash
+isaac-clip send <phase-project> \
+  --view slow_revolve_best \
+  --provider site \
+  --training-policy continue
+```
+
+For automatic checkpoint gates inside a phase:
+
+```bash
+isaac-clip watch <phase-project> \
+  --every-iterations <interval> \
+  --view slow_revolve_best \
+  --render \
+  --notify \
+  --to <email>
+```
+
+The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
+
+- [ ] Phase 0: build rail-free task scaffold from the plain walking/standing actor, not the rail-trained wheelchair actor. Use the regular wheelchair URDF, hard or fixed hand-handle attachment as the current interface, no X/yaw rail, and ground-plane lock only for wheelchair height/roll/pitch.
+- [ ] Phase 1: standing attached to handles. Chair is ground-plane locked and heavily damped/braked, with no forward push objective. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup.
+- [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline.
+- [ ] Phase 3: tiny forward push at `0.15-0.25 m/s`. Add wheelchair forward velocity/progress plus backward penalty. Keep strong yaw-rate, lateral-velocity, and centerline penalties. Success means positive forward speed with low yaw and low lateral drift.
+- [ ] Phase 4: slow walking push at `0.4-0.6 m/s`. Reduce stationary posture pressure so the robot can walk/lean. Add light smoothness or foot terms only after forward motion is clearly working.
+- [ ] Phase 5: straight `1.0 m/s` push. Keep ground-plane lock and keep yaw/lateral penalties active, but relax them from the early scaffold values. Success means the wheelchair tracks near `1.0 m/s` without the rail and without spinning.
+- [ ] Phase 6: robustness. Randomize small wheelchair yaw/position offsets, handle offsets, friction/damping, and command speed while staying straight-only. Success means the policy survives reset variation instead of only working from the perfect initial pose.
+- [ ] Phase 7: turning later. Add yaw/turn commands only after straight pushing works. Do not add turning early, because it will make spinning/side-pushing easier to rediscover.
+
+Minimum gate metrics for Phases 3-6:
+
+| Metric | Early accept target |
+|---|---:|
+| Wheelchair forward speed | clearly positive and trending toward the command |
+| Samples within `0.10 m/s` of command | improving phase to phase; not near zero |
+| Wheelchair yaw absolute mean | low enough that the chair is not visibly spinning |
+| Wheelchair lateral absolute speed | low enough that the chair is not side-slipping |
+| Centerline final offset | small and bounded over the playback |
+| Robot health | no sustained falling/crawling/flailing |
+
 ## Current Task Shape
 
 The current reference wheelchair is not free in all directions. It uses the PhysX rail URDF:
