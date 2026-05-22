@@ -6,17 +6,17 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-1mps-Fast-Lean-Small-Yaw-Torque-Push-Attached-Hard` |
-| Last rendered playback | small yaw-torque refinement: `model_19300.pt`, rendered with no delayed best-env switch |
+| Active training task | stopped; latest check is a no-rail/free-yaw playback diagnostic from the `model_19247.pt` reference |
+| Last rendered playback | free-yaw ground-lock transfer diagnostic: `model_19247.pt`, rendered May 22 |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_small_yaw_torque_hard_attach_push_attached/2026-05-20_01-41-19_small_yawtorque_0005_from_19247_may20` |
+| Current run | stopped; last active branch was `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_small_yaw_torque_hard_attach_push_attached/2026-05-20_01-41-19_small_yawtorque_0005_from_19247_may20` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-physx-rail-1mps-fast-lean-small-yaw-torque-hard-attach-push-attached_model_19300_slow_revolve_best_20260520_014829/model_19300_slow_revolve_best.mp4` |
-| Summary last updated | May 20, 2026, 01:54 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-hard-attach-push-attached_model_19247_slow_revolve_best_20260522_045657/model_19247_slow_revolve_best.mp4` |
+| Summary last updated | May 22, 2026, 05:08 Toronto |
 | Training tmux | stopped after `model_19300.pt` comparison render |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -27,6 +27,40 @@ The previous soft-attachment run was stopped at `model_15900.pt` and used as the
 Current status: deterministic playback from the 1 m/s full-resume continuation still shows the robot walking forward while pushing the wheelchair. This means the true resume path is usable and did not immediately destroy the behavior. The gait is not final: it still needs refinement for cleaner foot motion, less awkward pushing posture, and later a broader command space for left/right turning instead of only straight-ahead forward motion. The active May 20 branch is the first small gait/refinement probe: it starts from `model_19247.pt` and adds only a tiny rail yaw-torque penalty.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
+
+## May 22 Free-Yaw Ground-Lock Playback
+
+The next diagnostic asks whether the best 1 m/s hard-attach policy can still push when the chair is not held on the PhysX X/yaw rail. This is playback-only for now, not a training branch.
+
+Task added in `unitree_rl_lab` commit `661b663`:
+
+`Unitree-G1-29dof-Wheelchair-Minimal-FreeYaw-GroundLock-1mps-Fast-Lean-Push-Attached-Hard`
+
+The task uses the regular no-collision wheelchair URDF instead of `active_manual_wheelchair_x_rail.urdf`. It keeps the hard hand-handle attachment and the same policy/reward shape as the 1 m/s reference, but the only wheelchair constraint event is:
+
+`constrain_wheelchair_to_ground_plane`
+
+That event pins wheelchair height, roll, and pitch every environment step, while preserving X, Y, yaw, and yaw velocity. In other words: all four wheels are effectively kept on the floor, but the chair is free to drift sideways or rotate if the policy pushes off-center.
+
+Playback command:
+
+```bash
+isaac-clip send unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-hard-attach-push-attached \
+  --view slow_revolve_best \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19/model_19247.pt \
+  --run-dir /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19 \
+  --provider site \
+  --training-policy continue \
+  --no-compress-site-video
+```
+
+Rendered output:
+
+`logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-hard-attach-push-attached_model_19247_slow_revolve_best_20260522_045657/model_19247_slow_revolve_best.mp4`
+
+The Isaac event table for this playback showed `constrain_wheelchair_to_ground_plane` as the only interval event; there was no `constrain_wheelchair_to_forward_rail` event and no PhysX X-rail asset in the task. The latest-video site was restarted with this project as the New Video target.
+
+Operational note: the first render attempt failed before environment creation because the workstation had an NVIDIA driver/library mismatch after an update (`580.126.09` kernel module loaded with `580.159.03` user-space libraries). The final successful render was made after rebooting into the matching `580.159.03` driver. Future whole-workstation reboots should be cleared with the team first.
 
 ## Current Task Shape
 
