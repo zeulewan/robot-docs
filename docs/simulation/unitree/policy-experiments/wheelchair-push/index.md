@@ -60,6 +60,8 @@ Rendered output:
 
 The Isaac event table for this playback showed `constrain_wheelchair_to_ground_plane` as the only interval event; there was no `constrain_wheelchair_to_forward_rail` event and no PhysX X-rail asset in the task. The latest-video site was restarted with this project as the New Video target.
 
+Status after inspecting the playback and running raw speed stats: the policy does not transfer cleanly once yaw is free. It still produces intermittent chair motion, but it does not walk straight or track the `1.0 m/s` wheelchair command. Over `900` steps and `10` envs, measured wheelchair `base_link` forward speed averaged only `0.0183 m/s`, with `0.8%` of samples within `0.10 m/s` of the command. Mean absolute yaw rate was `0.8466 rad/s`, mean absolute lateral speed was `0.3206 m/s`, and the final centerline offset averaged `0.3932 m`. Treat the rail-free playback as a failed transfer diagnostic: the current actor is relying heavily on the rail/yaw constraint.
+
 Operational note: the first render attempt failed before environment creation because the workstation had an NVIDIA driver/library mismatch after an update (`580.126.09` kernel module loaded with `580.159.03` user-space libraries). The final successful render was made after rebooting into the matching `580.159.03` driver. Future whole-workstation reboots should be cleared with the team first.
 
 ## Current Task Shape
