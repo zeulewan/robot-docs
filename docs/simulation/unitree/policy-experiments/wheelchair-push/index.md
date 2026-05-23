@@ -134,10 +134,11 @@ isaac-clip watch <phase-project> \
   --view slow_revolve_best \
   --render \
   --notify \
-  --notify-provider telegram
+  --notify-provider telegram \
+  --notify-attach-video
 ```
 
-The Telegram update should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put bot tokens, chat IDs, credentials, or keyring details in docs.
+The Telegram update should say which phase just completed or which checkpoint was rendered, link the latest-video page, include the checkpoint path, and attach the MP4 when review should happen from the phone. Use `--notify-attach-video` for this site-first watcher path. `--telegram-attach-video` is only for the separate `--provider telegram` delivery path. Do not put bot tokens, chat IDs, credentials, or keyring details in docs.
 
 For the rewritten damping-release ladder, use the gated auto-advancer instead of manually chaining each phase:
 
