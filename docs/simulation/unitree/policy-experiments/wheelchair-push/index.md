@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-FreeYaw-GroundLock-1mps-Fast-Lean-HeavyDamping-Push-Attached-Hard` |
-| Last rendered playback | scratch Phase 1A damped-release failure diagnostic: `model_700.pt`, rendered May 23; render the heavy-damping bridge at first useful checkpoint |
+| Last rendered playback | free-yaw heavy-damping bridge: `model_19300.pt`, rendered May 23 at 13:27 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -15,8 +15,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_freeyaw_groundlock_1mps_fast_lean_heavydamp_hard_attach_push_attached/2026-05-23_*_freeyaw_heavydamp_from_19247_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1a-damped-release-directobs_model_700_slow_revolve_best_20260523_080310/model_700_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 13:22 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-heavydamp-hard-attach-push-attached_model_19300_slow_revolve_best_20260523_132740/model_19300_slow_revolve_best.mp4` |
+| Summary last updated | May 23, 2026, 13:34 Toronto |
 | Training tmux | `freeyaw_heavydamp_train`; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -64,7 +64,13 @@ Bridge settings:
 | Ground plane | height, roll, and pitch constrained so the chair stays on the floor |
 | Rewards added beyond the rail task | lateral velocity, forward-line drift, yaw velocity, root heading, forward-heading penalties |
 
-Early signal at iteration `19252`: unlike the scratch release, the bridge produced useful rollouts. `bad_orientation` was below `0.001`, `base_height` was `0.0`, unstable robot/chair resets were `0.0`, and wheelchair forward progress was nonzero. This is only an early diagnostic; deterministic playback at the first checkpoint is still required before continuing to medium damping.
+Early signal at iteration `19252`: unlike the scratch release, the bridge produced useful rollouts. `bad_orientation` was below `0.001`, `base_height` was `0.0`, unstable robot/chair resets were `0.0`, and wheelchair forward progress was nonzero.
+
+The first bridge checkpoint, `model_19300.pt`, was rendered at `13:27 Toronto` and published to the latest-video site. Training remained live during render. Around iteration `19333`, the training process was still healthy: `time_out` was about `0.986`, `bad_orientation` about `0.014`, `base_height` `0.0`, `unstable_robot_state` `0.0`, `unstable_wheelchair_state` `0.0`, and `wheelchair_forward_progress` about `0.87`. This is not a solved free-chair push yet, but it is a viable non-rigid bridge branch compared with the failed scratch damping-release run.
+
+Playback also confirmed that the actor policy observation vector is getting robot joint state and chair state. For this task, policy obs shape is `(585,)`, including `joint_pos_rel`, `joint_vel_rel`, `last_action`, `base_ang_vel`, `projected_gravity`, `velocity_commands`, `wheelchair_root_state`, and `wheelchair_handle_state`. In other words, the immediate issue is not that PPO is missing the robot joint angles; the harder part is transitioning from rail/rigid support to a chair that can drift and yaw without destabilizing the learned push.
+
+The latest-video site was restarted at `13:24 Toronto` so the New Video button targets `unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-heavydamp-hard-attach-push-attached`.
 
 ## May 22 Free-Yaw Ground-Lock Playback
 
