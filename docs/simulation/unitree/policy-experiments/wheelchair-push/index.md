@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | fixed-chair standing true resume: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1-FixedStand-DirectObs` |
-| Last rendered playback | scratch Phase 1A failed stand-only retry: `model_900.pt`, rendered May 23 at 15:48 Toronto |
+| Last rendered playback | fixed-chair standing true resume: `model_949.pt`, rendered May 23 at 18:20 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -16,8 +16,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_*_fixed_stand_true_resume_from_350_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1a-damped-release-directobs_model_900_slow_revolve_best_20260523_154837/model_900_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 16:27 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_949_slow_revolve_best_20260523_182027/model_949_slow_revolve_best.mp4` |
+| Summary last updated | May 23, 2026, 18:22 Toronto |
 | Training tmux | `wheelchair_fixed_stand_resume` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -57,6 +57,10 @@ Launch log:
 `logs/rsl_rl/fixed_stand_true_resume_from_350_may23.launch.log`
 
 Resume verification: the log shows `Loading model checkpoint` from the fixed-stand `model_350.pt` path and then `Learning iteration 350/950`. This confirms the run resumed the saved actor, critic, optimizer, and exploration state instead of silently starting from iteration zero. Early continuation metrics still show `bad_orientation = 0.0`, `fall_termination = 0.0`, and no active handle-force penalty: `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`.
+
+The true-resume run finished and saved `model_949.pt`. It was rendered with the `slow_revolve_best` view and published to the latest-video site:
+
+`logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_949_slow_revolve_best_20260523_182027/model_949_slow_revolve_best.mp4`
 
 ## May 23 Rigid-To-Free Bridge
 
