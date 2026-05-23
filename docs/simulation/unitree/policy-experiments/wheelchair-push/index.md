@@ -6,25 +6,27 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1A-DampedRelease-DirectObs` |
-| Last rendered playback | scratch Phase 1B fixed-low-load gate: `model_400.pt`, rendered May 23; new Phase 1A playback pending first gate |
+| Active training task | none; scratch Phase 1A was stopped as a failed setup |
+| Last rendered playback | scratch Phase 1A damped-release failure diagnostic: `model_700.pt`, rendered May 23 |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Phase 1 source checkpoint | none; rewritten Phase 1 trains from zero |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_06-50-27_scratch_phase1a_damped_release_no_forward_reward_from_zero_may23` |
+| Current run | stopped `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_06-50-27_scratch_phase1a_damped_release_no_forward_reward_from_zero_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1b-fixed-lowload-stand-directobs_model_400_slow_revolve_best_20260523_061851/model_400_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 06:52 Toronto |
-| Training tmux | `scratch_phase1a_train`; latest-video site still running |
+| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1a-damped-release-directobs_model_700_slow_revolve_best_20260523_080310/model_700_slow_revolve_best.mp4` |
+| Summary last updated | May 23, 2026, 08:12 Toronto |
+| Training tmux | stopped; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
 
-Current status: the May 22 rail-free transfer attempts and the first May 23 fixed-chair scratch bridge were useful diagnostics, but they are no longer the active plan. The fixed-chair path learned to stand, then failed as soon as X/Y/yaw were released, which means it likely taught the robot to lean on an artificial support. Phase 1 has therefore been rewritten as a ground-up damping-release curriculum. It starts from zero with the chair on the ground plane and planar chair velocity nearly locked by damping, then gradually reduces that damping until the robot can stand with hands attached while the chair is free to move on the ground plane. There is no forward-push objective in Phase 1; pushing starts only after the free-standing hold gate passes.
+Current status: the May 22 rail-free transfer attempts and the first May 23 fixed-chair scratch bridge were useful diagnostics, but they are no longer the active plan. The fixed-chair path learned to stand, then failed as soon as X/Y/yaw were released, which means it likely taught the robot to lean on an artificial support. Phase 1 was rewritten as a ground-up damping-release curriculum, but the first Phase 1A run also failed: by roughly `model_700-800`, `bad_orientation` was effectively `1.0`, `time_out` was `0.0`, and mean episode length was only about `10-12` steps. The run was stopped before the `model_2499` gate because it was not producing usable PPO rollouts.
+
+Working diagnosis: hard hand-handle attachment from a scratch/random policy is too large a first step. The reset pose and chair pose place the hands near the handles, but the policy cannot keep the constrained humanoid upright long enough to collect useful standing data. The next branch should restore a viable bridge before the damping-release ladder: either warm-start from the stable fixed-relaxed attached standing checkpoint, start from a reach/stand primitive and introduce the hard hand-handle constraint after that policy is stable, or use a softer/staged grip before switching to hard attachment.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
