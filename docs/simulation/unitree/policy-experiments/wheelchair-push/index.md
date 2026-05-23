@@ -6,19 +6,19 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | none; scratch Phase 1A was stopped after failing |
-| Last rendered playback | free-yaw heavy-damping bridge: `model_19300.pt`, rendered May 23 at 13:27 Toronto |
+| Active training task | fixed-chair standing true resume: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1-FixedStand-DirectObs` |
+| Last rendered playback | scratch Phase 1A failed stand-only retry: `model_900.pt`, rendered May 23 at 15:48 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Phase 1 source checkpoint | none; current Phase 1A retry is from scratch |
+| Phase 1 source checkpoint | fixed-chair stand `model_350.pt` from `2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23` |
 | Bridge source checkpoint | `model_19247.pt` from the good 1 m/s PhysX-rail hard-attach run |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_*_scratch_phase1a_standonly_from_zero_may23_retry` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_*_fixed_stand_true_resume_from_350_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-heavydamp-hard-attach-push-attached_model_19300_slow_revolve_best_20260523_132740/model_19300_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 15:33 Toronto |
-| Training tmux | none for wheelchair training; latest-video site still targets the standing-only project |
+| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1a-damped-release-directobs_model_900_slow_revolve_best_20260523_154837/model_900_slow_revolve_best.mp4` |
+| Summary last updated | May 23, 2026, 16:27 Toronto |
+| Training tmux | `wheelchair_fixed_stand_resume` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -27,13 +27,36 @@ The previous soft-attachment run was stopped at `model_15900.pt` and used as the
 
 Current status: the May 23 heavy-damping bridge was a useful diagnostic, but it was not the requested standing-only scratch phase because it still carried the forward wheelchair velocity/progress objectives. It was stopped at `14:04 Toronto`. The standing-only scratch Phase 1A retry had forward wheelchair terms disabled: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, `wheelchair_backward_velocity = 0.0`, and `robot_forward_lean = 0.0`. The remaining rewards were standing/health/keep-still terms: zero base velocity, upright orientation, base height, chair lateral/yaw/root drift, hand-load penalties, and wrist regularization.
 
-The retry repeated the prior scratch failure pattern and was stopped at about iteration `917/2500`. Final live metrics had `bad_orientation = 1.0`, `time_out = 0.0`, and mean episode length about `13` steps, meaning every rollout was terminating from bad orientation. The next step should reduce the hard hand-handle burden or warm-start from a pure standing/reach primitive before reintroducing attached hands.
+The retry repeated the prior scratch failure pattern and was stopped at about iteration `917/2500`. Final live metrics had `bad_orientation = 1.0`, `time_out = 0.0`, and mean episode length about `13` steps, meaning every rollout was terminating from bad orientation.
 
-The fixed-chair path learned to stand, then failed as soon as X/Y/yaw were released, which means it likely taught the robot to lean on an artificial support. Phase 1 was rewritten as a ground-up damping-release curriculum, but the first Phase 1A run also failed: by roughly `model_700-800`, `bad_orientation` was effectively `1.0`, `time_out` was `0.0`, and mean episode length was only about `10-12` steps. The run was stopped before the `model_2499` gate because it was not producing usable PPO rollouts.
+Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The immediate plan is to return to the simplest successful primitive: fixed wheelchair root, hard hand-handle attachment, no handle-force penalty, and standing only. Once that stand is solid, add a small penalty on handle/wrench load as the next stage.
 
-Working diagnosis: hard hand-handle attachment from a scratch/random policy is too large a first step. The reset pose and chair pose place the hands near the handles, but the policy cannot keep the constrained humanoid upright long enough to collect useful standing data. The next branch should restore a viable bridge before the damping-release ladder: either warm-start from the stable fixed-relaxed attached standing checkpoint, start from a reach/stand primitive and introduce the hard hand-handle constraint after that policy is stable, or use a softer/staged grip before switching to hard attachment.
+Resume rule to keep straight: use full RSL-RL continuation only when continuing the same task/checkpoint lineage. For this fixed-chair standing continuation, the command intentionally uses `--resume --checkpoint <model_350.pt>` without `--load_model_only`, without `--reset_critic`, and without a new `--policy_std`. Actor warm-start mode remains appropriate when changing task lineage: `--resume --checkpoint <model.pt> --load_model_only --reset_critic --policy_std <value>`.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
+
+## May 23 Fixed-Chair Stand Reset
+
+The fixed-chair standing branch is active again. This is intentionally narrower than the failed damping-release Phase 1A: the wheelchair root is fixed, the hands remain hard-attached to the handles, forward wheelchair velocity/progress rewards are disabled, and handle-force penalties are still disabled. The goal is just a reliable attached standing primitive.
+
+Training command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1-FixedStand-DirectObs \
+  --max_iterations 600 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23/model_350.pt \
+  --run_name fixed_stand_true_resume_from_350_may23
+```
+
+Launch log:
+
+`logs/rsl_rl/fixed_stand_true_resume_from_350_may23.launch.log`
+
+Resume verification: the log shows `Loading model checkpoint` from the fixed-stand `model_350.pt` path and then `Learning iteration 350/950`. This confirms the run resumed the saved actor, critic, optimizer, and exploration state instead of silently starting from iteration zero. Early continuation metrics still show `bad_orientation = 0.0`, `fall_termination = 0.0`, and no active handle-force penalty: `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`.
 
 ## May 23 Rigid-To-Free Bridge
 
@@ -336,9 +359,9 @@ Conclusion: direct wheelchair state and handle/body wrench observations are tech
 
 ### May 23 Rewritten Phase 1
 
-The first May 23 scratch bridge used a fixed wheelchair root, then tried to release the chair directly. It looked stable while fixed, but both release attempts failed quickly: the direct handoff from `model_300.pt` reached `bad_orientation` around `0.57`, and the low-load handoff from `model_500.pt` reached `bad_orientation` above `0.62`. Treat the fixed-chair Phase 1 and Phase 1B runs as deprecated diagnostics, not as the current curriculum.
+The first May 23 scratch bridge used a fixed wheelchair root, then tried to release the chair directly. It looked stable while fixed, but both release attempts failed quickly: the direct handoff from `model_300.pt` reached `bad_orientation` around `0.57`, and the low-load handoff from `model_500.pt` reached `bad_orientation` above `0.62`. The release handoffs are deprecated diagnostics. The fixed-chair standing primitive itself is active again as the current reset point.
 
-The active replacement is a ground-up damping-release ladder. It keeps the same DirectObs policy shape throughout: policy `(900,)`, critic `(915,)`, action `(29,)`. It uses the ground-plane lock for chair height/roll/pitch and an interval event, `damp_wheelchair_planar_velocity`, to scale wheelchair X, Y, and yaw velocity every env step. Phase 1 has no forward-push reward: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, and `wheelchair_backward_velocity = 0.0`.
+The attempted replacement was a ground-up damping-release ladder. It kept the same DirectObs policy shape throughout: policy `(900,)`, critic `(915,)`, action `(29,)`. It used the ground-plane lock for chair height/roll/pitch and an interval event, `damp_wheelchair_planar_velocity`, to scale wheelchair X, Y, and yaw velocity every env step. Phase 1 had no forward-push reward: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, and `wheelchair_backward_velocity = 0.0`. This ladder is currently paused after the Phase 1A stand-only retry failed.
 
 | Stage | Task | Damping scales `x/y/yaw` | Goal |
 |---|---|---:|---|
@@ -348,7 +371,7 @@ The active replacement is a ground-up damping-release ladder. It keeps the same 
 | 1D | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D-LightDamping-DirectObs` | `0.60 / 0.35 / 0.35` | Continue with light damping. |
 | 1E | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1E-FreeStand-DirectObs` | `1.0 / 1.0 / 1.0` | Stand/hold with no artificial planar damping. |
 
-Active Phase 1A command:
+Paused Phase 1A command:
 
 ```bash
 TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
@@ -362,7 +385,7 @@ Run directory:
 
 `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_06-50-27_scratch_phase1a_damped_release_no_forward_reward_from_zero_may23`
 
-Training tmux:
+Former training tmux:
 
 ```bash
 tmux attach -t scratch_phase1a_train
