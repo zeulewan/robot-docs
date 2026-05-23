@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1A-DampedRelease-DirectObs` |
+| Active training task | none; scratch Phase 1A was stopped after failing |
 | Last rendered playback | free-yaw heavy-damping bridge: `model_19300.pt`, rendered May 23 at 13:27 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -17,17 +17,17 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_*_scratch_phase1a_standonly_from_zero_may23_retry` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-heavydamp-hard-attach-push-attached_model_19300_slow_revolve_best_20260523_132740/model_19300_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 14:08 Toronto |
-| Training tmux | `wheelchair_standonly_phase1a`; latest-video site targets the standing-only project |
+| Summary last updated | May 23, 2026, 15:33 Toronto |
+| Training tmux | none for wheelchair training; latest-video site still targets the standing-only project |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
 
-Current status: the May 23 heavy-damping bridge was a useful diagnostic, but it was not the requested standing-only scratch phase because it still carried the forward wheelchair velocity/progress objectives. It was stopped at `14:04 Toronto`. The active run is now the standing-only scratch Phase 1A retry. Its forward wheelchair terms are disabled: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, `wheelchair_backward_velocity = 0.0`, and `robot_forward_lean = 0.0`. The remaining rewards are standing/health/keep-still terms: zero base velocity, upright orientation, base height, chair lateral/yaw/root drift, hand-load penalties, and wrist regularization.
+Current status: the May 23 heavy-damping bridge was a useful diagnostic, but it was not the requested standing-only scratch phase because it still carried the forward wheelchair velocity/progress objectives. It was stopped at `14:04 Toronto`. The standing-only scratch Phase 1A retry had forward wheelchair terms disabled: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, `wheelchair_backward_velocity = 0.0`, and `robot_forward_lean = 0.0`. The remaining rewards were standing/health/keep-still terms: zero base velocity, upright orientation, base height, chair lateral/yaw/root drift, hand-load penalties, and wrist regularization.
 
-Early metrics for the retry were still rough at iteration `5`: `time_out` about `0.18`, `base_height` about `0.32`, and `bad_orientation` about `0.46`. This is acceptable only as a scratch-start baseline; if it trends toward the prior Phase 1A failure pattern, the next step is to reduce the hard hand-handle burden or warm-start from a pure standing/reach primitive before reintroducing attached hands.
+The retry repeated the prior scratch failure pattern and was stopped at about iteration `917/2500`. Final live metrics had `bad_orientation = 1.0`, `time_out = 0.0`, and mean episode length about `13` steps, meaning every rollout was terminating from bad orientation. The next step should reduce the hard hand-handle burden or warm-start from a pure standing/reach primitive before reintroducing attached hands.
 
 The fixed-chair path learned to stand, then failed as soon as X/Y/yaw were released, which means it likely taught the robot to lean on an artificial support. Phase 1 was rewritten as a ground-up damping-release curriculum, but the first Phase 1A run also failed: by roughly `model_700-800`, `bad_orientation` was effectively `1.0`, `time_out` was `0.0`, and mean episode length was only about `10-12` steps. The run was stopped before the `model_2499` gate because it was not producing usable PPO rollouts.
 
