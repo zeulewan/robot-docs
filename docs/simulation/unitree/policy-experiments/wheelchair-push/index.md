@@ -6,25 +6,25 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1-FixedStand-DirectObs` |
+| Active training task | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1B-FixedLowLoadStand-DirectObs` |
 | Last rendered playback | scratch Phase 1 fixed-stand gate: `model_50.pt`, rendered May 23 |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/2026-05-16_18-06-04_fixed_relaxed_stand_attached_straight_wrists_from_11600/model_12300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1b_fixed_lowload_stand_directobs/2026-05-23_06-07-11_scratch_phase1b_fixed_lowload_from_phase1_model300_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_50_slow_revolve_best_20260523_053351/model_50_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 05:54 Toronto |
-| Training tmux | `scratch_phase1_train`; `scratch_phase1_gate_watch` waits for the Phase 1 gate; latest-video site still running |
+| Summary last updated | May 23, 2026, 06:09 Toronto |
+| Training tmux | `scratch_phase1b_train`; `scratch_phase1b_gate_watch` waits for the Phase 1B gate; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
 
-Current status: the direct rail-free playback transfer failed, so the next path is a clean staged scratch curriculum. The first rail-free stand gate rendered from `model_12549.pt`; it was not acceptable. A PoseObs test added hard hand-handle relative orientation and angular velocity and also failed. A DirectObs test then added full wheelchair orientation, wheelchair linear/angular velocity, and scaled hand/handle incoming wrench observations. A longer DirectObs continuation ran to `model_13299.pt` and still stayed in the same failure mode, with bad-orientation term near `0.88` and near-zero wheelchair forward progress. This is no longer just a missing-observation problem; the warm-started rail-free scaffold is unstable. On May 23, we switched to a from-scratch, phase-gated curriculum that first learns fixed-chair attached standing before releasing the chair. The first scratch Phase 1 checkpoint, `model_50.pt`, is rendered on the latest-video site.
+Current status: the direct rail-free playback transfer failed, so the next path is a clean staged scratch curriculum. The first rail-free stand gate rendered from `model_12549.pt`; it was not acceptable. A PoseObs test added hard hand-handle relative orientation and angular velocity and also failed. A DirectObs test then added full wheelchair orientation, wheelchair linear/angular velocity, and scaled hand/handle incoming wrench observations. A longer DirectObs continuation ran to `model_13299.pt` and still stayed in the same failure mode, with bad-orientation term near `0.88` and near-zero wheelchair forward progress. This is no longer just a missing-observation problem; the warm-started rail-free scaffold is unstable. On May 23, we switched to a from-scratch, phase-gated curriculum that first learns fixed-chair attached standing before releasing the chair. The first scratch Phase 1 checkpoint, `model_50.pt`, looked stable. A direct move from Phase 1 `model_300.pt` into ground-lock/free-X/Y/yaw standing failed immediately, so the active bridge is now Phase 1B: fixed-chair standing with hand/handle reaction-wrench penalties to reduce dependence on the fixed chair before trying Phase 2 again.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
@@ -91,8 +91,9 @@ isaac-clip watch <phase-project> \
 The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
 
 - [x] Phase 0: build rail-free task scaffold from the plain walking/standing actor, not the rail-trained wheelchair actor. Use the regular wheelchair URDF, hard or fixed hand-handle attachment as the current interface, no X/yaw rail, and ground-plane lock only for wheelchair height/roll/pitch.
-- [ ] Phase 1: standing attached to handles. Current scratch implementation fixes the wheelchair root and trains from zero with DirectObs. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: active in `scratch_phase1_train`; early iterations have no bad-orientation or fall term, the first checkpoint `model_50.pt` has been rendered to the latest-video site, and `scratch_phase1_gate_watch` is waiting for `model_2500.pt` to render/email the gate.
-- [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline.
+- [x] Phase 1: standing attached to handles. The scratch implementation fixes the wheelchair root and trains from zero with DirectObs. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: accepted from `model_300.pt` after the rendered checkpoint looked rock solid.
+- [ ] Phase 1B: fixed-chair low-load standing. Keep the wheelchair root fixed, but penalize robot hand and wheelchair handle reaction wrench so the robot stops relying on the fixed chair as support. Status: active in `scratch_phase1b_train`, started from Phase 1 `model_300.pt`.
+- [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline. Status: first direct handoff from Phase 1 `model_300.pt` failed immediately with `bad_orientation` around `0.57`, so retry only after Phase 1B is stable.
 - [ ] Phase 3: tiny forward push at `0.15-0.25 m/s`. Add wheelchair forward velocity/progress plus backward penalty. Keep strong yaw-rate, lateral-velocity, and centerline penalties. Success means positive forward speed with low yaw and low lateral drift.
 - [ ] Phase 4: slow walking push at `0.4-0.6 m/s`. Reduce stationary posture pressure so the robot can walk/lean. Add light smoothness or foot terms only after forward motion is clearly working.
 - [ ] Phase 5: straight `1.0 m/s` push. Keep ground-plane lock and keep yaw/lateral penalties active, but relax them from the early scaffold values. Success means the wheelchair tracks near `1.0 m/s` without the rail and without spinning.
@@ -279,6 +280,7 @@ New task sequence added on May 23:
 | Phase | Task | Purpose |
 |---:|---|---|
 | 1 | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1-FixedStand-DirectObs` | Learn standing with hands attached while the wheelchair root is fixed. |
+| 1B | `Unitree-G1-29dof-Wheelchair-Scratch-Phase1B-FixedLowLoadStand-DirectObs` | Keep the fixed chair but penalize hand/handle reaction wrench so the robot carries more of its own balance. |
 | 2 | `Unitree-G1-29dof-Wheelchair-Scratch-Phase2-GroundLockStand-DirectObs` | Release X/Y/yaw, keep the chair on the ground plane, and damp drift/yaw through rewards. |
 | 3 | `Unitree-G1-29dof-Wheelchair-Scratch-Phase3-GroundLockCreep-DirectObs` | Add a tiny `0.15 m/s` forward wheelchair target. |
 | 4 | `Unitree-G1-29dof-Wheelchair-Scratch-Phase4-GroundLock1mps-DirectObs` | Push toward the final `1.0 m/s` straight-line target with ground lock but no forward rail. |
@@ -317,7 +319,43 @@ First rendered checkpoint:
 
 `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_50_slow_revolve_best_20260523_053351/model_50_slow_revolve_best.mp4`
 
-Early read: the one-iteration 16-env smoke check passed, and the real 2048-env Phase 1 run started without immediate collapse. Around iteration `119`, `Episode_Termination/bad_orientation` and `Episode_Reward/fall_termination` were both `0.0`, and episodes were reaching the `500` step timeout. By the time the gate watcher started, the latest saved checkpoint was `model_250.pt`. Do not advance to Phase 2 until Phase 1 has a visually stable checkpoint.
+Phase 1 was stopped early at `model_300.pt` after review accepted the visual result.
+
+Direct Phase 2 attempt:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase2-GroundLockStand-DirectObs \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23/model_300.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.05 \
+  --run_name scratch_phase2_groundlock_stand_from_phase1_model300_may23
+```
+
+Result: failed immediately; early iterations had `Episode_Termination/bad_orientation` rising toward `0.57`, short episode length, and strong wheelchair drift/yaw penalties. This indicates the fixed-chair policy was likely leaning on the chair. The run was stopped and kept as a failed handoff under:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase2_groundlock_stand_directobs/2026-05-23_06-02-22_scratch_phase2_groundlock_stand_from_phase1_model300_may23`
+
+Active Phase 1B command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1B-FixedLowLoadStand-DirectObs \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23/model_300.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.05 \
+  --run_name scratch_phase1b_fixed_lowload_from_phase1_model300_may23
+```
+
+Phase 1B adds `robot_hand_wrench` and `wheelchair_handle_wrench` penalties while keeping the wheelchair fixed. Early read around iteration `314`: `Episode_Termination/bad_orientation = 0.0`, `Episode_Reward/fall_termination = 0.0`, and episodes reached the full `500` step timeout. The gate watcher waits for `model_1100.pt`, renders the latest-video site, and sends the gate email.
 
 ## Current Task Shape
 
