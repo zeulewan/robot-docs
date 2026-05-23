@@ -122,10 +122,11 @@ isaac-clip watch unitree-wheelchair-relaxed-push-attached \
   --view two_orbit \
   --render \
   --notify \
-  --notify-provider telegram
+  --notify-provider telegram \
+  --notify-attach-video
 ```
 
-That command starts from the next interval after the current latest checkpoint. For example, if the latest checkpoint is `model_12300.pt` and the interval is `250`, the first render target is `model_12500.pt`, then `model_12750.pt`, `model_13000.pt`, and so on. It updates the latest-video page and sends a short Telegram notification after each successful render.
+That command starts from the next interval after the current latest checkpoint. For example, if the latest checkpoint is `model_12300.pt` and the interval is `250`, the first render target is `model_12500.pt`, then `model_12750.pt`, `model_13000.pt`, and so on. It updates the latest-video page and sends the rendered MP4 to Telegram after each successful render. Drop `--notify-attach-video` when only a text/path notification is needed.
 
 The notification uses `telecli` and the local Telegram config at `~/.config/telecli/config.toml`. The preferred project config shape is:
 
@@ -136,6 +137,8 @@ telegram_attach_video = false
 ```
 
 For site-first projects, keep `provider = "site"` and add `notify_provider = "telegram"`. Omit `--notify` when only the website should update.
+
+Flag distinction: `--notify-attach-video` attaches the MP4 to a Telegram notification after a `site` render. `--telegram-attach-video` attaches the MP4 when Telegram is the primary delivery provider, as in `isaac-clip send <project> --provider telegram --telegram-attach-video`.
 
 The default `unitree-wheelchair-attached` view currently uses:
 
