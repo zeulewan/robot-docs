@@ -43,8 +43,9 @@ More detail: [Sunshine Streaming](workstation/sunshine.md) and [GPU & Display Co
 
 | Provider | Use |
 |---|---|
-| `gog` | Send the rendered MP4 by email using the local `gog` CLI. |
-| `file` | Render/archive the MP4 and metadata without sending email. |
+| `telegram` | Send a Telegram update through `telecli`, optionally attaching the MP4. |
+| `gog` | Email fallback using the local `gog` CLI. Do not use for normal Isaac updates. |
+| `file` | Render/archive the MP4 and metadata without sending a notification. |
 | `site` | Render/archive, then overwrite the stable MP4/JSON watched by the latest-video page. |
 
 The real CLI is installed as `isaac-clip`. Its source repo is currently `zeulewan/isaac-runclip`; the local checkout is `/home/zeul/GIT/telecli`. Project/view behavior should live in `isaac-clip` config, not in local wrapper scripts.
@@ -121,12 +122,20 @@ isaac-clip watch unitree-wheelchair-relaxed-push-attached \
   --view two_orbit \
   --render \
   --notify \
-  --to <email>
+  --notify-provider telegram
 ```
 
-That command starts from the next interval after the current latest checkpoint. For example, if the latest checkpoint is `model_12300.pt` and the interval is `250`, the first render target is `model_12500.pt`, then `model_12750.pt`, `model_13000.pt`, and so on. It updates the latest-video page and sends a short email after each successful render.
+That command starts from the next interval after the current latest checkpoint. For example, if the latest checkpoint is `model_12300.pt` and the interval is `250`, the first render target is `model_12500.pt`, then `model_12750.pt`, `model_13000.pt`, and so on. It updates the latest-video page and sends a short Telegram notification after each successful render.
 
-The notification uses `gog`; keep provider credentials/keyring material out of docs and project config. Omit `--notify` when only the website should update.
+The notification uses `telecli` and the local Telegram config at `~/.config/telecli/config.toml`. The preferred project config shape is:
+
+```toml
+[projects.<name>.send]
+provider = "telegram"
+telegram_attach_video = false
+```
+
+For site-first projects, keep `provider = "site"` and add `notify_provider = "telegram"`. Omit `--notify` when only the website should update.
 
 The default `unitree-wheelchair-attached` view currently uses:
 
@@ -173,7 +182,7 @@ isaac-clip send unitree-wheelchair-physx-rail-1mps-fast-lean-hard-attach-push-at
 
 The 1 m/s hard-attach project preset now uses `follow_best_after_steps = 0`, so the latest-video page's **New Video** button selects the best env at frame zero instead of switching mid-clip.
 
-Do not document or commit local email/keyring credentials. If the `gog` provider cannot unlock in a non-interactive shell, unlock the local keyring/session first or run the command from an interactive workstation shell.
+Do not document or commit Telegram bot tokens, chat IDs, local email credentials, or keyring material. Keep `gog` only as a fallback if Telegram is unavailable.
 
 ## Latest Video Website
 
