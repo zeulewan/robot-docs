@@ -6,17 +6,17 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | `Unitree-G1-29dof-Wheelchair-RailFree-Phase1-Stand-Attached` |
-| Last rendered playback | rail-free Phase 1 gate: `model_12549.pt`, rendered May 22 |
+| Active training task | stopped; latest test was `Unitree-G1-29dof-Wheelchair-RailFree-Phase1-PoseObs-Stand-Attached` |
+| Last rendered playback | rail-free Phase 1 PoseObs gate: `model_12350.pt`, rendered May 22 |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Warm-start checkpoint | `logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/2026-05-16_18-06-04_fixed_relaxed_stand_attached_straight_wrists_from_11600/model_12300.pt` |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_railfree_phase1_stand_attached/2026-05-22_06-13-39_railfree_phase1_groundlock_from_fixed_relaxed_12300_may22` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_railfree_phase1_poseobs_stand_attached/2026-05-22_22-20-17_railfree_phase1_poseobs_from_fixed_relaxed_12300_may22` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-railfree-phase1-stand-attached_model_12549_slow_revolve_best_20260522_200012/model_12549_slow_revolve_best.mp4` |
-| Summary last updated | May 22, 2026, 20:02 Toronto |
+| Latest archived playback | `logs/demos/unitree-wheelchair-railfree-phase1-poseobs-stand-attached_model_12350_slow_revolve_best_20260522_222657/model_12350_slow_revolve_best.mp4` |
+| Summary last updated | May 22, 2026, 22:29 Toronto |
 | Training tmux | stopped; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
@@ -24,7 +24,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
 
-Current status: the direct rail-free playback transfer failed, so the next path is a staged rail-free curriculum. Phase 1 trained from the fixed-relaxed standing-with-handles checkpoint, kept the hands attached, removed the X/yaw rail, and kept only the ground-plane lock on wheelchair height, roll, and pitch. The first gate rendered from `model_12549.pt`; it is not acceptable yet. The robots do not cleanly stand and hold the chair, which matches the high train-time `bad_orientation` termination rate near `0.87`.
+Current status: the direct rail-free playback transfer failed, so the next path is a staged rail-free curriculum. Phase 1 trained from the fixed-relaxed standing-with-handles checkpoint, kept the hands attached, removed the X/yaw rail, and kept only the ground-plane lock on wheelchair height, roll, and pitch. The first gate rendered from `model_12549.pt`; it was not acceptable. A follow-up PoseObs test added hard hand-handle relative orientation and angular velocity to the policy input, expanded the warm-start checkpoint, and trained to `model_12350.pt`. That also failed quickly, with `bad_orientation` staying near `0.87` and playback showing robots collapsed or teetering in the chairs. Extra observation alone did not fix this scaffold.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
@@ -91,7 +91,7 @@ isaac-clip watch <phase-project> \
 The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
 
 - [x] Phase 0: build rail-free task scaffold from the plain walking/standing actor, not the rail-trained wheelchair actor. Use the regular wheelchair URDF, hard or fixed hand-handle attachment as the current interface, no X/yaw rail, and ground-plane lock only for wheelchair height/roll/pitch.
-- [ ] Phase 1: standing attached to handles. Chair is ground-plane locked and heavily damped/braked, with no forward push objective. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: first gate rendered from `model_12549.pt`; failed visually, likely needs a softer or more stationary warmup before moving to Phase 2.
+- [ ] Phase 1: standing attached to handles. Chair is ground-plane locked and heavily damped/braked, with no forward push objective. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: original gate `model_12549.pt` and PoseObs gate `model_12350.pt` both failed visually; next change should alter the scaffold/physics/reward setup, not just add more observations.
 - [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline.
 - [ ] Phase 3: tiny forward push at `0.15-0.25 m/s`. Add wheelchair forward velocity/progress plus backward penalty. Keep strong yaw-rate, lateral-velocity, and centerline penalties. Success means positive forward speed with low yaw and low lateral drift.
 - [ ] Phase 4: slow walking push at `0.4-0.6 m/s`. Reduce stationary posture pressure so the robot can walk/lean. Add light smoothness or foot terms only after forward motion is clearly working.
@@ -166,6 +166,52 @@ Rendered output:
 `logs/demos/unitree-wheelchair-railfree-phase1-stand-attached_model_12549_slow_revolve_best_20260522_200012/model_12549_slow_revolve_best.mp4`
 
 This gate should be treated as a failed Phase 1 attempt. Final train metrics around `12549/12550` had `Episode_Termination/bad_orientation` near `0.87`, `wheelchair_xy_velocity` around `-0.79`, and `wheelchair_root_position` around `-3.83`, so the stationary no-rail stand setup is not yet holding the chair cleanly.
+
+### May 22 Phase 1 PoseObs Test
+
+The follow-up hypothesis was that the hard hand-handle constraint made the task partially observable: the old `wheelchair_handle_state_b` only exposed handle positions and hand-to-handle position error, so once the spherical joints held the hands on the handles, the policy could be blind to twist and angular motion at the grip.
+
+Added code:
+
+- `wheelchair_hand_handle_pose_state_b` in `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py`
+- `DynamicWheelchairPushHardAttachmentPoseObservationsCfg` in `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py`
+- `Unitree-G1-29dof-Wheelchair-RailFree-Phase1-PoseObs-Stand-Attached`
+
+The new observation term adds, for both hand-handle pairs, the wheelchair handle basis vectors expressed in the hand frame plus relative handle angular velocity expressed in the hand frame. With the existing history stack of `5`, it adds `120` policy inputs. The resulting shapes are policy `(705,)`, critic `(720,)`, action `(29,)`.
+
+The fixed-relaxed standing-with-handles checkpoint was expanded so the old actor can warm-start while ignoring the new inputs initially:
+
+```bash
+python scripts/rsl_rl/expand_input_checkpoint.py \
+  logs/rsl_rl/unitree_g1_29dof_wheelchair_fixed_relaxed_stand_attached/2026-05-16_18-06-04_fixed_relaxed_stand_attached_straight_wrists_from_11600/model_12300.pt \
+  logs/rsl_rl/expanded_checkpoints/fixed_relaxed_stand_attached_model_12300_poseobs_705_720.pt \
+  --actor-input-dim 705 \
+  --critic-input-dim 720
+```
+
+Training command:
+
+```bash
+python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-RailFree-Phase1-PoseObs-Stand-Attached \
+  --max_iterations 250 \
+  --resume \
+  --checkpoint logs/rsl_rl/expanded_checkpoints/fixed_relaxed_stand_attached_model_12300_poseobs_705_720.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.01 \
+  --run_name railfree_phase1_poseobs_from_fixed_relaxed_12300_may22
+```
+
+The run was stopped at the first adapted checkpoint instead of burning the full gate because the failure appeared immediately. By `model_12350.pt`, `Episode_Termination/bad_orientation` was still about `0.87`, `wheelchair_xy_velocity` was around `-0.76`, and `wheelchair_root_position` was around `-3.46`. The rendered playback also failed visually: several robots were collapsed or teetering in the chairs.
+
+Rendered output:
+
+`logs/demos/unitree-wheelchair-railfree-phase1-poseobs-stand-attached_model_12350_slow_revolve_best_20260522_222657/model_12350_slow_revolve_best.mp4`
+
+Conclusion: the missing hard-attachment orientation/angular-velocity observation was real, but adding it did not fix the current rail-free Phase 1 scaffold. The next experiment should change the physical scaffold or reward target: for example, use a more stationary support stage, simplify/disable the wheelchair forward command during standing, delay the hard attachment until a settled pose, or add an explicit attachment-load signal instead of relying only on relative pose.
 
 ## Current Task Shape
 
