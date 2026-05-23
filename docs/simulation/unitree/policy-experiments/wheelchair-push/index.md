@@ -6,18 +6,18 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | none; scratch Phase 1A was stopped as a failed setup |
-| Last rendered playback | scratch Phase 1A damped-release failure diagnostic: `model_700.pt`, rendered May 23 |
+| Active training task | `Unitree-G1-29dof-Wheelchair-Minimal-FreeYaw-GroundLock-1mps-Fast-Lean-HeavyDamping-Push-Attached-Hard` |
+| Last rendered playback | scratch Phase 1A damped-release failure diagnostic: `model_700.pt`, rendered May 23; render the heavy-damping bridge at first useful checkpoint |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Phase 1 source checkpoint | none; rewritten Phase 1 trains from zero |
+| Phase 1 source checkpoint | `model_19247.pt` from the good 1 m/s PhysX-rail hard-attach run |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | stopped `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_06-50-27_scratch_phase1a_damped_release_no_forward_reward_from_zero_may23` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_freeyaw_groundlock_1mps_fast_lean_heavydamp_hard_attach_push_attached/2026-05-23_*_freeyaw_heavydamp_from_19247_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1a-damped-release-directobs_model_700_slow_revolve_best_20260523_080310/model_700_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 08:12 Toronto |
-| Training tmux | stopped; latest-video site still running |
+| Summary last updated | May 23, 2026, 13:22 Toronto |
+| Training tmux | `freeyaw_heavydamp_train`; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -29,6 +29,42 @@ Current status: the May 22 rail-free transfer attempts and the first May 23 fixe
 Working diagnosis: hard hand-handle attachment from a scratch/random policy is too large a first step. The reset pose and chair pose place the hands near the handles, but the policy cannot keep the constrained humanoid upright long enough to collect useful standing data. The next branch should restore a viable bridge before the damping-release ladder: either warm-start from the stable fixed-relaxed attached standing checkpoint, start from a reach/stand primitive and introduce the hard hand-handle constraint after that policy is stable, or use a softer/staged grip before switching to hard attachment.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
+
+## May 23 Rigid-To-Free Bridge
+
+The new active path is not the failed scratch Phase 1A run. It starts from the successful 1 m/s hard-attach PhysX-rail actor and removes the forward rail gradually. The first bridge keeps hard hand-handle attachment and the wheelchair ground-plane lock, leaves forward X motion free, and damps only the unstable lateral/yaw axes.
+
+Current task:
+
+`Unitree-G1-29dof-Wheelchair-Minimal-FreeYaw-GroundLock-1mps-Fast-Lean-HeavyDamping-Push-Attached-Hard`
+
+Training command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Minimal-FreeYaw-GroundLock-1mps-Fast-Lean-HeavyDamping-Push-Attached-Hard \
+  --run_name freeyaw_heavydamp_from_19247_may23 \
+  --resume \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_fast_lean_hard_attach_push_attached/2026-05-19_15-22-06_hard_attach_1mps_continue_full_from_18248_may19/model_19247.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.03 \
+  --max_iterations 500
+```
+
+Bridge settings:
+
+| Axis | Setting |
+|---|---|
+| Forward X velocity | free, `x_velocity_scale = 1.0` |
+| Lateral Y velocity | heavily damped, `y_velocity_scale = 0.05` |
+| Chair yaw velocity | heavily damped, `yaw_velocity_scale = 0.05` |
+| Ground plane | height, roll, and pitch constrained so the chair stays on the floor |
+| Rewards added beyond the rail task | lateral velocity, forward-line drift, yaw velocity, root heading, forward-heading penalties |
+
+Early signal at iteration `19252`: unlike the scratch release, the bridge produced useful rollouts. `bad_orientation` was below `0.001`, `base_height` was `0.0`, unstable robot/chair resets were `0.0`, and wheelchair forward progress was nonzero. This is only an early diagnostic; deterministic playback at the first checkpoint is still required before continuing to medium damping.
 
 ## May 22 Free-Yaw Ground-Lock Playback
 
