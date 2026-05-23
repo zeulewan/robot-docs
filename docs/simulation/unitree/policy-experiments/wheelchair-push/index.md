@@ -7,7 +7,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Item | Value |
 |---|---|
 | Active training task | `Unitree-G1-29dof-Wheelchair-RailFree-Phase1-Stand-Attached` |
-| Last rendered playback | free-yaw ground-lock transfer diagnostic: `model_19247.pt`, rendered May 22; Phase 1 render pending at `model_12550.pt` |
+| Last rendered playback | rail-free Phase 1 gate: `model_12549.pt`, rendered May 22 |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
@@ -15,16 +15,16 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_railfree_phase1_stand_attached/2026-05-22_06-13-39_railfree_phase1_groundlock_from_fixed_relaxed_12300_may22` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-freeyaw-groundlock-1mps-fast-lean-hard-attach-push-attached_model_19247_slow_revolve_best_20260522_045657/model_19247_slow_revolve_best.mp4` |
-| Summary last updated | May 22, 2026, 06:17 Toronto |
-| Training tmux | `railfree_phase1_train`; gate watcher `railfree_phase1_gate` |
+| Latest archived playback | `logs/demos/unitree-wheelchair-railfree-phase1-stand-attached_model_12549_slow_revolve_best_20260522_200012/model_12549_slow_revolve_best.mp4` |
+| Summary last updated | May 22, 2026, 20:02 Toronto |
+| Training tmux | stopped; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch. The current 1 m/s run is a new speed-scaled variant of the reproducible 2 m/s path, not that yaw-torque branch.
 
-Current status: the direct rail-free playback transfer failed, so the next path is a staged rail-free curriculum. Phase 1 is now training. It starts from the fixed-relaxed standing-with-handles checkpoint, keeps the hands attached, removes the X/yaw rail, and keeps only the ground-plane lock on wheelchair height, roll, and pitch. The first gate is `model_12550.pt`; the gate watcher should render it to the latest-video site and send an email notification.
+Current status: the direct rail-free playback transfer failed, so the next path is a staged rail-free curriculum. Phase 1 trained from the fixed-relaxed standing-with-handles checkpoint, kept the hands attached, removed the X/yaw rail, and kept only the ground-plane lock on wheelchair height, roll, and pitch. The first gate rendered from `model_12549.pt`; it is not acceptable yet. The robots do not cleanly stand and hold the chair, which matches the high train-time `bad_orientation` termination rate near `0.87`.
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
@@ -91,7 +91,7 @@ isaac-clip watch <phase-project> \
 The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
 
 - [x] Phase 0: build rail-free task scaffold from the plain walking/standing actor, not the rail-trained wheelchair actor. Use the regular wheelchair URDF, hard or fixed hand-handle attachment as the current interface, no X/yaw rail, and ground-plane lock only for wheelchair height/roll/pitch.
-- [ ] Phase 1: standing attached to handles. Chair is ground-plane locked and heavily damped/braked, with no forward push objective. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: training from fixed-relaxed standing checkpoint, first gate at `model_12550.pt`.
+- [ ] Phase 1: standing attached to handles. Chair is ground-plane locked and heavily damped/braked, with no forward push objective. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: first gate rendered from `model_12549.pt`; failed visually, likely needs a softer or more stationary warmup before moving to Phase 2.
 - [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline.
 - [ ] Phase 3: tiny forward push at `0.15-0.25 m/s`. Add wheelchair forward velocity/progress plus backward penalty. Keep strong yaw-rate, lateral-velocity, and centerline penalties. Success means positive forward speed with low yaw and low lateral drift.
 - [ ] Phase 4: slow walking push at `0.4-0.6 m/s`. Reduce stationary posture pressure so the robot can walk/lean. Add light smoothness or foot terms only after forward motion is clearly working.
@@ -134,7 +134,7 @@ python scripts/rsl_rl/train.py \
   --run_name railfree_phase1_groundlock_from_fixed_relaxed_12300_may22
 ```
 
-The gate watcher is:
+The intended gate watcher was:
 
 ```bash
 isaac-clip watch unitree-wheelchair-railfree-phase1-stand-attached \
@@ -146,6 +146,26 @@ isaac-clip watch unitree-wheelchair-railfree-phase1-stand-attached \
   --notify \
   --to zeul@mordasiewicz.com
 ```
+
+The run saved `model_12549.pt` as its final checkpoint, so the watcher waiting for `12550` did not fire. The stale watcher was stopped and the gate was rendered manually from `model_12549.pt`:
+
+```bash
+isaac-clip watch unitree-wheelchair-railfree-phase1-stand-attached \
+  --target-iteration 12549 \
+  --run-dir logs/rsl_rl/unitree_g1_29dof_wheelchair_railfree_phase1_stand_attached/2026-05-22_06-13-39_railfree_phase1_groundlock_from_fixed_relaxed_12300_may22 \
+  --view slow_revolve_best \
+  --render \
+  --provider site \
+  --training-policy continue \
+  --notify \
+  --to zeul@mordasiewicz.com
+```
+
+Rendered output:
+
+`logs/demos/unitree-wheelchair-railfree-phase1-stand-attached_model_12549_slow_revolve_best_20260522_200012/model_12549_slow_revolve_best.mp4`
+
+This gate should be treated as a failed Phase 1 attempt. Final train metrics around `12549/12550` had `Episode_Termination/bad_orientation` near `0.87`, `wheelchair_xy_velocity` around `-0.79`, and `wheelchair_root_position` around `-3.83`, so the stationary no-rail stand setup is not yet holding the chair cleanly.
 
 ## Current Task Shape
 
