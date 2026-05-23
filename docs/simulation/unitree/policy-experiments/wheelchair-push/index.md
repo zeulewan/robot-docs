@@ -66,7 +66,7 @@ Operational note: the first render attempt failed before environment creation be
 
 ## Rail-Free Curriculum Task List
 
-Rule for this curriculum: each phase stops at its gate. Do not roll straight into the next phase. At each gate, render a playback to the latest-video site, send an email notification, write the status here, then wait for review before continuing.
+Rule for this curriculum: each phase stops at its gate. Do not roll straight into the next phase. At each gate, render a playback to the latest-video site, send a Telegram notification, write the status here, then wait for review before continuing.
 
 Use `isaac-clip` for the review gate. The normal shape is:
 
@@ -85,10 +85,10 @@ isaac-clip watch <phase-project> \
   --view slow_revolve_best \
   --render \
   --notify \
-  --to <email>
+  --notify-provider telegram
 ```
 
-The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
+The Telegram update should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put bot tokens, chat IDs, credentials, or keyring details in docs.
 
 For the rewritten damping-release ladder, use the gated auto-advancer instead of manually chaining each phase:
 
@@ -100,14 +100,14 @@ tmux new-session -d -s wheelchair_phase_advancer -c /home/zeul/GIT/unitree_rl_la
     --poll-seconds 60 \
     --render \
     --notify \
+    --notify-provider telegram \
     --codex-review \
-    --to zeul@mordasiewicz.com \
     2>&1 | tee logs/rsl_rl/wheelchair_phase_advancer_may23.log'
 ```
 
-The auto-advancer is not a blind phase jumper. At each gate it waits for the phase checkpoint, renders the latest-video site, emails the gate result, reads TensorBoard scalars, and advances only if the health gate passes. The default Phase 1 gate requires low `bad_orientation`, low `base_height`, and high `time_out`. If the gate fails, it stops instead of launching the next phase.
+The auto-advancer is not a blind phase jumper. At each gate it waits for the phase checkpoint, renders the latest-video site, sends the gate result through Telegram, reads TensorBoard scalars, and advances only if the health gate passes. The default Phase 1 gate requires low `bad_orientation`, low `base_height`, and high `time_out`. If the gate fails, it stops instead of launching the next phase.
 
-With `--codex-review`, the gate also launches a read-only `codex exec` reviewer. The reviewer gets a JSON context bundle with the phase config, checkpoint, TensorBoard metrics, latest-video path/metadata, this docs page, and the task config. It must return structured JSON with `decision: advance`, `stop`, or `needs_human`. The hard metric gate still vetoes advancement, and Codex can also veto or require human review. Codex writes a concise email update in the JSON; the parent advancer sends that update with `gog --enable-commands=send send`, so the child Codex process does not directly mutate files, stop training, or send mail itself.
+With `--codex-review`, the gate also launches a read-only `codex exec` reviewer. The reviewer gets a JSON context bundle with the phase config, checkpoint, TensorBoard metrics, latest-video path/metadata, this docs page, and the task config. It must return structured JSON with `decision: advance`, `stop`, or `needs_human`. The hard metric gate still vetoes advancement, and Codex can also veto or require human review. Codex writes a concise Telegram update in the JSON; the parent advancer sends that update with `telecli send --agent isaac`, so the child Codex process does not directly mutate files, stop training, or send messages itself. Email is only a fallback if Telegram is unavailable.
 
 - [x] Phase 0: build the rail-free DirectObs scaffold. Use the regular wheelchair URDF, hard hand-handle attachment, no X/yaw rail, and the ground-plane lock only for wheelchair height, roll, and pitch.
 - [ ] Phase 1A: train from zero with chair ground lock and planar velocity damping at `x/y/yaw = 0.0/0.0/0.0`. This is the current run. It should learn stable standing/holding without any forward-push reward.
@@ -166,7 +166,7 @@ isaac-clip watch unitree-wheelchair-railfree-phase1-stand-attached \
   --provider site \
   --training-policy continue \
   --notify \
-  --to zeul@mordasiewicz.com
+  --notify-provider telegram
 ```
 
 The run saved `model_12549.pt` as its final checkpoint, so the watcher waiting for `12550` did not fire. The stale watcher was stopped and the gate was rendered manually from `model_12549.pt`:
@@ -180,7 +180,7 @@ isaac-clip watch unitree-wheelchair-railfree-phase1-stand-attached \
   --provider site \
   --training-policy continue \
   --notify \
-  --to zeul@mordasiewicz.com
+  --notify-provider telegram
 ```
 
 Rendered output:
