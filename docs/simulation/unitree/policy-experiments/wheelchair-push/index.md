@@ -16,8 +16,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1_fixed_stand_directobs/2026-05-23_05-28-52_scratch_phase1_fixed_stand_from_zero_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_50_slow_revolve_best_20260523_053351/model_50_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 05:38 Toronto |
-| Training tmux | `scratch_phase1_train`; latest-video site still running |
+| Summary last updated | May 23, 2026, 05:54 Toronto |
+| Training tmux | `scratch_phase1_train`; `scratch_phase1_gate_watch` waits for the Phase 1 gate; latest-video site still running |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -91,7 +91,7 @@ isaac-clip watch <phase-project> \
 The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
 
 - [x] Phase 0: build rail-free task scaffold from the plain walking/standing actor, not the rail-trained wheelchair actor. Use the regular wheelchair URDF, hard or fixed hand-handle attachment as the current interface, no X/yaw rail, and ground-plane lock only for wheelchair height/roll/pitch.
-- [ ] Phase 1: standing attached to handles. Current scratch implementation fixes the wheelchair root and trains from zero with DirectObs. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: active in `scratch_phase1_train`; early iterations have no bad-orientation or fall term, and the first checkpoint `model_50.pt` has been rendered to the latest-video site.
+- [ ] Phase 1: standing attached to handles. Current scratch implementation fixes the wheelchair root and trains from zero with DirectObs. Success means stable standing with hands attached, no flailing, no collapse, and visually clean startup. Status: active in `scratch_phase1_train`; early iterations have no bad-orientation or fall term, the first checkpoint `model_50.pt` has been rendered to the latest-video site, and `scratch_phase1_gate_watch` is waiting for `model_2500.pt` to render/email the gate.
 - [ ] Phase 2: stationary handle hold with free yaw. Chair yaw and lateral motion are free but strongly penalized. Success means the robot can hold the chair without twisting it or drifting off centerline.
 - [ ] Phase 3: tiny forward push at `0.15-0.25 m/s`. Add wheelchair forward velocity/progress plus backward penalty. Keep strong yaw-rate, lateral-velocity, and centerline penalties. Success means positive forward speed with low yaw and low lateral drift.
 - [ ] Phase 4: slow walking push at `0.4-0.6 m/s`. Reduce stationary posture pressure so the robot can walk/lean. Add light smoothness or foot terms only after forward motion is clearly working.
@@ -305,11 +305,19 @@ Training tmux:
 tmux attach -t scratch_phase1_train
 ```
 
+Gate watcher:
+
+```bash
+tmux attach -t scratch_phase1_gate_watch
+```
+
+The watcher waits for `model_2500.pt`, renders it with the `slow_revolve_best` view, updates `https://workstation.tailee9084.ts.net:8002/`, and sends the gate email notification.
+
 First rendered checkpoint:
 
 `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_50_slow_revolve_best_20260523_053351/model_50_slow_revolve_best.mp4`
 
-Early read: the one-iteration 16-env smoke check passed, and the real 2048-env Phase 1 run started without immediate collapse. Around iteration `90`, `Episode_Termination/bad_orientation` and `Episode_Reward/fall_termination` were both `0.0`, and episodes were reaching the `500` step timeout. Do not advance to Phase 2 until Phase 1 has a visually stable checkpoint.
+Early read: the one-iteration 16-env smoke check passed, and the real 2048-env Phase 1 run started without immediate collapse. Around iteration `119`, `Episode_Termination/bad_orientation` and `Episode_Reward/fall_termination` were both `0.0`, and episodes were reaching the `500` step timeout. By the time the gate watcher started, the latest saved checkpoint was `model_250.pt`. Do not advance to Phase 2 until Phase 1 has a visually stable checkpoint.
 
 ## Current Task Shape
 
