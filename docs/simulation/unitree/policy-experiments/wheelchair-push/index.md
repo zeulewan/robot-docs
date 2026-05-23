@@ -100,11 +100,14 @@ tmux new-session -d -s wheelchair_phase_advancer -c /home/zeul/GIT/unitree_rl_la
     --poll-seconds 60 \
     --render \
     --notify \
+    --codex-review \
     --to zeul@mordasiewicz.com \
     2>&1 | tee logs/rsl_rl/wheelchair_phase_advancer_may23.log'
 ```
 
 The auto-advancer is not a blind phase jumper. At each gate it waits for the phase checkpoint, renders the latest-video site, emails the gate result, reads TensorBoard scalars, and advances only if the health gate passes. The default Phase 1 gate requires low `bad_orientation`, low `base_height`, and high `time_out`. If the gate fails, it stops instead of launching the next phase.
+
+With `--codex-review`, the gate also launches a read-only `codex exec` reviewer. The reviewer gets a JSON context bundle with the phase config, checkpoint, TensorBoard metrics, latest-video path/metadata, this docs page, and the task config. It must return structured JSON with `decision: advance`, `stop`, or `needs_human`. The hard metric gate still vetoes advancement, and Codex can also veto or require human review. Codex writes a concise email update in the JSON; the parent advancer sends that update with `gog --enable-commands=send send`, so the child Codex process does not directly mutate files, stop training, or send mail itself.
 
 - [x] Phase 0: build the rail-free DirectObs scaffold. Use the regular wheelchair URDF, hard hand-handle attachment, no X/yaw rail, and the ground-plane lock only for wheelchair height, roll, and pitch.
 - [ ] Phase 1A: train from zero with chair ground lock and planar velocity damping at `x/y/yaw = 0.0/0.0/0.0`. This is the current run. It should learn stable standing/holding without any forward-push reward.
