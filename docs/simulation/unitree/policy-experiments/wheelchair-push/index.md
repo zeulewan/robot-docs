@@ -90,6 +90,22 @@ isaac-clip watch <phase-project> \
 
 The email should say which phase just completed or which checkpoint was rendered, link the latest-video page, and include the checkpoint path. Do not put credentials or keyring details in docs.
 
+For the rewritten damping-release ladder, use the gated auto-advancer instead of manually chaining each phase:
+
+```bash
+tmux new-session -d -s wheelchair_phase_advancer -c /home/zeul/GIT/unitree_rl_lab \
+  'tools/wheelchair_phase_advancer.py \
+    --start-phase phase1a \
+    --current-run-dir logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1a_damped_release_directobs/2026-05-23_06-50-27_scratch_phase1a_damped_release_no_forward_reward_from_zero_may23 \
+    --poll-seconds 60 \
+    --render \
+    --notify \
+    --to zeul@mordasiewicz.com \
+    2>&1 | tee logs/rsl_rl/wheelchair_phase_advancer_may23.log'
+```
+
+The auto-advancer is not a blind phase jumper. At each gate it waits for the phase checkpoint, renders the latest-video site, emails the gate result, reads TensorBoard scalars, and advances only if the health gate passes. The default Phase 1 gate requires low `bad_orientation`, low `base_height`, and high `time_out`. If the gate fails, it stops instead of launching the next phase.
+
 - [x] Phase 0: build the rail-free DirectObs scaffold. Use the regular wheelchair URDF, hard hand-handle attachment, no X/yaw rail, and the ground-plane lock only for wheelchair height, roll, and pitch.
 - [ ] Phase 1A: train from zero with chair ground lock and planar velocity damping at `x/y/yaw = 0.0/0.0/0.0`. This is the current run. It should learn stable standing/holding without any forward-push reward.
 - [ ] Phase 1B: continue from Phase 1A with heavy chair damping, `0.05/0.02/0.02`. The chair can move a little, but the dynamics should still be easy.
@@ -297,6 +313,12 @@ Training tmux:
 
 ```bash
 tmux attach -t scratch_phase1a_train
+```
+
+Auto-advancer tmux:
+
+```bash
+tmux attach -t wheelchair_phase_advancer
 ```
 
 Early verification after the fix: the smoke run showed `wheelchair_track_forward_velocity: 0.0000`, and the live 2048-env run also showed `wheelchair_track_forward_velocity: 0.0000` at the first logged updates. The earlier short run from `06:45` was discarded because it still had the old zero-velocity tracking reward active, which made the Phase 1 reward stack less clean than intended.
