@@ -35,6 +35,10 @@ Resume rule to keep straight: use full RSL-RL continuation only when continuing 
 
 Important correction from the May 19 git-history audit and reproduction test: treat the `model_13300.pt` hard-attach checkpoint as a real good visual reference, not as a randomly fragile checkpoint. The exact old command from the `model_13249.pt` source reproduced `model_13300.pt` and `model_13350.pt` byte-for-byte on May 19. The behavior changed in the later restart/modified branches, while the original 2 m/s hard-attach path is still reproducible.
 
+## Lessons Learned
+
+Reward terms used for diagnosis should stay factorized until the important axes are understood. The first handle-load split separated force and torque, but each term still summed local `x/y/z` before TensorBoard saw it. That hid the fact that the handle torque was mostly on `z`, then `y`, with much smaller `x`. For contact, wrench, rail, and alignment rewards, avoid one aggregate scalar too early; log and shape per axis, and only combine terms after it is clear which physical component is driving the behavior.
+
 ## May 23 Fixed-Chair Stand Reset
 
 The fixed-chair standing branch is active again. This is intentionally narrower than the failed damping-release Phase 1A: the wheelchair root is fixed, the hands remain hard-attached to the handles, forward wheelchair velocity/progress rewards are disabled, and handle-force penalties are still disabled. The goal is just a reliable attached standing primitive.
