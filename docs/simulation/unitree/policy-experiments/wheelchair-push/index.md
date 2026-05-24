@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair torque + net force standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D3-FixedTorqueNetForceStand-DirectObs` |
+| Active training task | fixed-chair individual force standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D4-FixedIndividualForceStand-DirectObs` |
 | Last rendered playback | fixed-chair medium-load standing: `model_1947.pt`, rendered May 23 at 22:00 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -305,6 +305,42 @@ TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train
 Live startup confirmed the intended reward set. At `Learning iteration 2704/3200`, `wheelchair_handle_force_x/y/z = 0.0`, `wheelchair_handle_torque_x/y/z` were active, and `wheelchair_handle_net_force_x/y/z` were active.
 
 The latest-video site was restarted at `05:14 Toronto` so the New Video button targets the Phase 1D3 torque + net force project.
+
+## May 24 Individual Handle-Force Phase
+
+Phase 1D4 backs up to the simplest requested signal: minimize the individual force components on the two wheelchair handle bodies. This branch does not use handle torque penalties, net-force penalties, or aggregate wrench penalties. The active load terms are only:
+
+| Term | Weight |
+|---|---:|
+| `wheelchair_handle_force_x` | `-0.06` |
+| `wheelchair_handle_force_y` | `-0.06` |
+| `wheelchair_handle_force_z` | `-0.06` |
+
+The force helper squares each selected handle body's signed force component and averages across the two handles, so this penalizes both hands/handles individually. This is intentionally simple and does not cancel opposite left/right forces.
+
+Task added in `unitree_rl_lab` commit `e1feb95`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1D4-FixedIndividualForceStand-DirectObs`
+
+The obsolete Phase 1D3 torque + net force session was stopped before launching this branch. Training started May 24 at `05:32 Toronto` from the Phase 1D3 `model_2850.pt` checkpoint:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1D4-FixedIndividualForceStand-DirectObs \
+  --max_iterations 500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d3_fixed_torque_net_force_stand_directobs/2026-05-24_05-14-31_fixed_torque_net_force_from_axis_2700_may24/model_2850.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name fixed_individual_force_from_torque_net_2850_may24
+```
+
+Live startup confirmed the intended reward set: `wheelchair_handle_force_x/y/z` are active, while `wheelchair_handle_torque_x/y/z` and `wheelchair_handle_net_force_x/y/z` are all `0.0`.
+
+The latest-video site was restarted at `05:33 Toronto` so the New Video button targets the Phase 1D4 individual-force project.
 
 ## May 23 Rigid-To-Free Bridge
 
