@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair axis-split handle-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D2-FixedAxisHandleLoadStand-DirectObs` |
+| Active training task | fixed-chair torque + net force standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D3-FixedTorqueNetForceStand-DirectObs` |
 | Last rendered playback | fixed-chair medium-load standing: `model_1947.pt`, rendered May 23 at 22:00 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -38,6 +38,8 @@ Important correction from the May 19 git-history audit and reproduction test: tr
 ## Lessons Learned
 
 Reward terms used for diagnosis should stay factorized until the important axes are understood. The first handle-load split separated force and torque, but each term still summed local `x/y/z` before TensorBoard saw it. That hid the fact that the handle torque was mostly on `z`, then `y`, with much smaller `x`. For contact, wrench, rail, and alignment rewards, avoid one aggregate scalar too early; log and shape per axis, and only combine terms after it is clear which physical component is driving the behavior.
+
+Net force and opposing forces are different signals. Penalizing the sum of left and right handle forces on an axis suppresses net push/pull on the fixed chair, but equal-and-opposite handle forces cancel in that sum and can still create a twisting moment. In the fixed-chair standing phase, use net force penalties to discourage leaning into the chair and torque penalties, especially around `z`, to discourage twisting the handles.
 
 ## May 23 Fixed-Chair Stand Reset
 
@@ -262,6 +264,47 @@ TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train
 Live startup confirmed the intended signal separation. At `Learning iteration 2447/2946`, the old aggregate terms were zero and the per-axis terms showed torque mostly in `y` and `z`: `wheelchair_handle_torque_x = -0.0003`, `wheelchair_handle_torque_y = -0.0029`, and `wheelchair_handle_torque_z = -0.0072`.
 
 The latest-video site was restarted at `04:48 Toronto` so the New Video button targets the Phase 1D2 axis-split project.
+
+## May 24 Torque + Net Force Phase
+
+The Phase 1D2 run showed the dominant bad term was still `wheelchair_handle_torque_z`, while the per-handle force-axis penalties were less directly tied to the behavior we care about. Phase 1D3 therefore removes the individual force-axis magnitude penalties and keeps only handle torque axes plus net handle force axes.
+
+This distinction matters: summing left and right force catches total load into the fixed chair, but equal-and-opposite forces cancel in the sum and are instead handled by the torque penalties. The active standing-only penalties are:
+
+| Term | Weight |
+|---|---:|
+| `wheelchair_handle_torque_x` | `-0.06` |
+| `wheelchair_handle_torque_y` | `-0.06` |
+| `wheelchair_handle_torque_z` | `-0.06` |
+| `wheelchair_handle_net_force_x` | `-0.06` |
+| `wheelchair_handle_net_force_y` | `-0.06` |
+| `wheelchair_handle_net_force_z` | `-0.06` |
+
+The aggregate and per-handle force terms are off: `wheelchair_handle_force = 0.0`, `wheelchair_handle_force_x/y/z = 0.0`, and `wheelchair_handle_torque = 0.0`.
+
+Task added in `unitree_rl_lab` commit `550b942`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1D3-FixedTorqueNetForceStand-DirectObs`
+
+The obsolete Phase 1D2 training session was stopped before launching this branch. Training started May 24 at `05:14 Toronto` from the Phase 1D2 `model_2700.pt` checkpoint:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1D3-FixedTorqueNetForceStand-DirectObs \
+  --max_iterations 500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d2_fixed_axis_handle_load_stand_directobs/2026-05-24_04-47-58_fixed_axis_handle_load_from_split_2446_may24/model_2700.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name fixed_torque_net_force_from_axis_2700_may24
+```
+
+Live startup confirmed the intended reward set. At `Learning iteration 2704/3200`, `wheelchair_handle_force_x/y/z = 0.0`, `wheelchair_handle_torque_x/y/z` were active, and `wheelchair_handle_net_force_x/y/z` were active.
+
+The latest-video site was restarted at `05:14 Toronto` so the New Video button targets the Phase 1D3 torque + net force project.
 
 ## May 23 Rigid-To-Free Bridge
 
