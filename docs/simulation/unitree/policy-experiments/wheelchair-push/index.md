@@ -17,8 +17,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1c_fixed_mediumload_stand_directobs/2026-05-23_20-17-55_fixed_mediumload_from_lowload_1448_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_949_slow_revolve_best_20260523_182027/model_949_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 20:19 Toronto |
-| Training tmux | `wheelchair_fixed_medium_force_penalty` |
+| Summary last updated | May 23, 2026, 21:54 Toronto |
+| Training tmux | none active; `wheelchair_fixed_medium_force_penalty` finished |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -132,7 +132,7 @@ Load penalty weights:
 | `robot_hand_wrench` | `-0.04` | `-0.12` |
 | `wheelchair_handle_wrench` | `-0.02` | `-0.06` |
 
-Early status by iteration `1465`: the run reached full-length episodes again. `time_out = 1.0`, `bad_orientation = 0.0`, `base_height = 0.0`, and mean episode length is back at the `500` step cap. The stronger scalar penalty is active: `robot_hand_wrench` is around `-3.16` and `wheelchair_handle_wrench` around `-0.088`. Interpreting those values relative to the `3x` weights, the actual underlying load has not clearly dropped yet; give the branch more iterations before deciding whether to raise the penalty again or add a direct posture/handle-force target.
+Final train status: the run finished and saved `model_1947.pt`. The robot stayed stable through the end: mean episode length remained at the `500` step cap with `time_out = 1.0`, `bad_orientation = 0.0`, and `base_height = 0.0`. The stronger scalar penalty stayed active, but the underlying load still did not clearly improve. Near the end, `robot_hand_wrench` stayed around `-3.1` to `-3.2` and `wheelchair_handle_wrench` around `-0.07` to `-0.08`; divided by the `3x` larger weights, that is roughly the same load scale as the low-load branch. Next useful step is a deterministic render of `model_1947.pt`, then decide whether to add a posture/handle-load target instead of simply raising the scalar weight again.
 
 ## May 23 Rigid-To-Free Bridge
 
