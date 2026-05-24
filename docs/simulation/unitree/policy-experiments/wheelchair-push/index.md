@@ -6,19 +6,19 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair low-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1B-FixedLowLoadStand-DirectObs` |
+| Active training task | fixed-chair medium-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1C-FixedMediumLoadStand-DirectObs` |
 | Last rendered playback | fixed-chair standing true resume: `model_949.pt`, rendered May 23 at 18:20 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
-| Phase 1 source checkpoint | fixed-chair stand `model_949.pt` from `2026-05-23_16-25-33_fixed_stand_true_resume_from_350_may23` |
+| Phase 1 source checkpoint | fixed-chair low-load stand `model_1448.pt` from `2026-05-23_18-28-52_fixed_lowload_from_fixedstand_949_may23` |
 | Bridge source checkpoint | `model_19247.pt` from the good 1 m/s PhysX-rail hard-attach run |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1b_fixed_lowload_stand_directobs/2026-05-23_18-28-52_fixed_lowload_from_fixedstand_949_may23` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1c_fixed_mediumload_stand_directobs/2026-05-23_20-17-55_fixed_mediumload_from_lowload_1448_may23` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1-fixed-stand-directobs_model_949_slow_revolve_best_20260523_182027/model_949_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 18:31 Toronto |
-| Training tmux | `wheelchair_fixed_force_penalty` |
+| Summary last updated | May 23, 2026, 20:19 Toronto |
+| Training tmux | `wheelchair_fixed_medium_force_penalty` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
@@ -29,7 +29,7 @@ Current status: the May 23 heavy-damping bridge was a useful diagnostic, but it 
 
 The retry repeated the prior scratch failure pattern and was stopped at about iteration `917/2500`. Final live metrics had `bad_orientation = 1.0`, `time_out = 0.0`, and mean episode length about `13` steps, meaning every rollout was terminating from bad orientation.
 
-Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The simplest successful primitive is now fixed wheelchair root, hard hand-handle attachment, no forward reward, and standing only. Since `model_949.pt` from that branch stands cleanly, the active next phase keeps the chair fixed and adds a small handle-load penalty before attempting any moving-chair release.
+Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The simplest successful primitive is now fixed wheelchair root, hard hand-handle attachment, no forward reward, and standing only. Since `model_949.pt` from that branch stands cleanly, the active sequence is to keep the chair fixed and raise the handle-load penalty until the robot can stand without leaning hard through the handles, before attempting any moving-chair release.
 
 Resume rule to keep straight: use full RSL-RL continuation only when continuing the same task/checkpoint lineage. For this fixed-chair standing continuation, the command intentionally uses `--resume --checkpoint <model_350.pt>` without `--load_model_only`, without `--reset_critic`, and without a new `--policy_std`. Actor warm-start mode remains appropriate when changing task lineage: `--resume --checkpoint <model.pt> --load_model_only --reset_critic --policy_std <value>`.
 
@@ -99,7 +99,40 @@ Load penalty weights:
 | `robot_hand_wrench` | `-0.04` |
 | `wheelchair_handle_wrench` | `-0.02` |
 
-Early status at iteration `972`: the standing behavior is still healthy. `time_out = 1.0`, `bad_orientation = 0.0`, `base_height = 0.0`, and mean episode length is at the `500` step cap. Forward-push terms remain disabled: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, and `wheelchair_backward_velocity = 0.0`. Current load penalties are nonzero, with `robot_hand_wrench` around `-1.03` and `wheelchair_handle_wrench` around `-0.022`.
+The low-load run finished at `model_1448.pt` and stayed stable: mean episode length reached the `500` step cap with `time_out = 1.0`, `bad_orientation = 0.0`, and `base_height = 0.0`. The penalty was active but too weak to change the behavior much. The final scalar values stayed near `robot_hand_wrench = -1.02` and `wheelchair_handle_wrench = -0.02`, so the next branch increases the load penalty.
+
+## May 23 Stronger Fixed-Chair Handle-Force Phase
+
+The stronger branch is now running from the low-load `model_1448.pt` actor. It keeps the same fixed-chair, hard hand-handle, no-forward-reward scaffold, but raises the load penalty by `3x`.
+
+Task added in `unitree_rl_lab` commit `99a25e3`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1C-FixedMediumLoadStand-DirectObs`
+
+Training command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1C-FixedMediumLoadStand-DirectObs \
+  --max_iterations 500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1b_fixed_lowload_stand_directobs/2026-05-23_18-28-52_fixed_lowload_from_fixedstand_949_may23/model_1448.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name fixed_mediumload_from_lowload_1448_may23
+```
+
+Load penalty weights:
+
+| Term | Low-load phase | Medium-load phase |
+|---|---:|---:|
+| `robot_hand_wrench` | `-0.04` | `-0.12` |
+| `wheelchair_handle_wrench` | `-0.02` | `-0.06` |
+
+Early status by iteration `1465`: the run reached full-length episodes again. `time_out = 1.0`, `bad_orientation = 0.0`, `base_height = 0.0`, and mean episode length is back at the `500` step cap. The stronger scalar penalty is active: `robot_hand_wrench` is around `-3.16` and `wheelchair_handle_wrench` around `-0.088`. Interpreting those values relative to the `3x` weights, the actual underlying load has not clearly dropped yet; give the branch more iterations before deciding whether to raise the penalty again or add a direct posture/handle-force target.
 
 ## May 23 Rigid-To-Free Bridge
 
