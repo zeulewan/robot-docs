@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair medium-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1C-FixedMediumLoadStand-DirectObs` |
+| Active training task | fixed-chair split handle-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D-FixedSplitHandleLoadStand-DirectObs` |
 | Last rendered playback | fixed-chair medium-load standing: `model_1947.pt`, rendered May 23 at 22:00 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -168,6 +168,53 @@ The diagnostic compared the trained policy against a zero-action playback. The r
 The policy reduced the raw handle-side wrench somewhat, but it barely reduced the robot-hand incoming wrench. The robot-hand signal is also two orders of magnitude larger than the handle-side force signal. That suggests `robot_hand_wrench` is dominated by the hard attachment/articulation reaction, not by a clean "how gently is the robot touching the handle" measurement. Simply increasing `robot_hand_wrench` again is therefore unlikely to teach a better behavior; the policy may be punished for a constraint reaction it cannot reduce much.
 
 Next experiment should not just raise the scalar weight. Better options are to favor the wheelchair-handle wrench over the robot-hand wrench, split force and torque into separately logged and separately weighted terms, add a left-right imbalance penalty, and verify the hard-attachment alignment after a short settled step instead of reading the pre-solve reset state.
+
+## May 24 Split Handle-Load Phase
+
+This branch implements the next diagnostic from the wrench data above. It removes the robot-side hand wrench penalty from the active reward and replaces the combined wheelchair handle wrench scalar with two separate handle-side rewards:
+
+| Term | Weight |
+|---|---:|
+| `robot_hand_wrench` | `0.0` |
+| `wheelchair_handle_wrench` | `0.0` |
+| `wheelchair_handle_force` | `-0.06` |
+| `wheelchair_handle_torque` | `-0.06` |
+
+Task added in `unitree_rl_lab` commit `86de3b6`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1D-FixedSplitHandleLoadStand-DirectObs`
+
+Smoke verification used `4` envs for one iteration from the Phase 1C `model_1947.pt` checkpoint. The reward table showed the intended terms: `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`, `wheelchair_handle_force` active, and `wheelchair_handle_torque` active.
+
+Training started May 24 at `03:52 Toronto` in tmux session `train_split_handle_load`.
+
+Run directory:
+
+`logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d_fixed_split_handle_load_stand_directobs/2026-05-24_03-52-00_fixed_split_handle_load_from_medium_1947_may24`
+
+Launch log:
+
+`logs/rsl_rl/fixed_split_handle_load_from_medium_1947_may24.launch.log`
+
+Training command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1D-FixedSplitHandleLoadStand-DirectObs \
+  --max_iterations 500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1c_fixed_mediumload_stand_directobs/2026-05-23_20-17-55_fixed_mediumload_from_lowload_1448_may23/model_1947.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name fixed_split_handle_load_from_medium_1947_may24
+```
+
+The purpose is not to make the force penalty stronger yet. The first test is whether the policy can reduce the cleaner handle-side force/torque terms when the artifact-heavy robot-hand wrench term is not part of the active reward.
+
+Initial live status: startup reached `Learning iteration 1948/2447` cleanly with `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`, `wheelchair_handle_force` active, `wheelchair_handle_torque` active, and no `bad_orientation` term. This confirms the run is using the intended split-load task.
 
 ## May 23 Rigid-To-Free Bridge
 
