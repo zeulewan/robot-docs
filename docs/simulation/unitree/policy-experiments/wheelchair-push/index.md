@@ -138,7 +138,36 @@ Rendered output:
 
 `logs/demos/unitree-wheelchair-scratch-phase1c-fixed-mediumload-stand-directobs_model_1947_slow_revolve_best_20260523_220000/model_1947_slow_revolve_best.mp4`
 
-Next useful step is to review this render, then decide whether to add a posture/handle-load target instead of simply raising the scalar weight again.
+### May 24 Hand-Handle Wrench Diagnostic
+
+After the medium-load run, playback diagnostics were added to print raw incoming-joint wrench stats for the robot hand bodies and the wheelchair handle bodies:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1C-FixedMediumLoadStand-DirectObs \
+  --num_envs 10 \
+  --checkpoint logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1c_fixed_mediumload_stand_directobs/2026-05-23_20-17-55_fixed_mediumload_from_lowload_1448_may23/model_1947.pt \
+  --print-hand-handle-wrench-stats \
+  --hand-handle-wrench-stats-steps 300
+```
+
+Logs:
+
+`logs/rsl_rl/hand_handle_wrench_zero_actions_model_1947.log`
+
+`logs/rsl_rl/hand_handle_wrench_policy_model_1947.log`
+
+The diagnostic compared the trained policy against a zero-action playback. The reset sample prints zero because it is taken before PhysX has stepped the hard hand-handle constraints, so it is not a useful preload measurement by itself. The rollout sample is the meaningful part.
+
+| Playback | Robot hand force mean | Robot hand torque mean | Wheelchair handle force mean | Wheelchair handle torque mean |
+|---|---:|---:|---:|---:|
+| Zero actions | `14723.66 N` | `223.58 Nm` | `81.58 N` | `63.91 Nm` |
+| `model_1947.pt` policy | `13952.54 N` | `207.45 Nm` | `61.97 N` | `50.76 Nm` |
+
+The policy reduced the raw handle-side wrench somewhat, but it barely reduced the robot-hand incoming wrench. The robot-hand signal is also two orders of magnitude larger than the handle-side force signal. That suggests `robot_hand_wrench` is dominated by the hard attachment/articulation reaction, not by a clean "how gently is the robot touching the handle" measurement. Simply increasing `robot_hand_wrench` again is therefore unlikely to teach a better behavior; the policy may be punished for a constraint reaction it cannot reduce much.
+
+Next experiment should not just raise the scalar weight. Better options are to favor the wheelchair-handle wrench over the robot-hand wrench, split force and torque into separately logged and separately weighted terms, add a left-right imbalance penalty, and verify the hard-attachment alignment after a short settled step instead of reading the pre-solve reset state.
 
 ## May 23 Rigid-To-Free Bridge
 
