@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair split handle-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D-FixedSplitHandleLoadStand-DirectObs` |
+| Active training task | fixed-chair axis-split handle-load standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D2-FixedAxisHandleLoadStand-DirectObs` |
 | Last rendered playback | fixed-chair medium-load standing: `model_1947.pt`, rendered May 23 at 22:00 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -217,6 +217,47 @@ The purpose is not to make the force penalty stronger yet. The first test is whe
 Initial live status: startup reached `Learning iteration 1948/2447` cleanly with `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`, `wheelchair_handle_force` active, `wheelchair_handle_torque` active, and no `bad_orientation` term. This confirms the run is using the intended split-load task.
 
 The latest-video site was restarted at `03:54 Toronto` so the New Video button targets the Phase 1D split handle-load project.
+
+## May 24 Axis-Split Handle-Load Phase
+
+The previous Phase 1D task split handle force and torque into two scalars, but each scalar still summed across local x/y/z before averaging left and right handles. That made the TensorBoard signal too blended: a large yaw-like torque could hide inside one aggregate `wheelchair_handle_torque` value.
+
+Phase 1D2 splits the wheelchair handle load into six separate reward terms:
+
+| Term | Weight |
+|---|---:|
+| `wheelchair_handle_force_x` | `-0.06` |
+| `wheelchair_handle_force_y` | `-0.06` |
+| `wheelchair_handle_force_z` | `-0.06` |
+| `wheelchair_handle_torque_x` | `-0.06` |
+| `wheelchair_handle_torque_y` | `-0.06` |
+| `wheelchair_handle_torque_z` | `-0.06` |
+
+The old aggregate active terms are off in this branch: `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`, `wheelchair_handle_force = 0.0`, and `wheelchair_handle_torque = 0.0`.
+
+Task added in `unitree_rl_lab` commit `f1739fe`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1D2-FixedAxisHandleLoadStand-DirectObs`
+
+Training started May 24 at `04:47 Toronto` from the Phase 1D `model_2446.pt` checkpoint:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1D2-FixedAxisHandleLoadStand-DirectObs \
+  --max_iterations 500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d_fixed_split_handle_load_stand_directobs/2026-05-24_03-52-00_fixed_split_handle_load_from_medium_1947_may24/model_2446.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name fixed_axis_handle_load_from_split_2446_may24
+```
+
+Live startup confirmed the intended signal separation. At `Learning iteration 2447/2946`, the old aggregate terms were zero and the per-axis terms showed torque mostly in `y` and `z`: `wheelchair_handle_torque_x = -0.0003`, `wheelchair_handle_torque_y = -0.0029`, and `wheelchair_handle_torque_z = -0.0072`.
+
+The latest-video site was restarted at `04:48 Toronto` so the New Video button targets the Phase 1D2 axis-split project.
 
 ## May 23 Rigid-To-Free Bridge
 
