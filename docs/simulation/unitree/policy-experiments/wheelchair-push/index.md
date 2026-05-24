@@ -216,6 +216,8 @@ The purpose is not to make the force penalty stronger yet. The first test is whe
 
 Initial live status: startup reached `Learning iteration 1948/2447` cleanly with `robot_hand_wrench = 0.0`, `wheelchair_handle_wrench = 0.0`, `wheelchair_handle_force` active, `wheelchair_handle_torque` active, and no `bad_orientation` term. This confirms the run is using the intended split-load task.
 
+The latest-video site was restarted at `03:54 Toronto` so the New Video button targets the Phase 1D split handle-load project.
+
 ## May 23 Rigid-To-Free Bridge
 
 This branch is not the standing-only scratch Phase 1A run. It starts from the successful 1 m/s hard-attach PhysX-rail actor and removes the forward rail gradually. The first bridge keeps hard hand-handle attachment and the wheelchair ground-plane lock, leaves forward X motion free, and damps only the unstable lateral/yaw axes. It intentionally keeps forward push rewards, so it is now paused as a transfer diagnostic rather than the active standing curriculum.
