@@ -6,30 +6,28 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | fixed-chair individual force standing: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D4-FixedIndividualForceStand-DirectObs` |
-| Last rendered playback | fixed-chair medium-load standing: `model_1947.pt`, rendered May 23 at 22:00 Toronto |
+| Active training task | none active; last completed run was fixed-chair individual force standing |
+| Last rendered playback | free-chair transfer probe: Phase 1D4 `model_3349.pt` loaded into `Unitree-G1-29dof-Wheelchair-Scratch-Phase1E-FreeStand-DirectObs`, rendered May 24 at 23:30 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
 | Attachment helper | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/events.py` |
 | Phase 1 source checkpoint | fixed-chair low-load stand `model_1448.pt` from `2026-05-23_18-28-52_fixed_lowload_from_fixedstand_949_may23` |
 | Bridge source checkpoint | `model_19247.pt` from the good 1 m/s PhysX-rail hard-attach run |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1c_fixed_mediumload_stand_directobs/2026-05-23_20-17-55_fixed_mediumload_from_lowload_1448_may23` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d4_fixed_individual_force_stand_directobs/2026-05-24_05-33-07_fixed_individual_force_from_torque_net_2850_may24` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
-| Latest archived playback | `logs/demos/unitree-wheelchair-scratch-phase1c-fixed-mediumload-stand-directobs_model_1947_slow_revolve_best_20260523_220000/model_1947_slow_revolve_best.mp4` |
-| Summary last updated | May 23, 2026, 22:00 Toronto |
-| Training tmux | none active; `wheelchair_fixed_medium_force_penalty` finished |
+| Latest site playback | `logs/demos/latest-site/latest.mp4` |
+| Summary last updated | May 24, 2026, 23:30 Toronto |
+| Training tmux | none active; Phase 1D4 finished at `model_3349.pt` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
 
-Current status: the May 23 heavy-damping bridge was a useful diagnostic, but it was not the requested standing-only scratch phase because it still carried the forward wheelchair velocity/progress objectives. It was stopped at `14:04 Toronto`. The standing-only scratch Phase 1A retry had forward wheelchair terms disabled: `wheelchair_track_forward_velocity = 0.0`, `wheelchair_forward_progress = 0.0`, `wheelchair_backward_velocity = 0.0`, and `robot_forward_lean = 0.0`. The remaining rewards were standing/health/keep-still terms: zero base velocity, upright orientation, base height, chair lateral/yaw/root drift, hand-load penalties, and wrist regularization.
+Current status: the fixed-chair standing curriculum advanced through Phase 1D4. The latest stable checkpoint is `model_3349.pt`, trained with the wheelchair root fixed, hard hand-handle attachment, no forward push objective, and individual per-axis handle-force penalties. A May 24 playback probe loaded this policy into the Phase 1E free-chair task, where the chair is ground-locked but free in X/Y/yaw. The checkpoint loads, but it does not hold the free chair still: with zero command the chair drifts/backward and yaws. Treat `model_3349.pt` as a good fixed-chair standing/load-reduction policy, not as a free-chair hold policy.
 
-The retry repeated the prior scratch failure pattern and was stopped at about iteration `917/2500`. Final live metrics had `bad_orientation = 1.0`, `time_out = 0.0`, and mean episode length about `13` steps, meaning every rollout was terminating from bad orientation.
-
-Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The simplest successful primitive is now fixed wheelchair root, hard hand-handle attachment, no forward reward, and standing only. Since `model_949.pt` from that branch stands cleanly, the active sequence is to keep the chair fixed and raise the handle-load penalty until the robot can stand without leaning hard through the handles, before attempting any moving-chair release.
+Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The next release attempt should train under moving-chair dynamics directly, likely with a controlled damping/release curriculum, instead of assuming fixed-chair standing transfers cleanly to the free chair.
 
 Resume rule to keep straight: use full RSL-RL continuation only when continuing the same task/checkpoint lineage. For this fixed-chair standing continuation, the command intentionally uses `--resume --checkpoint <model_350.pt>` without `--load_model_only`, without `--reset_critic`, and without a new `--policy_std`. Actor warm-start mode remains appropriate when changing task lineage: `--resume --checkpoint <model.pt> --load_model_only --reset_critic --policy_std <value>`.
 
@@ -341,6 +339,39 @@ TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train
 Live startup confirmed the intended reward set: `wheelchair_handle_force_x/y/z` are active, while `wheelchair_handle_torque_x/y/z` and `wheelchair_handle_net_force_x/y/z` are all `0.0`.
 
 The latest-video site was restarted at `05:33 Toronto` so the New Video button targets the Phase 1D4 individual-force project.
+
+### Free-Chair Playback Probe
+
+After Phase 1D4 finished at `model_3349.pt`, the checkpoint was loaded directly into the free-chair standing task:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1E-FreeStand-DirectObs`
+
+This was a playback probe only, not a training run. The Phase 1E setup keeps the wheelchair on the ground plane but removes artificial X/Y/yaw damping, so the chair can move freely on the floor while the command remains zero.
+
+Playback command:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/play.py \
+  --headless \
+  --video \
+  --video_length 700 \
+  --video-start-step 0 \
+  --video-follow-robot \
+  --video-camera-orbit-deg 360 \
+  --video-camera-eye-offset -4.4 -3.0 2.0 \
+  --video-camera-target-offset 0.5 0.0 0.9 \
+  --num_envs 10 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1E-FreeStand-DirectObs \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d4_fixed_individual_force_stand_directobs/2026-05-24_05-33-07_fixed_individual_force_from_torque_net_2850_may24/model_3349.pt \
+  --print-wheelchair-speed-stats \
+  --print-hand-handle-wrench-stats \
+  --speed-stats-steps 700 \
+  --hand-handle-wrench-stats-steps 700
+```
+
+Result: the policy loads cleanly, but the fixed-chair standing behavior does not transfer to a free chair. With zero forward command, the wheelchair moved backward on average at about `-0.50 m/s`, had lateral absolute speed about `0.36 m/s`, and yaw absolute speed about `0.60 rad/s`. Only about `9.7%` of samples stayed within `0.10 m/s` of zero forward velocity. Robot-side incoming-joint force was also high, with mean hand force norm about `2646 N`.
+
+Conclusion: this checkpoint is a good fixed-chair standing/load-reduction policy, but it is not yet a free-chair hold policy. The next release attempt should train under the free-chair dynamics instead of relying on a fixed-chair policy to transfer directly.
 
 ## May 23 Rigid-To-Free Bridge
 
