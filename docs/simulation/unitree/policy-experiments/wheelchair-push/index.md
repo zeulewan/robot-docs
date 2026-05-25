@@ -6,7 +6,7 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 | Item | Value |
 |---|---|
-| Active training task | none active; last completed run was fixed-chair individual force standing |
+| Active training task | Phase 1D5 pose-tethered release: `Unitree-G1-29dof-Wheelchair-Scratch-Phase1D5-HeavyDampedIndividualForceRelease-DirectObs` |
 | Last rendered playback | free-chair transfer probe: Phase 1D4 `model_3349.pt` loaded into `Unitree-G1-29dof-Wheelchair-Scratch-Phase1E-FreeStand-DirectObs`, rendered May 24 at 23:30 Toronto |
 | Main config | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/robots/g1/29dof/wheelchair_push_env_cfg.py` |
 | Observation helpers | `source/unitree_rl_lab/unitree_rl_lab/tasks/locomotion/mdp/observations.py` |
@@ -14,18 +14,18 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 | Phase 1 source checkpoint | fixed-chair low-load stand `model_1448.pt` from `2026-05-23_18-28-52_fixed_lowload_from_fixedstand_949_may23` |
 | Bridge source checkpoint | `model_19247.pt` from the good 1 m/s PhysX-rail hard-attach run |
 | Preserved 2 m/s visual reference | `Unitree-G1-29dof-Wheelchair-Minimal-PhysX-Rail-Fast-Lean-Velocity-Progress-Push-Attached-Hard`, `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_fast_lean_hard_attach_push_attached/2026-05-18_19-47-36_hard_attach_loose_guard_2048_from_13249/model_13300.pt` |
-| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d4_fixed_individual_force_stand_directobs/2026-05-24_05-33-07_fixed_individual_force_from_torque_net_2850_may24` |
+| Current run | `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d5_heavy_damped_individual_force_release_directobs/2026-05-25_01-28-09_pose_tethered_individual_force_release_conservative_from_fixed_force_3349_may25` |
 | Failed branch kept for comparison | `logs/rsl_rl/unitree_g1_29dof_wheelchair_minimal_physx_rail_1mps_yaw_torque_hard_attach_push_attached/2026-05-18_20-34-46_hard_1mps_yawtorque_from_fastlean_13300` |
 | Latest site playback | `logs/demos/latest-site/latest.mp4` |
-| Summary last updated | May 24, 2026, 23:30 Toronto |
-| Training tmux | none active; Phase 1D4 finished at `model_3349.pt` |
+| Summary last updated | May 25, 2026, 01:31 Toronto |
+| Training tmux | `train_phase1d5_heavy_damped_release` |
 | Training env count | `2048` |
 | Latest-video page | `https://workstation.tailee9084.ts.net:8002/` |
 | Focused TensorBoard | `http://workstation.tailee9084.ts.net:6007/` |
 
 The previous soft-attachment run was stopped at `model_15900.pt` and used as the baseline for the SoftObs branch. That branch is not the visually good reference. The visually useful 2 m/s hard-attachment fast-lean lineage is preserved as the visual reference and warm-start source. The earlier 1 m/s yaw-torque hard branch did not learn useful forward push behavior and is kept only as a failed comparison branch.
 
-Current status: the fixed-chair standing curriculum advanced through Phase 1D4. The latest stable checkpoint is `model_3349.pt`, trained with the wheelchair root fixed, hard hand-handle attachment, no forward push objective, and individual per-axis handle-force penalties. A May 24 playback probe loaded this policy into the Phase 1E free-chair task, where the chair is ground-locked but free in X/Y/yaw. The checkpoint loads, but it does not hold the free chair still: with zero command the chair drifts/backward and yaws. Treat `model_3349.pt` as a good fixed-chair standing/load-reduction policy, not as a free-chair hold policy.
+Current status: the fixed-chair standing curriculum advanced through Phase 1D4. The latest stable checkpoint is `model_3349.pt`, trained with the wheelchair root fixed, hard hand-handle attachment, no forward push objective, and individual per-axis handle-force penalties. A May 24 playback probe loaded this policy into the Phase 1E free-chair task, where the chair is ground-locked but free in X/Y/yaw. The checkpoint loads, but it does not hold the free chair still: with zero command the chair drifts/backward and yaws. Treat `model_3349.pt` as a good fixed-chair standing/load-reduction policy, not as a free-chair hold policy. The active May 25 branch adds a dynamic-chair bridge: the wheelchair root is not fixed, planar velocity is damped, and a velocity-servo pose tether keeps X/Y/yaw near the start pose while the policy adapts.
 
 Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The next release attempt should train under moving-chair dynamics directly, likely with a controlled damping/release curriculum, instead of assuming fixed-chair standing transfers cleanly to the free chair.
 
@@ -372,6 +372,41 @@ TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/play.
 Result: the policy loads cleanly, but the fixed-chair standing behavior does not transfer to a free chair. With zero forward command, the wheelchair moved backward on average at about `-0.50 m/s`, had lateral absolute speed about `0.36 m/s`, and yaw absolute speed about `0.60 rad/s`. Only about `9.7%` of samples stayed within `0.10 m/s` of zero forward velocity. Robot-side incoming-joint force was also high, with mean hand force norm about `2646 N`.
 
 Conclusion: this checkpoint is a good fixed-chair standing/load-reduction policy, but it is not yet a free-chair hold policy. The next release attempt should train under the free-chair dynamics instead of relying on a fixed-chair policy to transfer directly.
+
+### Phase 1D5 Pose-Tethered Release
+
+The May 25 release attempt starts from the Phase 1D4 `model_3349.pt` actor. It keeps zero forward command and keeps the individual per-axis handle-force penalties, but switches the wheelchair from fixed-root to a dynamic root. The first two attempts showed why velocity damping alone is not enough:
+
+| Attempt | Result |
+|---|---|
+| Heavy release, `x=0.05`, `y/yaw=0.02`, scratch PPO runner | Failed fast; `bad_orientation` climbed toward `0.8` within the first few iterations. |
+| Planar velocity clamp, `x/y/yaw=0.0`, conservative PPO runner | Still failed; wheelchair root position drift accumulated even with velocity clamped. |
+
+The active fix adds `mdp.tether_root_planar_pose_velocity`, a velocity-servo event that pulls the wheelchair root back toward its start X/Y/yaw without making the asset a fixed-base object. The active interval events are now ground-plane lock, planar velocity damping, and planar pose tether.
+
+Active task added in `unitree_rl_lab`:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-Phase1D5-HeavyDampedIndividualForceRelease-DirectObs`
+
+Current launch:
+
+```bash
+TERM=xterm conda run --no-capture-output -n isaaclab python scripts/rsl_rl/train.py \
+  --headless \
+  --num_envs 2048 \
+  --task Unitree-G1-29dof-Wheelchair-Scratch-Phase1D5-HeavyDampedIndividualForceRelease-DirectObs \
+  --max_iterations 1500 \
+  --resume \
+  --checkpoint /home/zeul/GIT/unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_phase1d4_fixed_individual_force_stand_directobs/2026-05-24_05-33-07_fixed_individual_force_from_torque_net_2850_may24/model_3349.pt \
+  --load_model_only \
+  --reset_critic \
+  --policy_std 0.005 \
+  --run_name pose_tethered_individual_force_release_conservative_from_fixed_force_3349_may25
+```
+
+This branch intentionally uses the conservative standing fine-tune PPO settings rather than the scratch PPO settings. The scratch runner's larger learning rate and clip range were too destructive for a warm-started release phase.
+
+Early signal at iteration `3365`: the pose tether keeps `wheelchair_root_position` near `0`, and the run is no longer in the immediate `bad_orientation > 0.8` failure mode. It is still rough, with `bad_orientation` around `0.39` and `time_out` around `0.60`, so this is a bridge run to monitor rather than a completed stable phase.
 
 ## May 23 Rigid-To-Free Bridge
 
