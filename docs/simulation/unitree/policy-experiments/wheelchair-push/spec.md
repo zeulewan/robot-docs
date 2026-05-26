@@ -1500,6 +1500,48 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.27586206793785095`
     Relative to retained historical bounded `M6q model_10150.pt`, `M6ad` did not hold its zero-shot cleanliness advantage once trained. Aggregate `physical_turn_motion_score` regressed (`0.1811` vs `0.2176`), aggregate `clean_hold_rate` regressed (`0.8125` vs `0.828125`), and aggregate `invalid_contact_rate` was still slightly worse (`0.1875` vs `0.171875`). The right-turn half also stayed worse than retained `M6q` on both cleanliness and physical turn score. So lowering only the right-turn dominant-side force cap was not a useful lever. I discarded `M6ad` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+164. I then checked whether the surviving weak-side contact was an underdamped dominant-side problem rather than a force-cap problem:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ae-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightDamped-RelaxedHandle`.
+    `M6ae` kept the retained `M6q` strong-soft scaffold and changed only one thing: during right-turn-command episodes, the dominant right-hand soft attachment kept the same stiffness and max force, but increased damping from `300.0` to `500.0`. The hypothesis was that the right-turn wrist/base spill might be an overshoot problem that could be reduced without giving back turn authority.
+    That branch failed immediately on deterministic zero-shot transfer from retained `M6q model_10150.pt`, so I did not spend a train budget on it. The zero-shot eval came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.13812577034261808`,
+      `clean_hold_rate = 0.6875`,
+      `invalid_contact_rate = 0.3125`,
+      `bad_orientation_rate = 0.125`,
+      `time_out_rate = 0.828125`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17982053125865288`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = -0.07719530538038262`,
+      `clean_hold_rate = 0.37931033968925476`,
+      `invalid_contact_rate = 0.6206896305084229`,
+      `bad_orientation_rate = 0.27586206793785095`
+    So increasing only the right-turn dominant-side damping was not stabilizing. It actually collapsed the right-turn half back to wrong-sign behavior with much worse contact and posture. I discarded `M6ae` from code without training.
+
+165. I then tested the opposite-side support hypothesis in the narrower direction:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6af-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightLowAssist-RelaxedHandle`.
+    `M6af` kept the retained `M6q` dominant-side strength intact and changed only the right-turn off-side assist, reducing it from `250/20/80` to `100/10/30` on the left hand during right-turn-command episodes. The idea was that the off-side hand might be dragging the robot torso into the chair base while the dominant right side was trying to turn.
+    Deterministic zero-shot transfer from retained `M6q model_10150.pt` came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.19930134763460872`,
+      `clean_hold_rate = 0.8125`,
+      `invalid_contact_rate = 0.1875`,
+      `bad_orientation_rate = 0.0625`,
+      `time_out_rate = 0.890625`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17590923426254665`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.15644299743092036`,
+      `clean_hold_rate = 0.6551724076271057`,
+      `invalid_contact_rate = 0.3448275923728943`,
+      `bad_orientation_rate = 0.13793103396892548`
+    This kept the right-turn sign physically positive, but it still did not beat retained `M6q model_10150.pt` on the real tradeoff. Aggregate `physical_turn_motion_score` regressed (`0.1993` vs `0.2176`), aggregate `clean_hold_rate` regressed (`0.8125` vs `0.828125`), and aggregate `invalid_contact_rate` worsened (`0.1875` vs `0.171875`). The right-turn half also stayed worse than retained `M6q` on both cleanliness and physical turn score. So weakening only the right-turn off-side assist was not a useful lever either. I discarded `M6af` from code without training.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
