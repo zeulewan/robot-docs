@@ -160,3 +160,9 @@ conda run --no-capture-output -n isaaclab python scripts/autoresearch/benchmark_
 ```
 
 That command lives in `unitree_rl_lab` and does two things: it runs a short bounded training continuation on the current M0 task, then it evaluates the resulting checkpoint with a deterministic standing rollout. The primary score is `m0_score`, but the evaluator also records `clean_hold_rate`, `invalid_contact_rate`, `bad_orientation_rate`, and `base_height_rate`. Phase advancement should not be decided from `m0_score` alone; it is only the dense optimization signal for the loop.
+
+For the unattended background loop, use the metrics-only JSON variant instead so the runtime can keep `m0_score` as the primary metric while also enforcing acceptance gates on `clean_hold_rate` and `invalid_contact_rate`:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/autoresearch/benchmark_wheelchair_m0.py --metrics-json-only
+```
