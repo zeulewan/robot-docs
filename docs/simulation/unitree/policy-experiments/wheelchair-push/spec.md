@@ -558,8 +558,37 @@ The current retained `M0` solution is no longer the original direct-observation 
     `invalid_contact_rate = 0.625`,
     with the same dominant invalid-contact pattern (`wheelchair_base_robot_contact` plus `wheelchair_left_rear_wheel_robot_contact`).
     So stepping earlier to heavier free-yaw damping did not fix backward pulling either.
-109. Current backward read:
-    backward chair motion transfers directionally from the retained forward ladder, but there is still no retained physically valid backward milestone. The meaningful lesson from `M4a/M4b/M4c` is that the blocker is not missing sign information in the reward, and it is not primarily handle contact. The blocker is geometric/postural collapse into the chair base and left rear wheel during pullback. The next backward branch should target that specific failure mode directly, likely with a changed backward manipulation scaffold or clearance/separation shaping rather than another raw speed reward change.
+109. The pre-`M4d` backward read after `M4a/M4b/M4c` was:
+    backward chair motion transferred directionally from the retained forward ladder, but there was still no retained physically valid backward milestone. The meaningful lesson from `M4a/M4b/M4c` was that the blocker was not missing sign information in the reward, and it was not primarily handle contact. The blocker was geometric/postural collapse into the chair base and left rear wheel during pullback. So the next backward branch had to target that specific failure mode directly, likely with a changed backward manipulation scaffold or clearance/separation shaping rather than another raw speed reward change.
+110. The first branch that directly targeted that failure mode was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4d-FreeYawHeavyDampedBackward-Creep-Observed-BothHard-RelaxedHandle`.
+    `M4d` keeps the retained `M3f` heavy-damped both-hard scaffold, but changes the backward curriculum in three specific ways:
+    - it slows the commanded backward speed down to a fixed creep target of `-0.14 m/s`
+    - it removes the extra raw backward-speed shaping and keeps signed command tracking as the dense motion term
+    - it adds explicit robot-frame chair-separation shaping through `wheelchair_robot_standoff`, penalizing drift of the wheelchair root away from its nominal XY offset in the robot root frame
+    This is the first backward branch that became physically clean instead of collapsing into the chair. Zero-shot transfer from retained `M3f model_10049.pt` on a full `64 env / 600 step` deterministic eval produced:
+    `physical_command_motion_score = 1.2724524709396063`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.7269237637519836`,
+    `wheelchair_forward_velocity_mean = -0.13679799437522888`,
+    `wheelchair_lateral_velocity_abs_mean = 0.003717011772096157`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.009016682393848896`.
+    So the retained forward `M3f` checkpoint already transfers cleanly into slow backward creep when the task is eased enough and the chair-separation geometry is made explicit.
+111. A bounded low-noise continuation on `M4d` from retained `M3f model_10049.pt` then wrote three checkpoints: `model_10050.pt`, `model_10100.pt`, and `model_10148.pt`. All three stayed fully clean on the same `64 env / 600 step` deterministic eval, and each slightly improved on the zero-shot baseline. The best saved checkpoint was `model_10148.pt` with:
+    `physical_command_motion_score = 1.282831170875579`,
+    `command_motion_score = 1.1443229076452552`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.7383108139038086`,
+    `wheelchair_forward_velocity_mean = -0.1339568942785263`,
+    `wheelchair_lateral_velocity_abs_mean = 0.003613825421780348`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.008656003512442112`.
+    The gain over zero-shot is small, but it is real and consistent, so `M4d model_10148.pt` is retained as the first physically valid backward curriculum rung. It is not yet the final `M5` backward-control milestone, because the commanded speed is still only a slow creep and the dynamics are still the easier heavy-damped branch, but it is the first backward stage that is worth building on instead of discarding.
 
 ## Autoresearch Harness
 
