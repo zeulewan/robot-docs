@@ -142,3 +142,19 @@ The current recommended starting point for the loop is:
 3. Only then move into braked or heavily damped free-chair hold.
 
 The current failure mode to avoid is clear: a policy that looks upright in scalar metrics but is actually using body-chair contact or chair interpenetration as support.
+
+## Autoresearch Harness
+
+The first `codex-autoresearch` loop should target `M0`, not the later motion phases.
+
+Current loop task:
+
+`Unitree-G1-29dof-Wheelchair-Scratch-M0-CollidableStand-DirectObs`
+
+Mechanical verify command:
+
+```bash
+conda run --no-capture-output -n isaaclab python scripts/autoresearch/benchmark_wheelchair_m0.py --metric m0_score
+```
+
+That command lives in `unitree_rl_lab` and does two things: it runs a short bounded training continuation on the current M0 task, then it evaluates the resulting checkpoint with a deterministic standing rollout. The primary score is `m0_score`, but the evaluator also records `clean_hold_rate`, `invalid_contact_rate`, `bad_orientation_rate`, and `base_height_rate`. Phase advancement should not be decided from `m0_score` alone; it is only the dense optimization signal for the loop.

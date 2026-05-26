@@ -4,6 +4,8 @@ This page is the working summary for the wheelchair-push policy experiments. Kee
 
 The project-level contract for what counts as success lives in the [wheelchair goal spec](spec.md).
 
+The current auto-loop entrypoint for `codex-autoresearch` is documented in the [goal spec's autoresearch section](spec.md#autoresearch-harness).
+
 ## Current Status
 
 | Item | Value |
