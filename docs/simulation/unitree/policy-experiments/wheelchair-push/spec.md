@@ -1115,6 +1115,61 @@ The current retained `M0` solution is no longer the original direct-observation 
       `wheelchair_yaw_velocity_mean = -0.02904720976948738`
     Training therefore improved `M6p` in the right direction: higher aggregate physical turn score, better symmetric yaw alignment, and much lower invalid contact than zero-shot. But it still does not beat retained `M6l model_10098.pt` as a mixed-turn milestone, and its left-turn authority is still far below the retained left-turn branch. So `M6p` is worth keeping as the first command-conditioned sign-correct unified-turn foothold, but not as the retained mixed-turn controller. The next useful branch should strengthen command-conditioned authority rather than go back to another fixed scaffold.
 
+152. I then tested exactly that stronger command-conditioned branch:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6q-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RelaxedHandle`.
+    `M6q` keeps the same `M6p` runtime mechanism, but makes the commanded dominant side much stiffer and the assist side much weaker. Zero-shot from retained `M6p model_10147.pt` immediately showed the right tradeoff: yaw authority increased substantially, but the right-turn side reopened contact and posture failures:
+    - aggregate zero-shot:
+      `physical_turn_motion_score = 0.180478867037474`,
+      `turn_motion_score = 0.7685924386605621`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.4062581956386566`,
+      `clean_hold_rate = 0.765625`,
+      `bad_orientation_rate = 0.140625`,
+      `invalid_contact_rate = 0.234375`
+    A short bounded continuation from `M6p model_10147.pt` improved the branch materially. The better checkpoint was `model_10150.pt`:
+    - aggregate:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `turn_motion_score = 0.7585547987371685`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.3074813783168793`,
+      `clean_hold_rate = 0.828125`,
+      `time_out_rate = 0.953125`,
+      `bad_orientation_rate = 0.015625`,
+      `invalid_contact_rate = 0.171875`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.18983607529271296`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.24410340189933777`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.21480752041858034`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.38397204875946045`,
+      `clean_hold_rate = 0.6896551847457886`,
+      `invalid_contact_rate = 0.3103448152542114`
+    This is the first branch here where both left and right turn commands have clearly positive physical-turn scores on one shared mechanism. But it is not retainable as a milestone because the right-turn half is still too dirty.
+
+153. I then checked whether that remaining `M6q` failure could be cleaned up with reward-side pressure instead of another mechanism change:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6r-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-ContactClean-RelaxedHandle`.
+    `M6r` keeps the `M6q` mechanism intact and only increases `wheelchair_invalid_contact` and `wheelchair_robot_standoff` penalties. That did not solve the real problem. The better checkpoint was `model_10150.pt`:
+    - aggregate:
+      `physical_turn_motion_score = 0.2020381042806937`,
+      `turn_motion_score = 0.7551943441852926`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.3301670253276825`,
+      `clean_hold_rate = 0.8125`,
+      `time_out_rate = 0.875`,
+      `bad_orientation_rate = 0.078125`,
+      `invalid_contact_rate = 0.171875`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.19608352782752075`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.2514706254005432`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.15149955009310193`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.4251454472541809`,
+      `clean_hold_rate = 0.6551724076271057`,
+      `bad_orientation_rate = 0.17241379618644714`,
+      `invalid_contact_rate = 0.3103448152542114`
+    So `M6r` confirmed the failure surface rather than fixing it: stronger command-conditioned soft dominance can create usable bidirectional yaw authority, but simply turning up invalid-contact and standoff penalties does not buy back the right-turn cleanliness. The blocker is now narrower than before: the next mixed-turn branch should keep the sign-conditioned authority idea from `M6q`, but solve the right-turn contact geometry with a different physical scaffold rather than more penalty weight on the same setup.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
