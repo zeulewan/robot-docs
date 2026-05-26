@@ -1542,6 +1542,16 @@ The current retained `M0` solution is no longer the original direct-observation 
       `bad_orientation_rate = 0.13793103396892548`
     This kept the right-turn sign physically positive, but it still did not beat retained `M6q model_10150.pt` on the real tradeoff. Aggregate `physical_turn_motion_score` regressed (`0.1993` vs `0.2176`), aggregate `clean_hold_rate` regressed (`0.8125` vs `0.828125`), and aggregate `invalid_contact_rate` worsened (`0.1875` vs `0.171875`). The right-turn half also stayed worse than retained `M6q` on both cleanliness and physical turn score. So weakening only the right-turn off-side assist was not a useful lever either. I discarded `M6af` from code without training.
 
+166. I then tested a true physical-control-point branch instead of another spring retune:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ag-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightWristYaw-RelaxedHandle`.
+    `M6ag` kept the retained `M6q` strong-soft gains unchanged and changed only the weak-side control scaffold. I measured the existing retained palm grip point relative to `right_wrist_yaw_link` and used that local offset (`[0.09564, 0.00072, 0.00502]`) to drive the right handle from `right_wrist_yaw_link` instead of `right_rubber_hand`, while also allowing `right_wrist_yaw_link` as valid right-handle contact and updating the handle-state observations/rewards to use the mixed left-hand / right-wrist control pair.
+    The task compiled and instantiated cleanly. In the Isaac logs, the reset/interval soft-attachment terms resolved `right_wrist_yaw_link` correctly, and the mixed `wheelchair_handle_state` observation resolved body names `['left_rubber_hand', 'right_wrist_yaw_link']`. But the deterministic zero-shot eval from retained `M6q model_10150.pt` never produced metrics:
+    - eval process stayed alive at full CPU
+    - `/tmp/wheelchair_bridge_eval_5ruv86xi.txt` remained empty
+    - Kit logged `SimulationApp.close: Closing application`
+      without emitting the usual benchmark JSON
+    So `M6ag` was not a scored failure like `M6ae` or `M6af`; it was a mechanical hang after the right-side control-point swap. I stopped the eval, removed `M6ag` from code, and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint. The useful lesson is narrow: swapping the weak side from `right_rubber_hand` to `right_wrist_yaw_link` is mechanically unstable in the current stack even when the local grip point is measured from the retained geometry.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
