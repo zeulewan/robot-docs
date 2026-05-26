@@ -589,6 +589,35 @@ The current retained `M0` solution is no longer the original direct-observation 
     `wheelchair_lateral_velocity_abs_mean = 0.003613825421780348`,
     and `wheelchair_yaw_velocity_abs_mean = 0.008656003512442112`.
     The gain over zero-shot is small, but it is real and consistent, so `M4d model_10148.pt` is retained as the first physically valid backward curriculum rung. It is not yet the final `M5` backward-control milestone, because the commanded speed is still only a slow creep and the dynamics are still the easier heavy-damped branch, but it is the first backward stage that is worth building on instead of discarding.
+112. The next backward rung was a pure command-difficulty increase on top of retained `M4d`:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4e-FreeYawHeavyDampedBackward-Moderate-Observed-BothHard-RelaxedHandle`.
+    `M4e` keeps the same heavy-damped both-hard scaffold and the same explicit `wheelchair_robot_standoff` shaping, but increases the fixed commanded backward speed from `-0.14 m/s` to `-0.25 m/s` and slightly widens the command-tracking standard deviation to `0.10`. Zero-shot transfer from retained `M4d model_10148.pt` stayed physically very strong:
+    `physical_command_motion_score = 1.106793893314898`,
+    `clean_hold_rate = 0.984375`,
+    `time_out_rate = 0.984375`,
+    `bad_orientation_rate = 0.015625`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.5650618672370911`,
+    `wheelchair_forward_velocity_mean = -0.14822953939437866`,
+    `wheelchair_lateral_velocity_abs_mean = 0.004035579971969128`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.010057952255010605`.
+    So the harder backward command did not reopen the old chair-contact failure mode; it only cost a small amount of stability and tracking.
+113. A short low-noise `M4e` continuation from retained `M4d model_10148.pt` then wrote two checkpoints: `model_10150.pt` and `model_10197.pt`. `model_10150.pt` regressed slightly by introducing a small base-contact leak (`invalid_contact_rate = 0.015625`), so it was not retained. The later checkpoint, `model_10197.pt`, recovered zero invalid contact and slightly improved the harder backward task over the zero-shot baseline:
+    `physical_command_motion_score = 1.108896442782134`,
+    `command_motion_score = 0.9297696615569295`,
+    `clean_hold_rate = 0.984375`,
+    `time_out_rate = 0.984375`,
+    `bad_orientation_rate = 0.015625`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.5706008672714233`,
+    `wheelchair_forward_velocity_mean = -0.14852306246757507`,
+    `wheelchair_lateral_velocity_abs_mean = 0.003994424361735582`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.010136200115084648`.
+    This is still not the final backward-control milestone, because the branch remains slightly less stable than retained `M4d` and is still on the easier heavy-damped dynamics. But it is a valid retained curriculum rung: the policy stays contact-clean at the faster backward command and does not collapse back into the chair.
+114. The retained backward ladder is now:
+    - retained `M4d model_10148.pt` for physically clean backward creep
+    - retained `M4e model_10197.pt` for the first faster backward pull on the same clean scaffold
+    The next useful branch is still not “final backward control.” The right next lever is another command/dynamics increase from `M4e`, while preserving the chair-separation shaping that removed the old base and rear-wheel collapse.
 
 ## Autoresearch Harness
 
