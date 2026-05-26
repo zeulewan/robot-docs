@@ -905,6 +905,31 @@ The current retained `M0` solution is no longer the original direct-observation 
 
 139. That means the next unified-controller branch should skip further soft-only variants. The likely next mechanism is a command-conditioned hybrid scaffold that changes the attachment class itself, not just the spring gain: for example a dominant hard or spherical attachment on the commanded turn side plus a bounded assist on the opposite hand. The turning blocker is no longer “which side should dominate”; it is that soft-only dominance does not transmit enough yaw authority into the chair.
 
+140. The remaining open question on turning was whether the successful right-turn asymmetry was just incidental to that one task family, or whether the hard/soft attachment class itself really determines the turn sign. Two direct probes on the existing left-hard/right-soft scaffold answered that cleanly:
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M6i-FreeYawHeavyDampedLeftTurn-Observed-LeftHardRightSoft-RelaxedHandle`
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M6j-FreeYawHeavyDampedRightTurn-Observed-LeftHardRightSoft-RelaxedHandle`
+    On `M6i`, zero-shot transfer from retained `M3f model_10049.pt` was fully stable and fully contact-clean, and it produced a very strong correct-sign left turn:
+    `physical_turn_motion_score = 0.7484071274287998`,
+    `turn_motion_score = 1.4161572684533892`,
+    `clean_hold_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 1.0`,
+    and `wheelchair_yaw_velocity_mean = 0.8289926052093506`.
+    On `M6j`, the exact same scaffold flipped back to the wrong sign under the mirrored right-turn command:
+    `physical_turn_motion_score = 0.0`,
+    `turn_motion_score = -0.6045880594581831`,
+    `clean_hold_rate = 0.984375`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.9685173630714417`,
+    and `wheelchair_yaw_velocity_mean = 0.4204327166080475`.
+
+141. That completes the asymmetric turn table:
+    - both-hard heavy-damped: strong left turn, wrong-sign right turn
+    - right-hard/left-soft heavy-damped: strong right turn, wrong-sign left turn
+    - left-hard/right-soft heavy-damped: strong left turn, wrong-sign right turn
+    - soft-only heavy-damped: stable but essentially no turn in either direction
+    So the next unified-controller branch is no longer ambiguous. It should be a command-conditioned hybrid attachment policy that switches the dominant hard/soft side with the turn command sign. The turn problem is not just reward shaping; it is attachment topology.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
