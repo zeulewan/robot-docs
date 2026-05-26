@@ -1065,6 +1065,56 @@ The current retained `M0` solution is no longer the original direct-observation 
       `wheelchair_yaw_velocity_mean = -0.3072325587272644`
     So `M6o` is the exact mirror image of retained `M6l`: strong right turn, wrong-sign left turn, fully stable, and fully contact-clean. It does not beat retained `M6l` as a unified mixed-turn controller, so `M6o` is discarded as a fixed-scaffold mixed branch and removed from code. The lesson is now concrete: neither fixed both-hard nor fixed right-hard/left-soft can support symmetric mixed-sign turning. The next unified-turn branch needs command-conditioned topology or a similar sign-aware mechanism, not another fixed attachment scaffold.
 
+150. I then moved to the first command-conditioned mixed-turn scaffold that stays inside the mechanically proven task family instead of switching attachment topology at reset time:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6p-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedSoft-RelaxedHandle`.
+    `M6p` replaces the fixed both-hard grip with two bounded soft hand-handle attachments whose dominant side follows the commanded yaw sign at runtime:
+    - left-turn command: left side dominant, right side assist
+    - right-turn command: right side dominant, left side assist
+    - near-zero yaw: both sides neutral
+    The zero-shot transfer from retained `M6l model_10098.pt` was immediately useful because it changed the sign behavior without reopening posture failure:
+    - aggregate:
+      `physical_turn_motion_score = 0.09044851200650537`,
+      `turn_motion_score = 0.6346616450930015`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.11344851553440094`,
+      `clean_hold_rate = 0.921875`,
+      `time_out_rate = 1.0`,
+      `bad_orientation_rate = 0.0`,
+      `invalid_contact_rate = 0.078125`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.04624660266167488`,
+      `turn_motion_score = 0.5735906860558317`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.0562153197824955`,
+      `wheelchair_yaw_velocity_mean = 0.010243130847811699`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.14185192968349883`,
+      `turn_motion_score = 0.708367930725217`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.18252304196357727`,
+      `wheelchair_yaw_velocity_mean = -0.02506144717335701`
+    That is the first mixed-sign branch here where both yaw-command signs stayed physically valid and produced the correct yaw sign on one shared runtime mechanism. But authority was still extremely weak, and invalid contact was still real.
+
+151. I then ran a bounded `50`-iteration model-only continuation on `M6p` from retained `M6l model_10098.pt`:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6p_freeyaw_heavydamped_mixedturn_observed_command_conditioned_soft_relaxedhandle/2026-05-26_14-13-42_mixedturn_commandsoft_from_m6l10098_modelonly_50it`
+    and evaluated both saved checkpoints. The later checkpoint `model_10147.pt` was the better one:
+    - aggregate:
+      `physical_turn_motion_score = 0.11287512941327117`,
+      `turn_motion_score = 0.680165586457588`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.1318761706352234`,
+      `clean_hold_rate = 0.984375`,
+      `time_out_rate = 1.0`,
+      `bad_orientation_rate = 0.0`,
+      `invalid_contact_rate = 0.015625`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.056229882400059016`,
+      `turn_motion_score = 0.6117976468289271`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.06599722802639008`,
+      `wheelchair_yaw_velocity_mean = 0.01132544968277216`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.17932415988238903`,
+      `turn_motion_score = 0.7626786550041288`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.21138525009155273`,
+      `wheelchair_yaw_velocity_mean = -0.02904720976948738`
+    Training therefore improved `M6p` in the right direction: higher aggregate physical turn score, better symmetric yaw alignment, and much lower invalid contact than zero-shot. But it still does not beat retained `M6l model_10098.pt` as a mixed-turn milestone, and its left-turn authority is still far below the retained left-turn branch. So `M6p` is worth keeping as the first command-conditioned sign-correct unified-turn foothold, but not as the retained mixed-turn controller. The next useful branch should strengthen command-conditioned authority rather than go back to another fixed scaffold.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
