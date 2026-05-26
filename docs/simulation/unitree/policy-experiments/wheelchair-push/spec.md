@@ -1611,6 +1611,28 @@ The current retained `M0` solution is no longer the original direct-observation 
     `invalid_contact_rate = 0.265625`.
     So `M6ai` confirmed a narrower lesson: making the right-turn dominant side harder does clean the branch locally, but it still does not transfer into a better shared mixed-turn controller on the real symmetric `M6q` task. I discarded `M6ai` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+169. I then tested the cleaner `M6ai` branch as an explicit curriculum source instead of judging it only as an alternate scaffold. The idea was simple: start from the same-task-cleaner `M6ai model_10150.pt` and continue directly on the standard symmetric `M6q` task, then score checkpoints on standard `M6q` rather than on the easier `M6ai` rung. The bounded low-noise `50`-iteration model-only continuation was:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6q_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_relaxedhandle/2026-05-26_19-27-56_mixedturn_m6q_from_m6ai10150_modelonly_std005_50it`
+    and produced two saved checkpoints:
+    - `model_10150.pt`:
+      `physical_turn_motion_score = 0.18110951605476558`,
+      `clean_hold_rate = 0.75`,
+      `invalid_contact_rate = 0.25`
+    - `model_10199.pt`:
+      `physical_turn_motion_score = 0.20292924602862325`,
+      `clean_hold_rate = 0.796875`,
+      `invalid_contact_rate = 0.203125`
+    The better of those, `model_10199.pt`, still lost to retained historical `M6q model_10150.pt`:
+    - transferred `M6q` from `M6ai model_10199.pt`:
+      `physical_turn_motion_score = 0.20292924602862325`,
+      `clean_hold_rate = 0.796875`,
+      `invalid_contact_rate = 0.203125`
+    - retained `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    The sign split stayed consistent with the aggregate loss: the transferred run helped neither side enough to offset the drop in cleanliness, and the right-turn half still lagged the retained branch on both authority and contact. So the curriculum hypothesis did not hold up. A cleaner `M6ai` rung does not transfer back into a better standard `M6q` mixed-turn controller, and I discarded this `M6ai -> M6q` transfer run.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
