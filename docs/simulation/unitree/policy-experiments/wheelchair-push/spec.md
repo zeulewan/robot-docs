@@ -386,6 +386,18 @@ The current retained `M0` solution is no longer the original direct-observation 
     Its downstream transfer into free-chair `M3` was slightly positive but still tiny:
     `forward_motion_score = 0.015163969621062322`, `clean_hold_rate = 0.515625`, `wheelchair_forward_velocity_mean = 0.0014841918600723147`, `wheelchair_forward_velocity_ratio_symmetric = 0.015274673700332642`.
 79. The current motion-stage read is therefore straightforward. The retained hold scaffold through `M2` is physically clean, but the first forward-motion curriculum is still blocked. The corrected metric shows both rail branches failed to produce real forward chair motion, and the best free-chair `M3` result is still only marginally above zero. The next useful lever is not more reward nudging on the same rail tasks; it should be a different motion-stage scaffold or command structure that cannot hide behind backward or near-stationary solutions.
+80. A third rail probe then tested whether the failure was mostly the shape of the motion reward itself:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3c-RailSignedForward-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This branch removed the soft exponential chair-velocity matching term entirely and replaced it with strictly directional shaping: strong positive `wheelchair_forward_progress`, linear `wheelchair_backward_velocity_l1`, and the same rail constraint.
+81. That probe was a clean negative result. The rail stage itself still settled into backward motion:
+    - selected same-stage checkpoint `model_9900.pt`:
+      `forward_motion_score = -0.09549030592315827`, `clean_hold_rate = 0.9921875`, `time_out_rate = 0.9921875`, `wheelchair_forward_velocity_mean = -0.06506837904453278`, `wheelchair_forward_velocity_ratio_symmetric = -0.49263304471969604`
+    Later checkpoints such as `model_9999.pt` stayed fully stable on the rail but still moved backward:
+      `forward_motion_score = -0.147451005372568`, `wheelchair_forward_velocity_mean = -0.06927454471588135`.
+82. Downstream transfer from `M3c` back into free-chair `M3` also did not improve. The best selected downstream checkpoint was again `model_9900.pt` with:
+    `forward_motion_score = -0.011835230141878147`, `clean_hold_rate = 0.484375`, `time_out_rate = 0.484375`, `wheelchair_forward_velocity_mean = 0.00040248059667646885`, `wheelchair_forward_velocity_ratio_symmetric = 0.004518650472164154`.
+    That is effectively the same as the raw retained `M2 -> M3` transfer and confirms that reward-shape cleanup alone is not enough on the current left-hard/right-soft rail bridge.
+83. The motion-stage blocker is therefore narrower now. The clean hold ladder through `M2` is still valid, but the current `M3` family does not bridge into actual chair propulsion. The next useful branch should borrow more aggressively from the older minimal successful motion scaffolds rather than keep iterating inside the current `M3a/M3b/M3c` structure. The most likely levers are a more minimal motion reward set, larger action authority, and possibly a temporarily stronger motion-phase hand constraint.
 
 ## Autoresearch Harness
 
