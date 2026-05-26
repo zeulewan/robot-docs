@@ -162,7 +162,23 @@ The current retained `M0` solution is no longer the original direct-observation 
     `Unitree-G1-29dof-Wheelchair-Scratch-M1-BrakedStationary-Observed-RelaxedHandle`
     with deterministic eval
     `invalid_contact_rate = 0.0`, `bad_orientation_rate = 0.9296875`, `time_out_rate = 0.0703125`, `clean_hold_rate = 0.0703125`, `m0_score = -0.626953125`.
-13. The current best physically valid post-`M0` branch is therefore the stationary collidable `M1` variant above. Contact semantics are no longer the blocker there; the remaining problem is upright stability under a free braked chair.
+13. The first follow-up `M1` stability sweep kept the same two-hand collidable stationary branch and tried two narrow changes. Neither helped enough to retain:
+    - reduced arm and wrist action freedom:
+      `bad_orientation_rate = 0.9453125`, `time_out_rate = 0.0546875`, `clean_hold_rate = 0.0546875`, `m0_score = -0.654296875`
+    - stronger upright and low-motion regularization:
+      `bad_orientation_rate = 0.9296875`, `time_out_rate = 0.0703125`, `clean_hold_rate = 0.0703125`, `m0_score = -0.6328125`
+14. A same-task full PPO resume from the two-hand stationary collidable checkpoint also did not improve the retained result:
+    `bad_orientation_rate = 0.9375`, `time_out_rate = 0.0625`, `clean_hold_rate = 0.0625`, `m0_score = -0.640625`.
+15. The first materially better physically valid post-`M0` branch came from changing the scaffold, not the reward weights. A temporary one-hand collidable stationary braked `M1` variant breaks the two-arm closed chain by attaching only the left hand:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1-BrakedStationary-Observed-LeftHand-RelaxedHandle`.
+16. The first bounded one-hand run from the same two-hand source checkpoint became the new retained `M1` scaffold with deterministic eval:
+    `bad_orientation_rate = 0.2109375`, `invalid_contact_rate = 0.0078125`, `time_out_rate = 0.7890625`, `clean_hold_rate = 0.78125`, `m0_score = 0.6061033082008361`.
+17. Continuing that one-hand branch for another short same-task training block stayed physically clean, but it drifted slightly on deterministic eval rather than improving the retained checkpoint. Saved checkpoints from that continuation scored:
+    - `model_9800.pt`:
+      `bad_orientation_rate = 0.2265625`, `invalid_contact_rate = 0.0078125`, `time_out_rate = 0.7734375`, `clean_hold_rate = 0.765625`, `m0_score = 0.595680835545063`
+    - `model_9836.pt`:
+      `bad_orientation_rate = 0.2421875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.75`, `clean_hold_rate = 0.75`, `m0_score = 0.5625`
+18. The retained best physically valid post-`M0` branch is therefore still the first one-hand collidable stationary braked `M1` checkpoint, not the later continuation. The current evidence is that the main blocker on the two-hand physical branch is the closed-chain attachment geometry, not missing contact penalties.
 
 ## Autoresearch Harness
 
