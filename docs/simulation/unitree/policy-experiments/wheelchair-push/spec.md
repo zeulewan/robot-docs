@@ -233,6 +233,15 @@ The current retained `M0` solution is no longer the original direct-observation 
     `model_9844.pt` with
     `bad_orientation_rate = 0.5078125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4921875`, `clean_hold_rate = 0.4921875`, `m0_score = 0.111328125`.
     This suggests the main cliff is the chair dynamics/damping drop itself, not only the stronger `M2` stationary reward weights.
+38. To narrow that dynamics cliff further, a midpoint bridge stage was added between `M1c` and the light-damped tasks:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1d-TransitionDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`.
+    It keeps the same left-hard/right-soft hold scaffold and reward shaping as `M1b`/`M1c`, but uses a transition wheelchair with `linear_damping = 0.25`, `angular_damping = 0.25`, and wheel/caster drive stiffness `1.75`.
+39. Immediate transfer from the retained `M1c model_9825.pt` into `M1d` was better than both light-damped branches while staying physically clean:
+    `bad_orientation_rate = 0.4453125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5546875`, `clean_hold_rate = 0.5546875`, `m0_score = 0.220703125`.
+    That is still materially behind retained `M1c`, but it shows the dynamics cliff is at least partly smoothable with a finer damping ladder.
+40. A short `20`-iteration warm-start continuation on `M1d` did not consolidate that gain. The saved `model_9844.pt` checkpoint regressed to:
+    `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`.
+41. The current read is therefore narrow: `M1d` is a useful intermediate transfer stage, but it is not yet a retained checkpoint stage because the same short continuation pattern that hurt the lighter-damped branches still hurts here. The next likely lever is another continuation-mode change or an even finer dynamics ladder, not a larger reward rewrite.
 
 ## Autoresearch Harness
 
