@@ -1203,6 +1203,49 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `M6s`: `wheelchair_base_robot_contact = 0.03125`, `wheelchair_left_handle_invalid_contact = 0.015625`
     So `M6s` did not solve the mixed-turn bottleneck. Dominant-side-only geometry shaping is not enough on top of the original soft scaffold. I discarded `M6s` from code. The next mixed-turn branch should continue from the `M6q` lesson instead: preserve sign-conditioned authority, but change the right-turn physical scaffold or contact geometry rather than just reweighting geometry rewards inside the weaker `M6p` mechanism.
 
+155. I then restored the stronger `M6q` mixed-turn scaffold into the live codebase because it had only existed in saved run artifacts, not in the current source tree:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6q-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RelaxedHandle`.
+    The first reconstruction pass exposed a real runtime bug in the helper path: `ScratchM6q...` was calling `_apply_command_conditioned_turn_soft_handle_scaffold(...)` with explicit dominant/assist gain overrides, but the current helper implementation only accepted the original fixed signature. That meant the task could compile but not instantiate. After restoring the missing helper parameters, I reran the deterministic zero-shot eval from retained `M6p model_10147.pt` and recovered the historical `M6q` zero-shot branch exactly:
+    - aggregate zero-shot:
+      `physical_turn_motion_score = 0.180478867037474`,
+      `turn_motion_score = 0.7685924386605621`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.4062581956386566`,
+      `clean_hold_rate = 0.765625`,
+      `bad_orientation_rate = 0.140625`,
+      `invalid_contact_rate = 0.234375`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.1849697791430749`,
+      `invalid_contact_rate = 0.02857142873108387`
+    - `right_turn_command`:
+      `physical_turn_motion_score = -0.008921457944580906`,
+      `invalid_contact_rate = 0.48275861144065857`
+    So the code restoration is now mechanically verified: the live `M6q` implementation reproduces the historical zero-shot behavior and remains the correct stronger shared-turn scaffold to branch from.
+
+156. The next bounded follow-up on top of that restored scaffold was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6u-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-DominantGeometry-RelaxedHandle`.
+    `M6u` kept the stronger `M6q` command-conditioned soft dominance and reintroduced dominant-side-only hand-handle geometry shaping, with the specific goal of cleaning up the right-turn contact leak without giving back the both-sign authority. As expected, zero-shot from `M6p model_10147.pt` was identical to zero-shot `M6q` because only the reward changed. The real test was a matched bounded `50`-iteration model-only continuation:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6u_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_dominant_geometry_relaxedhandle/2026-05-26_16-07-39_mixedturn_commandstrongsoft_dominantgeom_from_m6p10147_modelonly_50it`
+    which produced two saved checkpoints:
+    - `model_10150.pt`:
+      `physical_turn_motion_score = 0.203279605285046`,
+      `turn_motion_score = 0.7342491181567311`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.32976973056793213`,
+      `clean_hold_rate = 0.796875`,
+      `bad_orientation_rate = 0.03125`,
+      `invalid_contact_rate = 0.203125`
+      with `right_turn_command physical_turn_motion_score = 0.14647181343215585`
+      and `right_turn_command invalid_contact_rate = 0.41379308700561523`
+    - `model_10196.pt`:
+      `physical_turn_motion_score = 0.19345759608092344`,
+      `turn_motion_score = 0.7403149347752332`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.31351807713508606`,
+      `clean_hold_rate = 0.828125`,
+      `bad_orientation_rate = 0.09375`,
+      `invalid_contact_rate = 0.140625`
+      with `right_turn_command physical_turn_motion_score = 0.13699392383603276`
+      and `right_turn_command invalid_contact_rate = 0.27586206793785095`
+    This is a real improvement over zero-shot `M6q` because the right-turn half becomes physically positive instead of wrong-sign. But it still does not beat the historical bounded `M6q` continuation on the actual tradeoff we care about. Historical `M6q model_10150.pt` stayed stronger on authority (`physical_turn_motion_score = 0.21757397106793339`, right-turn `0.21480752041858034`) while landing at a comparable aggregate cleanliness point (`clean_hold_rate = 0.828125`, `invalid_contact_rate = 0.171875`). `M6u` buys back some right-turn contact, but it does so by giving back too much turn authority and reintroducing more bad orientation on the later checkpoint. So `M6u` is discarded from code. The retained lesson is narrower: preserving `M6q` sign-conditioned authority is correct, but dominant-side-only geometry shaping is still not the mechanism that resolves the right-turn scaffold cleanly.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
