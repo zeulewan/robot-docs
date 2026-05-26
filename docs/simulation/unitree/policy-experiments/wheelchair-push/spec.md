@@ -774,6 +774,27 @@ The current retained `M0` solution is no longer the original direct-observation 
 
 127. The turn evaluator had to be corrected before retaining any right-turn result. The original `physical_turn_motion_score` could still stay moderately positive when the rollout was stable and contact-clean even if the chair turned the wrong way. The corrected gate now multiplies the physical turn base score by `wheelchair_command_aligned_yaw_ratio_clipped`, so wrong-sign yaw cannot win selection just by surviving cleanly. This matters for future automation too. The wheelchair observed policy already includes signed `velocity_commands`, so the right-turn failure is not explained by a missing yaw command observation. The next right-turn branch should change the turn scaffold itself, most likely by changing grip asymmetry or handle-assist structure, not by blindly running more of the current mirrored both-hard task.
 
+128. That next scaffold change was exactly the missing mirrored asymmetry:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6c-FreeYawHeavyDampedRightTurn-Observed-RightHardLeftSoft-RelaxedHandle`.
+    `M6c` keeps the same heavy-damped right-turn command as `M6b`, but replaces the failing both-hard grip with the mirror of the successful left-turn asymmetry: the right hand stays as the hard attachment and the left hand becomes a bounded soft assist with mirrored handle-position and axis-alignment shaping. This immediately fixed the sign problem. Zero-shot transfer from retained `M3f model_10049.pt` came back fully stable, fully contact-clean, and directionally correct:
+    `physical_turn_motion_score = 0.6617681152270161`,
+    `turn_motion_score = 1.322267762525007`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.712121307849884`,
+    `wheelchair_command_aligned_yaw_ratio_clipped = 0.7412710785865784`,
+    `wheelchair_yaw_tracking_mean = 0.6739866733551025`,
+    and `wheelchair_yaw_velocity_mean = -0.27772974967956543`.
+    So `M6c` is retained immediately as the first valid right-turn milestone.
+
+129. The current turn read is now much cleaner:
+    - retained `M6a` for left turn on the both-hard heavy-damped scaffold
+    - discarded `M6b` because the mirrored both-hard right-turn scaffold stayed wrong-sign
+    - retained `M6c` because the mirrored right-hard/left-soft scaffold fixes the sign without losing stability
+    The important lesson is that turning on this wheelchair is not symmetric under the both-hard grip. Left turn works on the symmetric scaffold, but right turn needs the mirrored asymmetric grip structure. That is now concrete evidence, not speculation.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
