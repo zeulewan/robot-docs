@@ -211,6 +211,9 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `model_9806.pt`:
       `bad_orientation_rate = 0.34375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.65625`, `clean_hold_rate = 0.65625`, `m0_score = 0.3984375`
 30. The current read is that `M1c` is the best dynamic-chair bridge so far, and it clearly narrows the gap from `M1b` to a moving chair better than the old `M2` attempt. But it is still materially worse than the retained braked `M1b` scaffold, so it should be treated as a provisional intermediate stage rather than a promoted new baseline.
+31. A longer same-stage continuation from the retained `M1c` `model_9806.pt` did not preserve the improved online training statistics in deterministic eval. The saved `model_9845.pt` checkpoint regressed to:
+    `bad_orientation_rate = 0.3828125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.6171875`, `clean_hold_rate = 0.6171875`, `m0_score = 0.330078125`.
+    So the retained `M1c` result remains the earlier short-run `model_9806.pt`, not the longer continuation.
 
 ## Autoresearch Harness
 
