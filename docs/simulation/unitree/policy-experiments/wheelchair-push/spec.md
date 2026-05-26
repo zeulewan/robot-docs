@@ -214,6 +214,16 @@ The current retained `M0` solution is no longer the original direct-observation 
 31. A longer same-stage continuation from the retained `M1c` `model_9806.pt` did not preserve the improved online training statistics in deterministic eval. The saved `model_9845.pt` checkpoint regressed to:
     `bad_orientation_rate = 0.3828125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.6171875`, `clean_hold_rate = 0.6171875`, `m0_score = 0.330078125`.
     So the retained `M1c` result remains the earlier short-run `model_9806.pt`, not the longer continuation.
+32. Changing only the resume mode on `M1c` helped. A bounded full-PPO resume from the retained `M1c` `model_9806.pt` produced a better deterministic bridge checkpoint:
+    `model_9825.pt` with
+    `bad_orientation_rate = 0.328125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.671875`, `clean_hold_rate = 0.671875`, `m0_score = 0.42578125`.
+    This is the current retained `M1c` checkpoint. The evidence is that optimizer state matters on this stage; actor-only warm starts were leaving some performance on the table.
+33. Re-testing the lighter-damped `M2` stage from that improved retained `M1c` checkpoint helped the raw transfer a little but still did not make `M2` promotable. Immediate transfer of `model_9825.pt` into `M2` reached:
+    `bad_orientation_rate = 0.4921875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5078125`, `clean_hold_rate = 0.5078125`, `m0_score = 0.138671875`.
+    That is better than the earlier `M2` transfer from the weaker `M1b` source, but still materially behind `M1c`.
+34. A short `20`-iteration warm-start continuation on `M2` from the improved `M1c` `model_9825.pt` regressed again instead of consolidating the gain. The saved `model_9844.pt` checkpoint evaluated to:
+    `bad_orientation_rate = 0.5390625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4609375`, `clean_hold_rate = 0.4609375`, `m0_score = 0.056640625`.
+    So the light-damped `M2` task is still not the next retained milestone. The current best ladder is `M1b` braked hold, then `M1c` medium-damped bridge, with `M2` still blocked by stage design rather than simple checkpoint quality.
 
 ## Autoresearch Harness
 
