@@ -1041,6 +1041,30 @@ The current retained `M0` solution is no longer the original direct-observation 
     `physical_turn_motion_score = 0.3666192910436557`
     is mostly just the average of one good sign and one wrong sign. That narrows the next experiment substantially: the next unified-turn branch should target right-turn sign correction directly, not perturb the whole mixed-turn task globally.
 
+149. I tested that exact mirrored branch next instead of guessing: a mixed-sign turn task on the retained right-turn scaffold,
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6o-FreeYawHeavyDampedMixedTurn-Observed-RightHardLeftSoft-RelaxedHandle`.
+    `M6o` kept the same heavy-damped turn dynamics and symmetric yaw-command range as `M6l`, but replaced the both-hard grip with the retained right-hard/left-soft turn topology from `M6c`. I ran a matched `50`-iteration model-only continuation from retained `M3f model_10049.pt`:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6o_freeyaw_heavydamped_mixedturn_observed_right_hard_left_soft_relaxedhandle/2026-05-26_13-56-11_mixedturn_righthardleftsoft_from_m3f10049_modelonly_50it`
+    and evaluated the saved checkpoints with the split-turn metrics.
+    The later checkpoint `model_10098.pt` was slightly better than `model_10050.pt`, but the result simply mirrored `M6l` instead of solving it:
+    - aggregate:
+      `physical_turn_motion_score = 0.3394886074186614`,
+      `turn_motion_score = 0.4556515691103414`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = -0.02971457690000534`,
+      `clean_hold_rate = 1.0`,
+      `invalid_contact_rate = 0.0`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.03331444319650689`,
+      `turn_motion_score = -0.3082868215395137`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = -0.7320753931999207`,
+      `wheelchair_yaw_velocity_mean = -0.2430439293384552`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.7535063807269622`,
+      `turn_motion_score = 1.3776461312081665`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.8179622292518616`,
+      `wheelchair_yaw_velocity_mean = -0.3072325587272644`
+    So `M6o` is the exact mirror image of retained `M6l`: strong right turn, wrong-sign left turn, fully stable, and fully contact-clean. It does not beat retained `M6l` as a unified mixed-turn controller, so `M6o` is discarded as a fixed-scaffold mixed branch and removed from code. The lesson is now concrete: neither fixed both-hard nor fixed right-hard/left-soft can support symmetric mixed-sign turning. The next unified-turn branch needs command-conditioned topology or a similar sign-aware mechanism, not another fixed attachment scaffold.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
