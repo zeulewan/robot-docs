@@ -707,6 +707,34 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M4g model_10229.pt` for the medium-damped backward rung
     - retained `M4h model_10258.pt` for the next transition-damped backward rung at the same command
     The next useful move is the same one again: keep the backward command fixed and release dynamics one more rung before increasing backward speed or mixing in turning commands.
+122. The next backward rung was the light-transition release to the retained forward `M3l` damping level:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4i-FreeYawLightTransitionDampedBackward-Moderate-Observed-BothHard-RelaxedHandle`.
+    `M4i` keeps the retained `M4h` command at `-0.25 m/s`, keeps the same both-hard grip and the same `wheelchair_robot_standoff` shaping, and only relaxes planar damping one more step to `y_velocity_scale = 0.35` and `yaw_velocity_scale = 0.35`. Zero-shot transfer from retained `M4h model_10258.pt` exposed the first backward contact leak on this ladder:
+    `physical_command_motion_score = 1.039323188364506`,
+    `clean_hold_rate = 0.984375`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.015625`,
+    with the entire leak concentrated in `wheelchair_base_robot_contact`.
+    So `M4i` was initially beyond the clean backward boundary, but only slightly.
+123. A short low-noise continuation on `M4i` from retained `M4h model_10258.pt` then recovered that leak cleanly. The selected checkpoint `model_10287.pt` came back at:
+    `physical_command_motion_score = 1.0621339753270151`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.5296800136566162`,
+    `wheelchair_forward_velocity_mean = -0.14203692972660065`,
+    `wheelchair_lateral_velocity_abs_mean = 0.031298667192459106`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.07465916872024536`.
+    That makes `M4i` a valid retained rung after continuation. It is slightly freer than retained `M4h`, fully stable, and fully contact-clean again. The retained backward ladder is now:
+    - retained `M4d model_10148.pt` for physically clean backward creep
+    - retained `M4e model_10197.pt` for the faster heavy-damped backward pull
+    - retained `M4f model_10200.pt` for the first damping release at `-0.25 m/s`
+    - retained `M4g model_10229.pt` for the medium-damped backward rung
+    - retained `M4h model_10258.pt` for the transition-damped backward rung
+    - retained `M4i model_10287.pt` for the light-transition backward rung after contact recovery
+    The next useful move is to decide whether the backward ladder can absorb one final dynamics release cleanly, or whether this is the point to stop releasing damping and start mixing in turn command structure.
 
 ## Autoresearch Harness
 
