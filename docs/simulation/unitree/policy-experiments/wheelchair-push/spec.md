@@ -1022,6 +1022,25 @@ The current retained `M0` solution is no longer the original direct-observation 
     and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.11264941841363907`.
     So the rapid intra-episode sign-switch curriculum also failed to beat retained `M6l model_10098.pt`. It stayed physically clean, but it regressed both the mixed-turn physical score and the symmetric yaw-alignment score on the standard task. The conclusion is again narrow: the unified-turn blocker is not just lack of command switching within the episode. The retained mixed-turn rung still stays `M6l model_10098.pt`, and the next branch needs a different control or topology mechanism rather than more schedule tweaks on the same both-hard scaffold.
 
+148. I then tightened the evaluator instead of guessing from the aggregate mixed-turn score. `eval_wheelchair_m0.py` now emits `turn_metrics_by_command_sign`, splitting the turn metrics into `left_turn_command` and `right_turn_command` subsets. I reran the retained mixed-turn baseline `M6l model_10098.pt` on the standard `M6l` task with the full episode horizon (`64 envs`, `500 steps`). The split result is decisive:
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.6922063695049961`,
+      `turn_motion_score = 1.3198288734070955`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.8864503502845764`,
+      `wheelchair_yaw_velocity_mean = 0.459000825881958`,
+      `clean_hold_rate = 1.0`,
+      `invalid_contact_rate = 0.0`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.07233190653455447`,
+      `turn_motion_score = -0.19419106543064119`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = -0.585963785648346`,
+      `wheelchair_yaw_velocity_mean = 0.3227216303348541`,
+      `clean_hold_rate = 1.0`,
+      `invalid_contact_rate = 0.0`
+    So `M6l` is not a uniformly weak mixed-sign controller. It is effectively the retained left-turn specialist plus a still-broken right-turn branch on the same both-hard scaffold. The aggregate retained score
+    `physical_turn_motion_score = 0.3666192910436557`
+    is mostly just the average of one good sign and one wrong sign. That narrows the next experiment substantially: the next unified-turn branch should target right-turn sign correction directly, not perturb the whole mixed-turn task globally.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
