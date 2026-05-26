@@ -151,6 +151,9 @@ The current retained `M0` solution is no longer the original direct-observation 
 7. The dominant remaining `Phase 1A` failure after that change is no longer handle semantics; it is wheelchair base contact plus release-phase drift and mild balance loss.
 8. A follow-up base-only invalid-contact penalty on top of the relaxed-handle `Phase 1A` branch was a regression. It reduced neither drift nor stability cleanly and dropped deterministic release eval to:
    `clean_hold_rate = 0.421875`, `invalid_contact_rate = 0.578125`, `time_out_rate = 0.75`.
+9. A second follow-up that tightened the chair pose and velocity tethering on top of the relaxed-handle branch was also a regression. It overconstrained the release phase, increased wheelchair-base contact again, and dropped deterministic release eval to:
+   `clean_hold_rate = 0.4453125`, `invalid_contact_rate = 0.5546875`, `time_out_rate = 0.796875`.
+10. The retained `Phase 1A` baseline is therefore still the relaxed-handle observed branch. The current evidence says the next useful lever is not stronger tethering or sharper invalid-contact penalties; it is a lighter release-phase shaping change that reduces drift without pushing the robot back into the chair.
 
 ## Autoresearch Harness
 
