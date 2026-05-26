@@ -1170,6 +1170,39 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.3103448152542114`
     So `M6r` confirmed the failure surface rather than fixing it: stronger command-conditioned soft dominance can create usable bidirectional yaw authority, but simply turning up invalid-contact and standoff penalties does not buy back the right-turn cleanliness. The blocker is now narrower than before: the next mixed-turn branch should keep the sign-conditioned authority idea from `M6q`, but solve the right-turn contact geometry with a different physical scaffold rather than more penalty weight on the same setup.
 
+154. I also tested a narrower reward-only follow-up on top of retained `M6p model_10147.pt`:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6s-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedSoft-DominantGeometry-RelaxedHandle`.
+    `M6s` kept the original `M6p` soft command-conditioned turn scaffold, but replaced the shared hand-handle geometry shaping with commanded dominant-side-only geometry rewards. The idea was to preserve the clean `M6p` runtime mechanism while giving the commanded turn side a clearer spatial target without jumping all the way to the stronger `M6q` authority settings.
+    The bounded `50`-iteration model-only continuation run was:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6s_freeyaw_heavydamped_mixedturn_observed_command_conditioned_soft_dominant_geometry_relaxedhandle/2026-05-26_14-58-24_mixedturn_commandsoft_dominantgeom_from_m6p10147_modelonly_50it`
+    and produced one saved checkpoint, `model_10150.pt`.
+    Compared against retained `M6p model_10147.pt`, `M6s model_10150.pt` regressed slightly on the aggregate mixed-turn gate:
+    - retained `M6p model_10147.pt`:
+      `physical_turn_motion_score = 0.11287512941327117`,
+      `turn_motion_score = 0.680165586457588`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.1318761706352234`,
+      `clean_hold_rate = 0.984375`,
+      `invalid_contact_rate = 0.015625`
+    - `M6s model_10150.pt`:
+      `physical_turn_motion_score = 0.11120020173864448`,
+      `turn_motion_score = 0.6665303901769223`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.12793606519699097`,
+      `clean_hold_rate = 0.96875`,
+      `invalid_contact_rate = 0.03125`
+    The sign split makes the failure mode more specific:
+    - `left_turn_command` improved a little on authority
+      (`physical_turn_motion_score = 0.07252853426676785` vs `0.056229882400059016`)
+      but reopened contact
+      (`invalid_contact_rate = 0.02857142873108387` vs `0.0`)
+    - `right_turn_command` got worse on authority
+      (`physical_turn_motion_score = 0.158437060450738` vs `0.17932415988238903`)
+      while staying just as dirty as retained `M6p`
+      (`invalid_contact_rate = 0.03448275849223137`)
+    Aggregate invalid contact also shifted the failure surface the wrong way:
+    - retained `M6p`: `wheelchair_base_robot_contact = 0.015625`, `wheelchair_right_handle_invalid_contact = 0.015625`
+    - `M6s`: `wheelchair_base_robot_contact = 0.03125`, `wheelchair_left_handle_invalid_contact = 0.015625`
+    So `M6s` did not solve the mixed-turn bottleneck. Dominant-side-only geometry shaping is not enough on top of the original soft scaffold. I discarded `M6s` from code. The next mixed-turn branch should continue from the `M6q` lesson instead: preserve sign-conditioned authority, but change the right-turn physical scaffold or contact geometry rather than just reweighting geometry rewards inside the weaker `M6p` mechanism.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
