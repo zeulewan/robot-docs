@@ -1246,6 +1246,63 @@ The current retained `M0` solution is no longer the original direct-observation 
       and `right_turn_command invalid_contact_rate = 0.27586206793785095`
     This is a real improvement over zero-shot `M6q` because the right-turn half becomes physically positive instead of wrong-sign. But it still does not beat the historical bounded `M6q` continuation on the actual tradeoff we care about. Historical `M6q model_10150.pt` stayed stronger on authority (`physical_turn_motion_score = 0.21757397106793339`, right-turn `0.21480752041858034`) while landing at a comparable aggregate cleanliness point (`clean_hold_rate = 0.828125`, `invalid_contact_rate = 0.171875`). `M6u` buys back some right-turn contact, but it does so by giving back too much turn authority and reintroducing more bad orientation on the later checkpoint. So `M6u` is discarded from code. The retained lesson is narrower: preserving `M6q` sign-conditioned authority is correct, but dominant-side-only geometry shaping is still not the mechanism that resolves the right-turn scaffold cleanly.
 
+157. I then fixed the mixed-turn evaluator itself so the diagnosis path could be trusted. The per-handle/per-sensor breakdown mode in
+    `scripts/rsl_rl/eval_wheelchair_m0.py`
+    had been preallocating filter tensors from the static config lists, but the live relaxed-handle sensors were returning a different filter count at runtime. That caused the diagnosis run to crash with a `31 != 30` tensor-width mismatch instead of telling us what was actually colliding. I changed that evaluator path to size breakdown buffers from the live sensor shapes and to label them from the runtime filter expressions when available. After that fix, the historical bounded `M6q model_10150.pt` breakdown became usable and showed the real right-turn leak:
+    - `wheelchair_right_handle_invalid_contact` was dominated by
+      `right_wrist_pitch_link = 27904.484375`
+    - the next contributors were much smaller:
+      `right_wrist_roll_link = 237.5985107421875`,
+      `right_elbow_link = 124.99657440185547`,
+      `pelvis = 77.53118896484375`
+    - `wheelchair_base_robot_contact` was also mostly hand/wrist spill:
+      `right_rubber_hand = 380.507568359375`,
+      `right_wrist_pitch_link = 353.1176452636719`,
+      `right_wrist_yaw_link = 320.6406555175781`
+    Based on that, I ran one more bounded probe:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6v-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-DominantWrist-RelaxedHandle`.
+    `M6v` kept the strong-soft `M6q` scaffold, started from the historical bounded
+    `M6q model_10150.pt`,
+    and added a dominant-side wrist pitch/roll deviation term with the explicit goal of reducing the `right_wrist_pitch_link` handle intrusion without giving away two-sign turn authority.
+    The bounded continuation run was:
+    `unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6v_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_dominant_wrist_relaxedhandle/2026-05-26_16-34-03_mixedturn_commandstrongsoft_dominantwrist_from_m6q10150_modelonly_50it`
+    and produced `model_10199.pt` as the only new saved checkpoint.
+    Deterministic eval on `M6v model_10199.pt` came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.21214263804737943`,
+      `turn_motion_score = 0.7641600643284618`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.32313433289527893`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`,
+      `bad_orientation_rate = 0.046875`,
+      `base_height_rate = 0.078125`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17840703906227545`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.24167948961257935`,
+      `clean_hold_rate = 0.9142857193946838`,
+      `invalid_contact_rate = 0.08571428805589676`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.21401638972764173`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.42144185304641724`,
+      `clean_hold_rate = 0.7241379022598267`,
+      `invalid_contact_rate = 0.27586206793785095`
+    Relative to historical bounded `M6q model_10150.pt`, this did exactly what the targeted wrist penalty was supposed to do on the weak side:
+    - right-turn invalid contact improved:
+      `0.3103448152542114 -> 0.27586206793785095`
+    - right-turn clean hold improved:
+      `0.6896551847457886 -> 0.7241379022598267`
+    - and the dominant leak body was cut almost in half:
+      `wheelchair_right_handle_invalid_contact -> right_wrist_pitch_link`
+      `27904.484375 -> 13843.240234375`
+    But it was still not a win overall. Aggregate `physical_turn_motion_score` regressed slightly
+    (`0.21757397106793339 -> 0.21214263804737943`),
+    aggregate `invalid_contact_rate` stayed exactly flat at `0.171875`,
+    and the contact mostly shifted into adjacent geometry rather than disappearing:
+    `wheelchair_base_robot_contact -> right_rubber_hand`
+    rose to `735.692138671875`,
+    while `right_wrist_roll_link` also rose to `469.6550598144531`.
+    So `M6v` confirmed a useful physical fact: the dominant-side wrist term can reduce the specific `right_wrist_pitch_link` handle strike, but by itself it does not solve the mixed-turn scaffold. It just trades that leak for neighboring hand/base contact and degrades the left-turn half enough to lose overall. I discarded `M6v` from code. The retained outcome of this round is the evaluator fix plus a narrower diagnosis: the next `M6q`-family branch should change the dominant-side physical contact scaffold, not just add more reward pressure on the same soft geometry.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
