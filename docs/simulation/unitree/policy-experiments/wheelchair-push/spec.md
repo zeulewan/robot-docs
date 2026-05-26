@@ -1633,6 +1633,51 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.171875`
     The sign split stayed consistent with the aggregate loss: the transferred run helped neither side enough to offset the drop in cleanliness, and the right-turn half still lagged the retained branch on both authority and contact. So the curriculum hypothesis did not hold up. A cleaner `M6ai` rung does not transfer back into a better standard `M6q` mixed-turn controller, and I discarded this `M6ai -> M6q` transfer run.
 
+170. I then tested whether the source-policy itself was the blocker by probing standard symmetric `M6q` directly from the discarded mixed right-strong branch:
+    `M6o model_10098.pt`.
+    This did not justify a continuation budget. Deterministic zero-shot eval of `M6o model_10098.pt` on the standard `M6q` task came back at:
+    `physical_turn_motion_score = 0.18877694330328737`,
+    `clean_hold_rate = 0.796875`,
+    `invalid_contact_rate = 0.203125`.
+    The sign split was still weak on the right-turn half:
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.1795978052718013`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.11044519296102995`,
+      `clean_hold_rate = 0.6206896305084229`,
+      `invalid_contact_rate = 0.37931033968925476`
+    That is worse than retained `M6q model_10150.pt` on both the aggregate gate and the weak-side turn half, so I discarded the `M6o -> M6q` source-policy hypothesis without training.
+
+171. I then tested the cleanest discarded `M6u` checkpoint as a curriculum source:
+    `M6u model_10196.pt`.
+    Zero-shot transfer onto standard `M6q` was the closest source-policy alternative so far:
+    `physical_turn_motion_score = 0.19345759608092344`,
+    `clean_hold_rate = 0.828125`,
+    `invalid_contact_rate = 0.140625`.
+    That matched retained `M6q` on `clean_hold_rate` and improved aggregate invalid contact, so I spent one bounded low-noise `50`-iteration model-only continuation budget:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6q_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_relaxedhandle/2026-05-26_19-43-41_mixedturn_m6q_from_m6u10196_modelonly_std005_50it`
+    The checkpoint selector kept the early saved checkpoint `model_10200.pt`; the later `model_10245.pt` regressed harder. The selected downstream result was:
+    - transferred `M6q model_10200.pt`:
+      `physical_turn_motion_score = 0.19439021422986044`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.15625`
+    - retained `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    The weak-side split stayed consistent with the aggregate loss:
+    - transferred `right_turn_command`:
+      `physical_turn_motion_score = 0.14930035061665134`,
+      `clean_hold_rate = 0.6206896305084229`,
+      `invalid_contact_rate = 0.3448275923728943`
+    - retained `right_turn_command`:
+      `physical_turn_motion_score = 0.21480752041858034`,
+      `clean_hold_rate = 0.6896551847457886`,
+      `invalid_contact_rate = 0.3103448152542114`
+    So `M6u` confirmed the same lesson from a different angle: a cleaner source policy can reduce aggregate contact, but it still does not recover the missing right-turn authority on the real shared `M6q` scaffold. I discarded the `M6u -> M6q` transfer run and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
