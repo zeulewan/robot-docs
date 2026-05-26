@@ -347,7 +347,22 @@ The current retained `M0` solution is no longer the original direct-observation 
     - downstream-selected `M1g std=0.005 model_9900.pt`
     - retained `M2a model_9900.pt` from `m2a_from_m1g9900_std005`
     with zero invalid chair contact throughout.
-69. The next experiment should start from that retained `M2a model_9900.pt` and tackle the remaining wheel-drive stiffness drop into full `M2`, using the downstream-aware checkpoint-selection harness from the start rather than relying on the latest checkpoint.
+69. Starting from that retained `M2a model_9900.pt`, the remaining wheel-drive stiffness drop into full
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-LightDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+    was then retried with the downstream-aware checkpoint-selection harness and lower exploration (`policy_std = 0.005`).
+70. In run
+    `2026-05-26_06-03-42_m2_from_m2a9900_std005`,
+    the selected checkpoint was `model_9900.pt`, not the later `model_9919.pt`. The retained `M2` result came back at:
+    `bad_orientation_rate = 0.4609375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5390625`, `clean_hold_rate = 0.5390625`, `m0_score = 0.193359375`.
+    The later checkpoint regressed to:
+    `bad_orientation_rate = 0.46875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.53125`, `clean_hold_rate = 0.53125`, `m0_score = 0.1796875`.
+71. This is the first retained full-`M2` checkpoint on the current observed left-hard/right-soft ladder. It materially beats the earlier raw `M2` transfer (`0.125`) and the failed older continuation branch (`0.09765625`), while keeping invalid chair contact at zero.
+72. But `M2` is still weaker than the retained `M2a` source (`0.220703125`). So the wheel-drive stiffness boundary is no longer a hard failure, but it is still the next optimization target. The current retained ladder is now:
+    - retained `M1f model_9882.pt`
+    - downstream-selected `M1g std=0.005 model_9900.pt`
+    - retained `M2a model_9900.pt`
+    - retained `M2 model_9900.pt`
+73. The next branch should start from retained `M2 model_9900.pt` and begin the first real motion curriculum step on top of the current physically clean hold scaffold, rather than revisiting old bridge rungs or latest-checkpoint heuristics.
 
 ## Autoresearch Harness
 
