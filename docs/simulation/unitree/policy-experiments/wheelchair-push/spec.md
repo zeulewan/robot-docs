@@ -795,6 +795,48 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M6c` because the mirrored right-hard/left-soft scaffold fixes the sign without losing stability
     The important lesson is that turning on this wheelchair is not symmetric under the both-hard grip. Left turn works on the symmetric scaffold, but right turn needs the mirrored asymmetric grip structure. That is now concrete evidence, not speculation.
 
+130. The next question was whether that retained `M6c` right-hard/left-soft scaffold could serve as a single fixed grip structure for a future unified controller. Three direct probes answered that.
+    The first was a forward probe on the same heavy-damped motion stage:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3m-FreeYawHeavyDampedForward-Observed-RightHardLeftSoft-RelaxedHandle`.
+    Zero-shot transfer from retained `M3f model_10049.pt` stayed upright, but it was not a valid forward milestone:
+    `physical_command_motion_score = 0.6925527523155324`,
+    `clean_hold_rate = 0.921875`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.078125`,
+    with the entire leak concentrated in `wheelchair_left_handle_invalid_contact`,
+    and `wheelchair_forward_velocity_ratio = 0.05961471050977707`.
+    So the fixed right-hard/left-soft scaffold is poor for forward propulsion.
+
+131. The second probe was a left-turn task on the same fixed right-hard/left-soft scaffold:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6d-FreeYawHeavyDampedLeftTurn-Observed-RightHardLeftSoft-RelaxedHandle`.
+    Zero-shot transfer from retained `M3f model_10049.pt` stayed physically clean, but it flipped the sign just like the earlier failed right-turn both-hard branch:
+    `physical_turn_motion_score = 0.018247194337265026`,
+    `turn_motion_score = -0.32261592620052393`,
+    `clean_hold_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.7156335711479187`,
+    and `wheelchair_yaw_velocity_mean = -0.28035983443260193`.
+    So the fixed right-hard/left-soft scaffold is not a valid left-turn scaffold either.
+
+132. The third probe was a backward task on that same fixed right-hard/left-soft scaffold:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4j-FreeYawHeavyDampedBackward-Moderate-Observed-RightHardLeftSoft-RelaxedHandle`.
+    This one did work. Zero-shot transfer from retained `M4i model_10287.pt` came back fully stable and contact-clean:
+    `physical_command_motion_score = 1.315110251214355`,
+    `command_motion_score = 1.1925020365975796`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_velocity_ratio_symmetric = 0.8068245649337769`.
+    So the fixed right-hard/left-soft scaffold is strong for backward pulling, just like it is for right turning.
+
+133. That gives a clean scaffold split:
+    - both-hard heavy-damped is a strong retained scaffold for forward and left turn
+    - right-hard/left-soft heavy-damped is a strong retained scaffold for backward and right turn
+    - no single fixed grip structure tested so far supports all four commands cleanly
+    This means the next unified-controller branch should not assume one fixed hard/soft asymmetry. The most defensible next scaffold is either:
+    1. a command-conditioned attachment/stiffness scaffold that changes dominance with the command sign, or
+    2. a new neutral two-soft-hands scaffold that is explicitly tested across all four commands before mixed-command training starts.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
