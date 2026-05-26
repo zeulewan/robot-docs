@@ -930,6 +930,16 @@ The current retained `M0` solution is no longer the original direct-observation 
     - soft-only heavy-damped: stable but essentially no turn in either direction
     So the next unified-controller branch is no longer ambiguous. It should be a command-conditioned hybrid attachment policy that switches the dominant hard/soft side with the turn command sign. The turn problem is not just reward shaping; it is attachment topology.
 
+142. A first direct attempt to encode that mixed topology inside one task did not fail as a policy result; it failed mechanically during environment bring-up and was removed. The discarded task was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6k-FreeYawHeavyDampedMixedTurn-Observed-SplitHybrid-RelaxedHandle`.
+    The design was:
+    - even environment ids: `left-hard/right-soft`
+    - odd environment ids: `right-hard/left-soft`
+    - command sign split by environment parity so both left and right turn commands existed in one batch
+    The reason for the env-parity split was an Isaac Lab reset-order constraint: reset-mode events run before the command manager resamples commands, so the hard attachment side cannot be switched from the freshly sampled yaw sign in the ordinary reset event path.
+    In practice, `M6k` never reached deterministic evaluation. On repeated runs at `1`, `2`, `16`, and `64` environments, the process exited during environment setup before the manager/observation summary and before any `AUTORESEARCH_METRIC` or output file was written. The same evaluator and source checkpoint completed normally on the neighboring fixed task `M6a`, so this was not a shared evaluator failure. The last emitted `M6k` log lines were the base-environment setup banner plus the standard `/World/envs/.../Robot` rigid-body-property warnings, then silent exit.
+    So `M6k` is discarded as a task-construction/runtime failure, not as evidence about mixed-command policy quality. The lesson is narrower: the current env-parity mixed-turn scaffold is not robust inside the present Isaac Lab manager/event path. The next unified-controller branch should stay inside the mechanically proven task family and use a different command-conditioned hybrid mechanism instead of parity-split hard/soft reset events.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
