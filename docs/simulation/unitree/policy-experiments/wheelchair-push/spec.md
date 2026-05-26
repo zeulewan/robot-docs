@@ -355,3 +355,7 @@ For the unattended background loop, use the metrics-only JSON variant instead so
 ```bash
 conda run --no-capture-output -n isaaclab python scripts/autoresearch/benchmark_wheelchair_m0.py --metrics-json-only
 ```
+
+For later bridge stages such as `M1f`, `M1g`, and `M2a`, the single-stage `M0` wrapper is not sufficient. Use
+`scripts/autoresearch/benchmark_wheelchair_bridge.py`
+instead so the loop can score both same-stage hold quality and downstream transfer into the next damping rung, with downstream `m0_score` used as the primary metric.
