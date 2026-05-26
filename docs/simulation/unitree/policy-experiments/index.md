@@ -19,6 +19,7 @@ The wheelchair work has many stopped variants, startup diagnostics, and old vide
 
 | Archive | Contents |
 |---|---|
+| [Wheelchair goal spec](wheelchair-push/spec.md) | Deliverable contract, milestone ladder, acceptance criteria, and allowed experiment knobs for the wheelchair project. |
 | [Wheelchair chronological archive](wheelchair-push/archive.md) | Original full log with old commands, checkpoint paths, asset turntables, startup/ragdoll clips, X-rail experiments, and PhysX rail stabilization notes. |
 | [Old compatibility page](wheelchair-push-demo.md) | Short pointer kept for links that still target the former wheelchair page. |
 
