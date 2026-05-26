@@ -528,6 +528,38 @@ The current retained `M0` solution is no longer the original direct-observation 
     `wheelchair_lateral_velocity_abs_mean = 0.0511283352971077`,
     and `wheelchair_yaw_velocity_abs_mean = 0.1161910742521286`.
     This confirms that backward chair motion transfers directionally from the forward ladder, but the branch is still not physically usable. The continuation improves survival and reduces invalid contact compared with zero-shot transfer, yet it still relies heavily on bad orientation and chair-body contact. So `M4a` is not retained as a milestone; it is the first diagnostic backward branch, and the next backward iteration needs stronger stability/contact shaping rather than more damping release.
+105. A stricter signed-motion metric was then added:
+    `physical_command_motion_score`.
+    Unlike the earlier `command_motion_score`, it weights `clean_hold_rate`, `time_out_rate`, `bad_orientation_rate`, `base_height_rate`, and `invalid_contact_rate` much more heavily. The old scalar was too generous for backward pulling: it could score a fast but physically bad rollout as progress simply because the wheelchair moved backward at the commanded speed.
+106. The next backward branch was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4b-FreeYawLightTransitionDampedBackward-Stabilized-Observed-BothHard-RelaxedHandle`.
+    `M4b` removed the duplicated raw backward-speed reward, kept the signed command-tracking term as the only dense backward objective, and restored light posture/contact shaping (`flat_orientation_l2`, `base_height`, `robot_xy_velocity`, `robot_yaw_velocity`, stronger `wheelchair_invalid_contact`). On a fair `64 env / 300 step` deterministic eval, the best saved checkpoint was `model_10400.pt` with:
+    `physical_command_motion_score = -0.11300523318350317`,
+    `clean_hold_rate = 0.0`,
+    `time_out_rate = 0.0`,
+    `bad_orientation_rate = 0.578125`,
+    `base_height_rate = 0.03125`,
+    `invalid_contact_rate = 0.484375`,
+    `wheelchair_command_aligned_velocity_ratio = 0.5938286781311035`.
+    The useful diagnostic is where the contact lives:
+    `wheelchair_base_robot_contact = 658.8596`,
+    `wheelchair_left_rear_wheel_robot_contact = 255.9626`,
+    `wheelchair_right_rear_wheel_robot_contact = 21.5525`,
+    while both handle invalid-contact sensors stayed at `0.0`.
+107. The fair `64 env / 300 step` comparison against the original `M4a model_10497.pt` showed that `M4b` did not actually beat it as a branch. `M4a model_10497.pt` scored
+    `physical_command_motion_score = -0.10337315350770951`
+    with the same `clean_hold_rate = 0.0` and `time_out_rate = 0.0`.
+    `M4b` did reduce base-height failures and removed the small left-handle invalid-contact leak, but it did not solve the real blocker. The dominant failure mode is still torso/chair-base plus left-rear-wheel contact while the robot collapses backward into the chair.
+108. A second probe moved the backward task earlier in the dynamics ladder:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4c-FreeYawHeavyDampedBackward-Stabilized-Observed-BothHard-RelaxedHandle`.
+    Zero-shot transfer from retained `M3f model_10049.pt` came back worse:
+    `physical_command_motion_score = -0.16158021707087755`,
+    `bad_orientation_rate = 0.796875`,
+    `invalid_contact_rate = 0.625`,
+    with the same dominant invalid-contact pattern (`wheelchair_base_robot_contact` plus `wheelchair_left_rear_wheel_robot_contact`).
+    So stepping earlier to heavier free-yaw damping did not fix backward pulling either.
+109. Current backward read:
+    backward chair motion transfers directionally from the retained forward ladder, but there is still no retained physically valid backward milestone. The meaningful lesson from `M4a/M4b/M4c` is that the blocker is not missing sign information in the reward, and it is not primarily handle contact. The blocker is geometric/postural collapse into the chair base and left rear wheel during pullback. The next backward branch should target that specific failure mode directly, likely with a changed backward manipulation scaffold or clearance/separation shaping rather than another raw speed reward change.
 
 ## Autoresearch Harness
 
