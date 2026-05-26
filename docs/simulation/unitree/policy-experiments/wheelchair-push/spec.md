@@ -189,6 +189,17 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `model_9806.pt`:
       `bad_orientation_rate = 0.171875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.828125`, `clean_hold_rate = 0.828125`, `m0_score = 0.69921875`
 22. The retained best `M1`/early-`M2` scaffold is therefore now the immediate-transfer `M1b` result, not the continuation. The evidence so far says the right direction is staged second-hand reintroduction with bounded compliance, while naïve continued PPO updates on that stage still destabilize orientation.
+23. The next promotion attempt introduced an explicit damped dynamic-chair stage:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-DampedStationary-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This keeps the retained `M1b` left-hard/right-soft grip scaffold, but swaps the braked chair for a lightly damped dynamic chair with `linear_damping = 0.15`, `angular_damping = 0.15`, and stronger chair-stationary shaping.
+24. Immediate transfer of the retained `M1b` checkpoint into that `M2` stage was physically clean but materially worse on deterministic eval:
+    `bad_orientation_rate = 0.515625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.484375`, `clean_hold_rate = 0.484375`, `m0_score = 0.09765625`.
+25. A short `20`-iteration warm-start continuation on the same `M2` stage did not recover that drop. Both saved checkpoints evaluated to the same deterministic result:
+    - `model_9800.pt`:
+      `bad_orientation_rate = 0.515625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.484375`, `clean_hold_rate = 0.484375`, `m0_score = 0.09765625`
+    - `model_9806.pt`:
+      `bad_orientation_rate = 0.515625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.484375`, `clean_hold_rate = 0.484375`, `m0_score = 0.09765625`
+26. The current read is that this first damped-chair `M2` promotion is a failed branch, not a retained milestone. It removes invalid contact cleanly, but the stability drop is too large, and short warm-start PPO updates did not move it. The retained scaffold therefore remains the immediate-transfer `M1b` result until a gentler `M2` transition is found.
 
 ## Autoresearch Harness
 
