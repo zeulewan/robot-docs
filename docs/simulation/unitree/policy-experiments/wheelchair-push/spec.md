@@ -1358,6 +1358,31 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.24137930572032928`
     Compared with retained historical bounded `M6q model_10150.pt`, `M6x` is slightly cleaner in aggregate (`0.15625` vs `0.171875` invalid-contact rate) but materially weaker on the real turn objective (`0.1345` vs `0.2176` physical turn score), and it loses most of that gap on the right-turn half. So `M6x` is not retained and was removed from code. The useful conclusion is narrower than before: softening the weak-side dominant attachment can buy some cleanliness, but on this scaffold it buys it by giving away too much two-sign turn authority.
 
+158. I then tested the opposite-side support hypothesis directly:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6y-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-LeftAssist-RelaxedHandle`.
+    `M6y` kept the retained `M6q` dominant-side strength intact, but increased the left-side assist used during right-turn episodes. The intent was to preserve right-turn authority while letting the off-side hand help stabilize the torso and keep the dominant right wrist out of the chair.
+    That branch failed immediately on zero-shot transfer from retained `M6q model_10150.pt`, so I did not run a continuation. Deterministic zero-shot eval came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.17580272792821708`,
+      `turn_motion_score = 0.7473227627575397`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.3668012022972107`,
+      `clean_hold_rate = 0.78125`,
+      `invalid_contact_rate = 0.21875`,
+      `bad_orientation_rate = 0.140625`,
+      `base_height_rate = 0.046875`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17390093406513527`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.22297799587249756`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.05574707816595314`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.5403808951377869`,
+      `clean_hold_rate = 0.5862069129943848`,
+      `invalid_contact_rate = 0.41379308700561523`,
+      `bad_orientation_rate = 0.3103448152542114`
+    The right-turn sign stayed positive, but the physical base score collapsed because the branch immediately reintroduced large invalid contact, bad orientation, and base-height failures on the weak side. So the increased opposite-side assist is not the fix either. I discarded `M6y` from code without spending a train budget on it.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
