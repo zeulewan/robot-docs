@@ -1303,6 +1303,61 @@ The current retained `M0` solution is no longer the original direct-observation 
     while `right_wrist_roll_link` also rose to `469.6550598144531`.
     So `M6v` confirmed a useful physical fact: the dominant-side wrist term can reduce the specific `right_wrist_pitch_link` handle strike, but by itself it does not solve the mixed-turn scaffold. It just trades that leak for neighboring hand/base contact and degrades the left-turn half enough to lose overall. I discarded `M6v` from code. The retained outcome of this round is the evaluator fix plus a narrower diagnosis: the next `M6q`-family branch should change the dominant-side physical contact scaffold, not just add more reward pressure on the same soft geometry.
 
+156. I then tested a more structural command-conditioned hybrid branch:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6w-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedHybrid-RelaxedHandle`.
+    The intent was to use a hard dominant-side hand-handle joint on the commanded turn side and keep a soft assist on the other side, switching that topology with the yaw-command sign. The zero-shot transfer from retained `M6q model_10150.pt` immediately showed that this was not a real control improvement even before training:
+    `physical_turn_motion_score = 0.0035975821035016385`,
+    `turn_motion_score = 0.4383784196572379`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.1019144207239151`,
+    `clean_hold_rate = 1.0`,
+    and `invalid_contact_rate = 0.0`.
+    So `M6w` was physically clean but essentially non-turning and wrong-sign.
+    I still ran a bounded continuation attempt from retained `M6q model_10150.pt`, but that branch exposed a more serious issue: reset-time USD joint mutation on this scaffold triggered Isaac/PhysX hierarchy/xformstack errors during training instead of producing a valid checkpoint ladder. I stopped that run and discarded `M6w` from code. The lesson is specific: command-conditioned reset-time hard/soft joint rewriting is not currently a mechanically valid mixed-turn scaffold in this environment stack.
+
+157. The next branch kept the proven runtime mechanism from `M6q` and changed only the right-turn dominant-side strength:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6x-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedAsymmetricSoft-RelaxedHandle`.
+    `M6x` kept the left-turn dominant side at the retained `M6q` strong-soft values, but softened the right-turn dominant side to reduce the specific right wrist/base intrusion seen in the `M6q` breakdown.
+    Zero-shot transfer from retained `M6q model_10150.pt` came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.1523773732366186`,
+      `turn_motion_score = 0.6750587449409067`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.1960894614458084`,
+      `clean_hold_rate = 0.875`,
+      `invalid_contact_rate = 0.125`,
+      `bad_orientation_rate = 0.0`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.1895894598691404`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.24422724545001984`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.1128378109060148`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.13799212872982025`,
+      `clean_hold_rate = 0.7931034564971924`,
+      `invalid_contact_rate = 0.20689654350280762`
+    That was directionally plausible: it was cleaner than retained `M6q`, especially on the right-turn side, but it gave back a lot of turn authority.
+    I then ran a matched bounded `50`-iteration model-only continuation from retained `M6q model_10150.pt`:
+    `unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6x_freeyaw_heavydamped_mixedturn_observed_command_conditioned_asymmetric_soft_relaxedhandle/2026-05-26_17-10-40_mixedturn_asymmetricsoft_from_m6q10150_modelonly_50it`
+    The run produced one new checkpoint, `model_10199.pt`, and it regressed relative to its own zero-shot start:
+    - aggregate:
+      `physical_turn_motion_score = 0.13453308225478522`,
+      `turn_motion_score = 0.6417798833455891`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.18083100020885468`,
+      `clean_hold_rate = 0.84375`,
+      `invalid_contact_rate = 0.15625`,
+      `bad_orientation_rate = 0.0`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17649054176165396`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.22434625029563904`,
+      `clean_hold_rate = 0.9142857193946838`,
+      `invalid_contact_rate = 0.08571428805589676`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.09141481387408519`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.1283126175403595`,
+      `clean_hold_rate = 0.7586206793785095`,
+      `invalid_contact_rate = 0.24137930572032928`
+    Compared with retained historical bounded `M6q model_10150.pt`, `M6x` is slightly cleaner in aggregate (`0.15625` vs `0.171875` invalid-contact rate) but materially weaker on the real turn objective (`0.1345` vs `0.2176` physical turn score), and it loses most of that gap on the right-turn half. So `M6x` is not retained and was removed from code. The useful conclusion is narrower than before: softening the weak-side dominant attachment can buy some cleanliness, but on this scaffold it buys it by giving away too much two-sign turn authority.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
