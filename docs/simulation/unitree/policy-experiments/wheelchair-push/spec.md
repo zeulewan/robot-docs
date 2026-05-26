@@ -736,6 +736,44 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M4i model_10287.pt` for the light-transition backward rung after contact recovery
     The next useful move is to decide whether the backward ladder can absorb one final dynamics release cleanly, or whether this is the point to stop releasing damping and start mixing in turn command structure.
 
+124. The first turn branch started from the retained free-yaw both-hard motion scaffold:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6a-FreeYawHeavyDampedLeftTurn-Observed-BothHard-RelaxedHandle`.
+    `M6a` keeps the retained `M3f` chair dynamics, sets `lin_vel_x = 0`, `lin_vel_y = 0`, `ang_vel_z = +0.35`, enables the new wheelchair yaw-tracking reward, and suppresses forward-motion-specific shaping. Zero-shot transfer from retained `M3f model_10049.pt` was already a valid left-turn milestone with the corrected turn gate:
+    `physical_turn_motion_score = 0.6742888854518624`,
+    `turn_motion_score = 1.3318987463135272`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.887657642364502`,
+    `wheelchair_command_aligned_yaw_ratio_clipped = 0.8880758881568909`,
+    `wheelchair_yaw_tracking_mean = 0.3497166037559509`,
+    and `wheelchair_yaw_velocity_mean = 0.5226268768310547`.
+    So `M6a` is retained immediately. Left turning exists on the current ladder.
+
+125. The mirrored right-turn task was then added as
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6b-FreeYawHeavyDampedRightTurn-Observed-BothHard-RelaxedHandle`.
+    `M6b` is intentionally the exact mirror of `M6a` except for the command sign: `ang_vel_z = -0.35`. This branch exposed a real asymmetry. Zero-shot transfer from retained `M3f model_10049.pt` stayed physically clean, but the chair still turned left:
+    `wheelchair_yaw_velocity_mean = 0.35613349080085754`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.6341801881790161`,
+    and `turn_motion_score = -0.29364724527113134`.
+    A short low-noise continuation from the same source improved rollout cleanliness but not signed turning. The best checkpoint from that run, `model_10050.pt`, still failed the actual task:
+    `physical_turn_motion_score = 0.0456698986813967`,
+    `turn_motion_score = -0.22634734716266397`,
+    `clean_hold_rate = 0.96875`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.5703282356262207`,
+    and `wheelchair_yaw_velocity_mean = 0.32910603284835815`.
+    So `M6b` is not retained as a right-turn milestone. It is a stable wrong-sign turn.
+
+126. That wrong-sign behavior is not just a bad warm start from one checkpoint. The same right-turn task was probed from the cleaner motion and hold sources as well:
+    - retained `M3e model_9950.pt`: `wheelchair_command_aligned_yaw_ratio_symmetric = -0.6749926209449768`
+    - retained `M4i model_10287.pt`: `wheelchair_command_aligned_yaw_ratio_symmetric = -0.571495771408081`
+    - retained `M2 model_9900.pt`: `wheelchair_command_aligned_yaw_ratio_symmetric = -0.6318390965461731`
+    All of them stayed mostly or fully stable and contact-clean, and all of them still turned left under the negative yaw command. That means the immediate blocker for right turning is not simply a bad source checkpoint. The current both-hard heavy-damped turn scaffold is itself left-biased under the mirrored command.
+
+127. The turn evaluator had to be corrected before retaining any right-turn result. The original `physical_turn_motion_score` could still stay moderately positive when the rollout was stable and contact-clean even if the chair turned the wrong way. The corrected gate now multiplies the physical turn base score by `wheelchair_command_aligned_yaw_ratio_clipped`, so wrong-sign yaw cannot win selection just by surviving cleanly. This matters for future automation too. The wheelchair observed policy already includes signed `velocity_commands`, so the right-turn failure is not explained by a missing yaw command observation. The next right-turn branch should change the turn scaffold itself, most likely by changing grip asymmetry or handle-assist structure, not by blindly running more of the current mirrored both-hard task.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
