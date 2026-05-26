@@ -461,6 +461,21 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M3f model_10049.pt`
     - retained `M3h model_10148.pt`
     The next useful lever is no longer another broad damping jump. It should be either a downstream test from `M3h` into a lighter rung or another narrowly isolated release of the planar damping, using `M3h` rather than `M3f` as the source.
+95. That next isolated release was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3i-FreeYawMediumDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3i` starts from retained `M3h` and keeps the same reward scaffold, the same observations, and the same both-hard grip. The only change is another planar-damping release to `y_velocity_scale = 0.25` and `yaw_velocity_scale = 0.25`. Starting from retained `M3h model_10148.pt`, the bounded continuation selected `model_10200.pt` with:
+    `forward_motion_score = 0.3813771064276807`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.012850762344896793`,
+    `wheelchair_lateral_velocity_abs_mean = 0.007191838696599007`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.02351665124297142`.
+    This is a real improvement over retained `M3h` on the primary motion score while preserving full stability and zero invalid contact. It is still somewhat less laterally clean than retained `M3f`, but because the chair is now freer and the policy remained physically valid, `M3i` is retained as the next rung.
+96. The retained motion ladder is now:
+    - retained `M2 model_9900.pt`
+    - retained `M3e model_9950.pt`
+    - retained `M3f model_10049.pt`
+    - retained `M3h model_10148.pt`
+    - retained `M3i model_10200.pt`
+    The next useful experiment is to keep the same observation/reward scaffold again and either test a still lighter free-yaw damping rung from `M3i`, or start introducing explicit backward/turn command structure on top of this cleaner forward-motion ladder.
 
 ## Autoresearch Harness
 
