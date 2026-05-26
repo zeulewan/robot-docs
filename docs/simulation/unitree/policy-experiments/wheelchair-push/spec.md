@@ -59,6 +59,8 @@ For standing and hold phases:
 3. `wheelchair_invalid_contact` should stay near zero in the collidable task.
 4. Rollouts should not show the torso or hips using the chair as a support surface.
 
+For `M0` specifically, the fixed-chair hard-attachment scaffold currently treats the same-side `*_wrist_yaw_link` as acceptable handle-contact body alongside the rubber hand. This is deliberate: the hard attachment masks direct hand-handle collision, so strict hand-only contact at this phase produces a false invalid-contact failure at reset. Later free-chair phases should restore stricter contact expectations.
+
 For motion phases:
 
 1. The commanded wheelchair motion should match the observed chair motion directionally and approximately in magnitude.
