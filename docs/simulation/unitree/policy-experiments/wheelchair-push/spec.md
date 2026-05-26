@@ -311,6 +311,22 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `model_9901.pt`:
       `bad_orientation_rate = 0.4765625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5234375`, `clean_hold_rate = 0.5234375`, `m0_score = 0.166015625`
 58. The current read is now narrower. The wheel-drive stiffness drop is not the main blocker at the light-damped boundary; the chair body-damping drop is. The strongest boundary result below retained `M1f` is now the raw `M2b` transfer at `m0_score = 0.1796875`. The next useful lever is therefore another finer damping rung or a redesigned body-damping transition, not more same-task continuation on `M2`.
+59. A finer body-damping rung was then added directly below `M1f`:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1g-BodyTransitionDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This stage keeps the retained `M1f` wheel-drive stiffness `1.2` and lowers only the chair body damping partway to `M2a`, using `linear_damping = 0.1625` and `angular_damping = 0.1625`.
+60. Immediate transfer from retained `M1f model_9882.pt` into `M1g` was physically clean and matched the earlier best `M2b` probe:
+    `bad_orientation_rate = 0.46875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.53125`, `clean_hold_rate = 0.53125`, `m0_score = 0.1796875`.
+61. A short model-only continuation on `M1g` did retain that rung locally. The saved checkpoints evaluated to:
+    - `model_9900.pt`:
+      `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`
+    - `model_9901.pt`:
+      `bad_orientation_rate = 0.4609375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5390625`, `clean_hold_rate = 0.5390625`, `m0_score = 0.193359375`
+    So the retained same-stage `M1g` checkpoint is `model_9901.pt`.
+62. But that same-stage improvement did not improve the true body-damping boundary. Immediate transfer from retained `M1g model_9901.pt` into
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2a-LightBodyDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+    fell back to:
+    `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`.
+63. That changes the lesson from this branch. Same-stage bridge improvement is not sufficient as a retention criterion by itself, because `M1g` improved its own deterministic score while failing to improve downstream transfer into `M2a`. Future bridge-stage acceptance should therefore use downstream-stage transfer as a gate, not only same-stage deterministic eval.
 
 ## Autoresearch Harness
 
