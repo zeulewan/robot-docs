@@ -1393,6 +1393,22 @@ The current retained `M0` solution is no longer the original direct-observation 
     events during the same run instead of completing the deterministic evaluation. I stopped the probe and removed `M6z` from code.
     So the current lesson is that this larger right-palm grip relocation is not just unproven; in the present stack it is mechanically unstable enough to hang the zero-shot rollout before metrics are emitted.
 
+160. I then tested a smaller geometry-only right-side scaffold change:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6aa-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightHandleForwardUp-RelaxedHandle`.
+    `M6aa` kept the retained `M6q` strong-soft gains unchanged and did not move the robot hand grip point. Instead it shifted only the right handle target point slightly forward and upward in `right_handle_frame` local coordinates:
+    `right_wheelchair_body_local_positions = [[0.008, 0.0, 0.012]]`.
+    The intent was to keep the successful `M6q` authority mechanism intact while making the dominant right-turn alignment a little less wrist-pitch-heavy than the original contact geometry.
+    This branch also failed before producing a usable zero-shot eval. The smoke run never wrote `/tmp/m6aa_smoke_eval.json`, the Isaac log
+    `isaaclab_2026-05-26_17-40-20.log`
+    stopped at environment/reward-manager initialization, and the live Kit log
+    `kit_20260526_174007.log`
+    showed:
+    `SimulationApp.close: Closing application`
+    followed roughly two minutes later by:
+    `Hang detected`
+    and a declined crash dialog. So `M6aa` reproduced the same failure class as `M6z`: a geometry-only right-side handle-target change that is mechanically unstable enough to hang shutdown before deterministic eval metrics are emitted.
+    I removed `M6aa` from code. The mixed-turn lesson is tighter now: large right-palm relocation and smaller right-handle-target relocation both fail mechanically in the current stack, so the next `M6q`-family branch should stay away from more right-side geometry rewiring and instead change a different part of the right-turn physical scaffold.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
