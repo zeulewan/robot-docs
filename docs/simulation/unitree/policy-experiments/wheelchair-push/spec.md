@@ -885,6 +885,26 @@ The current retained `M0` solution is no longer the original direct-observation 
     - the fixed neutral scaffold therefore does not solve the unified-controller problem
     The next unified branch should not keep adding fixed grip variants. It should move to a command-conditioned attachment or stiffness scaffold that changes left/right dominance with the requested motion.
 
+138. A narrower follow-up tested exactly that next idea, but only on turning before widening it into a full mixed-command scaffold. Two heavy-damped zero-shot probes used bounded soft attachments on both hands, with the left/right spring gains selected from the commanded yaw sign at runtime:
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M6g-FreeYawHeavyDampedLeftTurn-Observed-CommandConditionedSoft-RelaxedHandle`
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M6h-FreeYawHeavyDampedRightTurn-Observed-CommandConditionedSoft-RelaxedHandle`
+    The left-turn probe stayed almost fully stable, but it still produced essentially no yaw:
+    `physical_turn_motion_score = 0.006829837649564176`,
+    `clean_hold_rate = 0.984375`,
+    `invalid_contact_rate = 0.015625`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.005293993279337883`,
+    and `wheelchair_yaw_velocity_mean = 0.0018529020017012954`.
+    The tiny contact leak was concentrated entirely in `wheelchair_base_robot_contact`.
+    The right-turn probe stayed fully stable and fully contact-clean, but it failed the same way:
+    `physical_turn_motion_score = 0.00034842319505137`,
+    `clean_hold_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = -0.00770591339096427`,
+    and `wheelchair_yaw_velocity_mean = 0.002697076415643096`.
+    So command-conditioned stiffness on an all-soft grip is still too weak. It preserves stability, but it does not create usable turning authority.
+
+139. That means the next unified-controller branch should skip further soft-only variants. The likely next mechanism is a command-conditioned hybrid scaffold that changes the attachment class itself, not just the spring gain: for example a dominant hard or spherical attachment on the commanded turn side plus a bounded assist on the opposite hand. The turning blocker is no longer “which side should dominate”; it is that soft-only dominance does not transmit enough yaw authority into the chair.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
