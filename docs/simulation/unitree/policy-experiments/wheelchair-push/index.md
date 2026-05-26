@@ -2,6 +2,8 @@
 
 This page is the working summary for the wheelchair-push policy experiments. Keep current decisions here and move detailed chronological notes to the [archive](archive.md).
 
+The project-level contract for what counts as success lives in the [wheelchair goal spec](spec.md).
+
 ## Current Status
 
 | Item | Value |
