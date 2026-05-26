@@ -1581,6 +1581,36 @@ The current retained `M0` solution is no longer the original direct-observation 
     `invalid_contact_rate = 0.21875`.
     So `M6ah` did answer the curriculum question cleanly: easing only the right-turn command demand makes the branch look better on its own task, but that improvement does not transfer back to the real symmetric mixed-turn objective. I discarded `M6ah` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+168. I then tested a sign-specific authority branch instead of another mirrored gain tweak:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ai-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedRightHarder-RelaxedHandle`.
+    `M6ai` kept the retained `M6q` left-turn scaffold unchanged, but made only the right-turn dominant side a stronger soft approximation of the successful fixed `right-hard / left-soft` topology. Zero-shot from retained `M6q model_10150.pt` was directionally promising on the new task:
+    - `M6ai same-task`:
+      `physical_turn_motion_score = 0.1957863270006181`,
+      `clean_hold_rate = 0.890625`,
+      `invalid_contact_rate = 0.109375`
+    - the right-turn half became materially cleaner than retained `M6q` on its own scaffold:
+      `clean_hold_rate = 0.8275861740112305`,
+      `invalid_contact_rate = 0.17241379618644714`
+      versus retained `M6q` right-turn
+      `clean_hold_rate = 0.6896551847457886`,
+      `invalid_contact_rate = 0.3103448152542114`
+    Because that looked like a real scaffold improvement, I ran a bounded low-noise `50`-iteration model-only continuation from retained `M6q model_10150.pt`:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6ai_freeyaw_heavydamped_mixedturn_observed_command_conditioned_right_harder_relaxedhandle/2026-05-26_19-16-38_mixedturn_rightharder_from_m6q10150_modelonly_std005_50it`
+    and selected checkpoints by downstream standard `M6q physical_turn_motion_score`, not by the easier same-task result. The best downstream checkpoint was `model_10150.pt`, and it still lost to retained `M6q`:
+    - downstream `M6q` from `M6ai model_10150.pt`:
+      `physical_turn_motion_score = 0.19398082470007244`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.140625`
+    - retained `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    The later saved checkpoint `model_10199.pt` regressed harder downstream:
+    `physical_turn_motion_score = 0.18075072226731204`,
+    `clean_hold_rate = 0.734375`,
+    `invalid_contact_rate = 0.265625`.
+    So `M6ai` confirmed a narrower lesson: making the right-turn dominant side harder does clean the branch locally, but it still does not transfer into a better shared mixed-turn controller on the real symmetric `M6q` task. I discarded `M6ai` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
