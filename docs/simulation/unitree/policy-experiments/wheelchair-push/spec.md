@@ -224,6 +224,15 @@ The current retained `M0` solution is no longer the original direct-observation 
 34. A short `20`-iteration warm-start continuation on `M2` from the improved `M1c` `model_9825.pt` regressed again instead of consolidating the gain. The saved `model_9844.pt` checkpoint evaluated to:
     `bad_orientation_rate = 0.5390625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4609375`, `clean_hold_rate = 0.4609375`, `m0_score = 0.056640625`.
     So the light-damped `M2` task is still not the next retained milestone. The current best ladder is `M1b` braked hold, then `M1c` medium-damped bridge, with `M2` still blocked by stage design rather than simple checkpoint quality.
+35. To separate light damping from the stronger `M2` stationary reward shaping, a second light-damped hold probe was added:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-LightDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This uses the same light-damped chair as `M2`, but keeps the `M1b`/`M1c` hold reward scaffold unchanged.
+36. Immediate transfer from the retained `M1c model_9825.pt` into that isolated light-damped hold task matched the prior `M2` transfer:
+    `bad_orientation_rate = 0.4921875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5078125`, `clean_hold_rate = 0.5078125`, `m0_score = 0.138671875`.
+37. A short `20`-iteration warm-start continuation on the isolated light-damped hold task also failed to retain the gain:
+    `model_9844.pt` with
+    `bad_orientation_rate = 0.5078125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4921875`, `clean_hold_rate = 0.4921875`, `m0_score = 0.111328125`.
+    This suggests the main cliff is the chair dynamics/damping drop itself, not only the stronger `M2` stationary reward weights.
 
 ## Autoresearch Harness
 
