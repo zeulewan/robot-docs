@@ -447,6 +447,20 @@ The current retained `M0` solution is no longer the original direct-observation 
     `wheelchair_lateral_velocity_abs_mean = 0.007954314351081848`,
     and `wheelchair_yaw_velocity_abs_mean = 0.026653502136468887`.
     This stayed fully stable and contact-clean, but it was still a slight regression from retained `M3f` on the primary motion score and a clear regression in lateral/yaw cleanliness, so `M3g` was discarded rather than promoted into the retained ladder.
+93. The next probe isolated the damping change instead of changing both dynamics and reward shaping at once:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3h-FreeYawIntermediateDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3h` keeps the retained `M3f` reward scaffold exactly the same and only relaxes the planar damping to an intermediate step (`y_velocity_scale = 0.15`, `yaw_velocity_scale = 0.15`). Starting from retained `M3f model_10049.pt`, the bounded continuation selected `model_10148.pt` with:
+    `forward_motion_score = 0.377978881332092`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.012244169600307941`,
+    `wheelchair_lateral_velocity_abs_mean = 0.004626037552952766`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.015049846842885017`.
+    This is still a small same-task regression from retained `M3f` on pure forward-motion score, but unlike `M3g` it stayed close to `M3f` while materially increasing chair freedom. Because it is fully stable, fully contact-clean, and substantially cleaner than `M3g`, `M3h` is retained as the next motion rung.
+94. The retained motion ladder is now:
+    - retained `M2 model_9900.pt`
+    - retained `M3e model_9950.pt`
+    - retained `M3f model_10049.pt`
+    - retained `M3h model_10148.pt`
+    The next useful lever is no longer another broad damping jump. It should be either a downstream test from `M3h` into a lighter rung or another narrowly isolated release of the planar damping, using `M3h` rather than `M3f` as the source.
 
 ## Autoresearch Harness
 
