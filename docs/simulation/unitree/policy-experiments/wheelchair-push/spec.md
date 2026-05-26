@@ -677,6 +677,36 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M4f model_10200.pt` for the first damping release at `-0.25 m/s`
     - retained `M4g model_10229.pt` for the next medium-damped backward rung on the same clean scaffold
     The next useful move is the same pattern again: keep the backward command fixed and release dynamics one more rung before increasing backward speed.
+120. The next backward rung was that next dynamics-only release:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4h-FreeYawTransitionDampedBackward-Moderate-Observed-BothHard-RelaxedHandle`.
+    `M4h` keeps the retained `M4g` command at `-0.25 m/s`, keeps the same both-hard grip and the same `wheelchair_robot_standoff` shaping, and only relaxes planar damping one more step to the retained forward `M3k` level (`y_velocity_scale = 0.325`, `yaw_velocity_scale = 0.325`). Zero-shot transfer from retained `M4g model_10229.pt` stayed fully physically valid:
+    `physical_command_motion_score = 1.0293966956436635`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.5074198842048645`,
+    `wheelchair_forward_velocity_mean = -0.14734360575675964`,
+    `wheelchair_lateral_velocity_abs_mean = 0.03193458169698715`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.07378971576690674`.
+    This is a small same-task regression versus retained `M4g`, but it is still a real physically valid backward rung at freer chair dynamics.
+121. A short low-noise continuation on `M4h` from retained `M4g model_10229.pt` then wrote two checkpoints: `model_10250.pt` and `model_10258.pt`. Both stayed fully stable and fully contact-clean. The later checkpoint was slightly better and is retained:
+    `physical_command_motion_score = 1.0570705771446227`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `bad_orientation_rate = 0.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_backward_velocity_ratio = 0.5301052927970886`,
+    `wheelchair_forward_velocity_mean = -0.14599697291851044`,
+    `wheelchair_lateral_velocity_abs_mean = 0.03068336471915245`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.07100684940814972`.
+    `M4h` still does not beat retained `M4g` on the primary same-task score, but it recovers part of the zero-shot drop and preserves full physical cleanliness at the freer damping level. The retained backward ladder is now:
+    - retained `M4d model_10148.pt` for physically clean backward creep
+    - retained `M4e model_10197.pt` for the faster heavy-damped backward pull
+    - retained `M4f model_10200.pt` for the first damping release at `-0.25 m/s`
+    - retained `M4g model_10229.pt` for the medium-damped backward rung
+    - retained `M4h model_10258.pt` for the next transition-damped backward rung at the same command
+    The next useful move is the same one again: keep the backward command fixed and release dynamics one more rung before increasing backward speed or mixing in turning commands.
 
 ## Autoresearch Harness
 
