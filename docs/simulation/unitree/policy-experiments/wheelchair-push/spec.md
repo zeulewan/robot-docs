@@ -413,6 +413,32 @@ The current retained `M0` solution is no longer the original direct-observation 
     `wheelchair_forward_velocity_mean = 0.0013121002120897174`, and `invalid_contact_rate = 0.0`.
     Later checkpoints `model_9950.pt` and `model_9999.pt` were worse downstream. This makes `M3d` a discard: it is weaker than the earlier bounded free-chair `M3` continuation (`0.025361138582229645`) and weaker than the denser rail branch `M3b` (`0.015163969621062322`) on the actual forward-motion metric.
 87. The current motion-stage diagnosis is now sharper. Minimal reward cleanup, larger action authority, and a ground-lock/heavy-damping scaffold can produce a stable constrained-stage gait, but under the current observed left-hard/right-soft setup they still do not transfer into real free-chair chair propulsion and they reopen chair-contact exploitation. The next branch should change the motion-stage constraint structure itself rather than keep tuning within `M3b/M3c/M3d`.
+88. That next branch was `M3e`:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3e-GroundLockHeavyDampedForward-Observed-BothHard-RelaxedHandle`.
+    It keeps the same minimal `M3d` motion scaffold but replaces the left-hard/right-soft grip with both-hand hard attachment during the constrained motion bridge. This was a useful correction. Same-stage `M3e` became almost perfectly clean:
+    - selected checkpoint `model_9950.pt`
+    - `forward_motion_score = 0.28799832941731435`
+    - `clean_hold_rate = 0.9921875`
+    - `time_out_rate = 1.0`
+    - `bad_orientation_rate = 0.0`
+    - `invalid_contact_rate = 0.0078125`
+    So the right-hand drift/bracing failure from `M3d` was largely removed.
+89. But forcing transfer from `M3e` back into the older free-chair soft-right `M3` task still underperformed. The best selected downstream checkpoint was `model_9950.pt` with:
+    `forward_motion_score = 0.013585472479462624`, `clean_hold_rate = 0.5078125`, `time_out_rate = 0.5078125`, `bad_orientation_rate = 0.4921875`, and `invalid_contact_rate = 0.0`.
+    That is better than `M3d`, but still weaker than the earlier bounded free-chair continuation (`0.025361138582229645`). The important lesson is that the old left-hard/right-soft free-chair target had become the wrong curriculum target once the cleaner both-hard motion scaffold was introduced.
+90. The next stage therefore promoted the cleaner grip into the freer motion task itself:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3f-FreeYawHeavyDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3f` removes the ground-plane clamp from `M3e` while keeping the both-hard grip and heavy planar damping. This is the first strong positive result on the current motion ladder. Starting from retained `M3e model_9950.pt`, the bounded `M3f` continuation selected `model_10049.pt` with:
+    `forward_motion_score = 0.3852109075058252`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.014253754168748856`,
+    `wheelchair_lateral_velocity_abs_mean = 0.0014836001209914684`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.004958887584507465`.
+    This makes `M3f` the new retained motion rung. It is materially better than every prior `M3/M3a/M3b/M3c/M3d` branch and, more importantly, it stays fully stable and contact-clean while the chair is freer than in the old ground-locked bridges.
+91. The motion curriculum has now changed shape. The retained path is no longer “left-hard/right-soft bridge back into the old free-chair `M3` task.” The better path is:
+    - retained `M2 model_9900.pt`
+    - retained `M3e model_9950.pt` for clean both-hard constrained motion
+    - retained `M3f model_10049.pt` for free-yaw heavy-damped both-hard forward motion
+    The next useful lever is to start reducing the remaining heavy planar damping on `M3f`, not to return to the older soft-right motion family.
 
 ## Autoresearch Harness
 
