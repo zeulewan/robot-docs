@@ -1552,6 +1552,35 @@ The current retained `M0` solution is no longer the original direct-observation 
       without emitting the usual benchmark JSON
     So `M6ag` was not a scored failure like `M6ae` or `M6af`; it was a mechanical hang after the right-side control-point swap. I stopped the eval, removed `M6ag` from code, and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint. The useful lesson is narrow: swapping the weak side from `right_rubber_hand` to `right_wrist_yaw_link` is mechanically unstable in the current stack even when the local grip point is measured from the retained geometry.
 
+167. I then tried an explicit easier right-turn curriculum rung rather than another contact-geometry retune:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ah-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightModerate-RelaxedHandle`.
+    `M6ah` kept the retained `M6q` strong-soft runtime scaffold exactly the same and only reduced the right-turn command range, changing `ang_vel_z` from symmetric `(-0.35, 0.35)` to `(-0.25, 0.35)`. The intent was to create a real bridge rung: keep the shared mixed-turn mechanism, make the weak-side demand slightly easier, and then score any saved checkpoints back on the standard symmetric `M6q` task rather than judging them only on the easier rung.
+    Zero-shot from retained `M6q model_10150.pt` behaved like a real curriculum rung should:
+    - on the easier `M6ah` task:
+      `physical_turn_motion_score = 0.20418132327252228`,
+      `clean_hold_rate = 0.875`,
+      `invalid_contact_rate = 0.125`
+    - but on downstream standard `M6q` it was still just the retained baseline:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    I then ran a bounded low-noise `50`-iteration model-only continuation from retained `M6q model_10150.pt`:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6ah_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_rightmoderate_relaxedhandle/2026-05-26_18-59-25_mixedturn_rightmoderate_from_m6q10150_modelonly_std005_50it`
+    and selected checkpoints by downstream `M6q physical_turn_motion_score`, not same-task score. The better checkpoint on the easier rung was `model_10199.pt`:
+    - `M6ah same-task`:
+      `physical_turn_motion_score = 0.19036498903991295`,
+      `clean_hold_rate = 0.84375`,
+      `invalid_contact_rate = 0.15625`
+    - `M6q downstream`:
+      `physical_turn_motion_score = 0.2007210309635142`,
+      `clean_hold_rate = 0.796875`,
+      `invalid_contact_rate = 0.203125`
+    Even the earlier saved checkpoint `model_10150.pt` was worse downstream:
+    `physical_turn_motion_score = 0.19389275615147705`,
+    `clean_hold_rate = 0.78125`,
+    `invalid_contact_rate = 0.21875`.
+    So `M6ah` did answer the curriculum question cleanly: easing only the right-turn command demand makes the branch look better on its own task, but that improvement does not transfer back to the real symmetric mixed-turn objective. I discarded `M6ah` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
