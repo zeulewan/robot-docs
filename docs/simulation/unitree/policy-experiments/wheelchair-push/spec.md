@@ -500,6 +500,23 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M3i model_10200.pt`
     - retained `M3k model_10299.pt`
     The next useful lever is no longer another big damping jump. It should be either one more small free-yaw damping release from `M3k`, or the first explicit backward/turn command branch on top of this now-cleaner forward ladder.
+100. That next smaller free-yaw damping release from retained `M3k` was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3l-FreeYawLightTransitionDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3l` kept the retained `M3k` reward and observation scaffold unchanged and only relaxed the planar damping again to `y_velocity_scale = 0.35` and `yaw_velocity_scale = 0.35`. Starting from retained `M3k model_10299.pt`, the bounded continuation selected `model_10398.pt` with:
+    `forward_motion_score = 0.38274107103934507`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.007933719083666801`,
+    `wheelchair_lateral_velocity_abs_mean = 0.009734446182847023`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.03142866492271423`.
+    Relative to retained `M3k`, this is again only a narrow primary-score improvement (`0.38274107103934507` vs `0.3819064769661054`). It gives up some raw forward velocity and a bit of yaw/lateral cleanliness, but it does so at still-freer chair dynamics while staying fully stable and fully contact-clean. So `M3l` is retained as the next bridge rung, with the caveat that this branch is now clearly in diminishing-return territory.
+101. The retained forward-motion ladder is now:
+    - retained `M2 model_9900.pt`
+    - retained `M3e model_9950.pt`
+    - retained `M3f model_10049.pt`
+    - retained `M3h model_10148.pt`
+    - retained `M3i model_10200.pt`
+    - retained `M3k model_10299.pt`
+    - retained `M3l model_10398.pt`
+    The next useful branch should stop treating freer forward-only damping release as the only lever. The cleaner next move is either the first explicit backward/turn command-conditioned stage on top of `M3l`, or a motion-stage redesign that rewards more actual chair speed instead of marginal score gains from trading forward speed against lateral/yaw behavior.
 
 ## Autoresearch Harness
 
