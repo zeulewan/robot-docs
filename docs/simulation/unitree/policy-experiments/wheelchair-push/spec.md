@@ -398,6 +398,21 @@ The current retained `M0` solution is no longer the original direct-observation 
     `forward_motion_score = -0.011835230141878147`, `clean_hold_rate = 0.484375`, `time_out_rate = 0.484375`, `wheelchair_forward_velocity_mean = 0.00040248059667646885`, `wheelchair_forward_velocity_ratio_symmetric = 0.004518650472164154`.
     That is effectively the same as the raw retained `M2 -> M3` transfer and confirms that reward-shape cleanup alone is not enough on the current left-hard/right-soft rail bridge.
 83. The motion-stage blocker is therefore narrower now. The clean hold ladder through `M2` is still valid, but the current `M3` family does not bridge into actual chair propulsion. The next useful branch should borrow more aggressively from the older minimal successful motion scaffolds rather than keep iterating inside the current `M3a/M3b/M3c` structure. The most likely levers are a more minimal motion reward set, larger action authority, and possibly a temporarily stronger motion-phase hand constraint.
+84. A fourth motion probe then borrowed more directly from the older minimal successful scaffolds:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3d-GroundLockHeavyDampedForward-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This branch replaced the rail with a ground-lock and heavy planar damping scaffold, increased leg/waist/arm/wrist action authority substantially, relaxed base-height and orientation terminations, strengthened the right soft hand attachment, and reduced the reward set to a sparse motion core around forward progress, backward penalty, lateral/yaw penalties, lean bias, and low-weight hand geometry.
+85. The bounded `M3d` run was stable on its own constrained stage, but it exposed a new failure mode instead of solving motion. The selected same-stage checkpoint was `model_9900.pt` with:
+    `forward_motion_score = 0.2117772144381888`, `clean_hold_rate = 0.6484375`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.02916671335697174`,
+    but also `invalid_contact_rate = 0.3515625`, dominated by
+    `wheelchair_base_robot_contact = 0.34375` and
+    `wheelchair_right_handle_invalid_contact = 0.140625`.
+    So the constrained stage itself was already learning contact abuse instead of a clean push.
+86. Downstream transfer from `M3d` back into the real free-chair `M3` did not help. The best selected downstream checkpoint was again `model_9900.pt` with:
+    `forward_motion_score = 0.005037643201649188`, `clean_hold_rate = 0.5`, `time_out_rate = 0.5`, `bad_orientation_rate = 0.5`,
+    `wheelchair_forward_velocity_mean = 0.0013121002120897174`, and `invalid_contact_rate = 0.0`.
+    Later checkpoints `model_9950.pt` and `model_9999.pt` were worse downstream. This makes `M3d` a discard: it is weaker than the earlier bounded free-chair `M3` continuation (`0.025361138582229645`) and weaker than the denser rail branch `M3b` (`0.015163969621062322`) on the actual forward-motion metric.
+87. The current motion-stage diagnosis is now sharper. Minimal reward cleanup, larger action authority, and a ground-lock/heavy-damping scaffold can produce a stable constrained-stage gait, but under the current observed left-hard/right-soft setup they still do not transfer into real free-chair chair propulsion and they reopen chair-contact exploitation. The next branch should change the motion-stage constraint structure itself rather than keep tuning within `M3b/M3c/M3d`.
 
 ## Autoresearch Harness
 
