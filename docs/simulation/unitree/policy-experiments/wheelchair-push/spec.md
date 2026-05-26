@@ -145,7 +145,12 @@ The current retained `M0` solution is no longer the original direct-observation 
 3. That branch warm-started from the relaxed attached standing checkpoint and reached deterministic `M0` eval with:
    `m0_score = 1.0`, `clean_hold_rate = 1.0`, `invalid_contact_rate = 0.0`.
 4. The next milestone is `Phase 1A` damped release on the same observed-state branch.
-5. The first bounded `Phase 1A` transfer from the clean observed `M0` checkpoint did not reintroduce torso bracing, but it failed through bilateral handle invalid-contact once the chair started moving. That is the current blocker.
+5. The first bounded `Phase 1A` transfer from the clean observed `M0` checkpoint did not reintroduce torso bracing, but it failed through bilateral handle invalid-contact once the chair started moving.
+6. A temporary early-release scaffold that allows same-side `*_wrist_yaw_link` handle contact, matching the `M0` logic, removed the fake handle-contact blow-up and produced a usable `Phase 1A` branch:
+   `clean_hold_rate = 0.8046875`, `invalid_contact_rate = 0.1953125`, `time_out_rate = 0.875`.
+7. The dominant remaining `Phase 1A` failure after that change is no longer handle semantics; it is wheelchair base contact plus release-phase drift and mild balance loss.
+8. A follow-up base-only invalid-contact penalty on top of the relaxed-handle `Phase 1A` branch was a regression. It reduced neither drift nor stability cleanly and dropped deterministic release eval to:
+   `clean_hold_rate = 0.421875`, `invalid_contact_rate = 0.578125`, `time_out_rate = 0.75`.
 
 ## Autoresearch Harness
 
