@@ -327,6 +327,27 @@ The current retained `M0` solution is no longer the original direct-observation 
     fell back to:
     `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`.
 63. That changes the lesson from this branch. Same-stage bridge improvement is not sufficient as a retention criterion by itself, because `M1g` improved its own deterministic score while failing to improve downstream transfer into `M2a`. Future bridge-stage acceptance should therefore use downstream-stage transfer as a gate, not only same-stage deterministic eval.
+64. The bridge harness was then upgraded to support `--evaluate-all-checkpoints`, so bounded bridge runs can score every saved checkpoint and keep the one with the best downstream transfer metric rather than automatically taking the latest checkpoint. Re-scoring the existing `M1g` run with that rule changed the retained result:
+    - `model_9900.pt` was the best downstream-transfer checkpoint, not `model_9901.pt`
+    - same-stage `M1g`: `m0_score = 0.125`
+    - downstream `M2a`: `bad_orientation_rate = 0.4765625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5234375`, `clean_hold_rate = 0.5234375`, `m0_score = 0.166015625`
+65. A fresh downstream-aware `M1g` continuation from retained `M1f model_9882.pt` with lower exploration (`policy_std = 0.005`) improved the real body-damping boundary further. The selected checkpoint from run
+    `2026-05-26_05-52-09_m1g_bridge_std005_from_m1f_9882`
+    was `model_9900.pt`, with:
+    - same-stage `M1g`: `bad_orientation_rate = 0.4765625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5234375`, `clean_hold_rate = 0.5234375`, `m0_score = 0.166015625`
+    - downstream `M2a`: `bad_orientation_rate = 0.453125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.546875`, `clean_hold_rate = 0.546875`, `m0_score = 0.20703125`
+66. That `M1g std=0.005 model_9900.pt` checkpoint is now the best pre-`M2a` bridge source we have seen. It beats the older raw `M2b` probe (`0.1796875`), the earlier `M2a` continuation from `M1f` (`0.166015625`), and the first same-stage-selected `M1g` result.
+67. Using that downstream-selected `M1g model_9900.pt` as the source for a short low-noise `M2a` continuation lifted the actual light-body-damped stage itself. In run
+    `2026-05-26_05-57-38_m2a_from_m1g9900_std005`,
+    the best selected checkpoint was `model_9900.pt` with:
+    `bad_orientation_rate = 0.4453125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5546875`, `clean_hold_rate = 0.5546875`, `m0_score = 0.220703125`.
+    The later saved `model_9919.pt` regressed to `m0_score = 0.15234375`, confirming again that earliest downstream-clean checkpoints can be better than the latest checkpoint on these delicate bridge stages.
+68. The current retained ladder is therefore no longer just a sequence of stage-local optima. The best known path is now:
+    - retained `M1f model_9882.pt`
+    - downstream-selected `M1g std=0.005 model_9900.pt`
+    - retained `M2a model_9900.pt` from `m2a_from_m1g9900_std005`
+    with zero invalid chair contact throughout.
+69. The next experiment should start from that retained `M2a model_9900.pt` and tackle the remaining wheel-drive stiffness drop into full `M2`, using the downstream-aware checkpoint-selection harness from the start rather than relying on the latest checkpoint.
 
 ## Autoresearch Harness
 
