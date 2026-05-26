@@ -291,6 +291,26 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `model_9901.pt`:
       `bad_orientation_rate = 0.515625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.484375`, `clean_hold_rate = 0.484375`, `m0_score = 0.09765625`
 53. The current read is now concrete. `M1d`, `M1e`, and `M1f` all became usable retained bridge rungs once continuation mode was softened to model-only, but the fully light-damped `M2` stage is still blocked even with the improved source checkpoints. The next likely lever is another task-design change at the light-damped boundary, not more continuation on the current `M2` setup.
+54. To isolate that remaining `M1f -> M2` cliff, two split boundary variants were added:
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M2a-LightBodyDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+      changes only the chair body damping to the `M2` level (`linear_damping = 0.15`, `angular_damping = 0.15`) while keeping the retained `M1f` wheel-drive stiffness `1.2`.
+    - `Unitree-G1-29dof-Wheelchair-Scratch-M2b-SoftDriveTransitionHold-Observed-LeftHardRightSoft-RelaxedHandle`
+      keeps the retained `M1f` body damping (`0.175`) while dropping only the wheel/caster drive stiffness to the `M2` level (`1.0`).
+55. Immediate transfer from retained `M1f model_9882.pt` into those split variants showed the boundary is asymmetric:
+    - `M2a` raw transfer:
+      `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`
+    - `M2b` raw transfer:
+      `bad_orientation_rate = 0.46875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.53125`, `clean_hold_rate = 0.53125`, `m0_score = 0.1796875`
+    The stiffness drop alone is therefore less damaging than the body-damping drop alone.
+56. A short model-only continuation on `M2b` did not retain the raw-transfer gain. The saved `model_9901.pt` checkpoint evaluated to:
+    `bad_orientation_rate = 0.4765625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.53125`, `clean_hold_rate = 0.5234375`, `m0_score = 0.173828125`.
+    So `M2b` is useful as a probe, but its retained best is still the immediate-transfer result rather than the continuation.
+57. A short model-only continuation on `M2a` did help a little, but not enough to beat the stronger `M2b` raw transfer. Direct deterministic eval of the saved checkpoints came back at:
+    - `model_9900.pt`:
+      `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`
+    - `model_9901.pt`:
+      `bad_orientation_rate = 0.4765625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5234375`, `clean_hold_rate = 0.5234375`, `m0_score = 0.166015625`
+58. The current read is now narrower. The wheel-drive stiffness drop is not the main blocker at the light-damped boundary; the chair body-damping drop is. The strongest boundary result below retained `M1f` is now the raw `M2b` transfer at `m0_score = 0.1796875`. The next useful lever is therefore another finer damping rung or a redesigned body-damping transition, not more same-task continuation on `M2`.
 
 ## Autoresearch Harness
 
