@@ -179,6 +179,16 @@ The current retained `M0` solution is no longer the original direct-observation 
     - `model_9836.pt`:
       `bad_orientation_rate = 0.2421875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.75`, `clean_hold_rate = 0.75`, `m0_score = 0.5625`
 18. The retained best physically valid post-`M0` branch is therefore still the first one-hand collidable stationary braked `M1` checkpoint, not the later continuation. The current evidence is that the main blocker on the two-hand physical branch is the closed-chain attachment geometry, not missing contact penalties.
+19. The next successful curriculum step keeps the retained left-hand hard attachment and reintroduces the right hand as a bounded soft assist instead of a second hard joint:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1b-BrakedStationary-Observed-LeftHardRightSoft-RelaxedHandle`.
+20. That `M1b` stage preserves the same `585`-dim observation space as the retained one-hand branch, so the one-hand checkpoint can be evaluated there directly. That immediate transfer is the current best physically valid free-chair hold result so far:
+    `bad_orientation_rate = 0.1015625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.8984375`, `clean_hold_rate = 0.8984375`, `m0_score = 0.822265625`.
+21. A short same-stage warm-start continuation from the same checkpoint did not improve that immediate-transfer result. Deterministic eval after 20 iterations gave:
+    - `model_9800.pt`:
+      `bad_orientation_rate = 0.125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.8828125`, `clean_hold_rate = 0.875`, `m0_score = 0.7890625`
+    - `model_9806.pt`:
+      `bad_orientation_rate = 0.171875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.828125`, `clean_hold_rate = 0.828125`, `m0_score = 0.69921875`
+22. The retained best `M1`/early-`M2` scaffold is therefore now the immediate-transfer `M1b` result, not the continuation. The evidence so far says the right direction is staged second-hand reintroduction with bounded compliance, while naïve continued PPO updates on that stage still destabilize orientation.
 
 ## Autoresearch Harness
 
