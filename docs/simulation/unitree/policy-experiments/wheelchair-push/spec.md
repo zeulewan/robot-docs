@@ -1409,6 +1409,58 @@ The current retained `M0` solution is no longer the original direct-observation 
     and a declined crash dialog. So `M6aa` reproduced the same failure class as `M6z`: a geometry-only right-side handle-target change that is mechanically unstable enough to hang shutdown before deterministic eval metrics are emitted.
     I removed `M6aa` from code. The mixed-turn lesson is tighter now: large right-palm relocation and smaller right-handle-target relocation both fail mechanically in the current stack, so the next `M6q`-family branch should stay away from more right-side geometry rewiring and instead change a different part of the right-turn physical scaffold.
 
+161. I then tested whether the dominant weak-side leak was really just a handle-contact classification issue:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ab-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-PitchRelaxedHandle`.
+    `M6ab` kept the retained `M6q` strong-soft scaffold unchanged, but temporarily relaxed handle validity to allow same-side `wrist_pitch` contact at both handles in addition to the already-allowed `rubber_hand` and `wrist_yaw` links. The idea was to see whether the right-turn failure was mostly a bookkeeping problem around `right_wrist_pitch_link` touching the handle rather than a real base/torso contact problem.
+    Deterministic zero-shot eval from retained `M6q model_10150.pt` came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.19427912372222916`,
+      `turn_motion_score = 0.7051787175238131`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.38512715697288513`,
+      `clean_hold_rate = 0.8125`,
+      `invalid_contact_rate = 0.1875`,
+      `bad_orientation_rate = 0.046875`,
+      `base_height_rate = 0.0625`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17755345293315306`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.24824529886245728`,
+      `clean_hold_rate = 0.9142857193946838`,
+      `invalid_contact_rate = 0.08571428805589676`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.16123353407766905`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.5503294467926025`,
+      `clean_hold_rate = 0.6551724076271057`,
+      `invalid_contact_rate = 0.3448275923728943`,
+      `bad_orientation_rate = 0.13793103396892548`
+    The useful detail is in the sensor split. `M6ab` did suppress the specific handle invalid-contact terms hard: `wheelchair_right_handle_invalid_contact` dropped to `4182.55810546875` mean force and `0.125` rate, while `wheelchair_left_handle_invalid_contact` dropped to `595.6119384765625` mean force and `0.09375` rate. But the aggregate branch still lost to retained `M6q` because the contact just migrated into `wheelchair_base_robot_contact`, which stayed large at `6263.53466796875` mean force with `0.1875` rate. So `M6ab` proved the weak side was not primarily misclassified handle contact. It was a real physical collapse into the chair base once the wrist-pitch link stopped being counted against the handles. I discarded `M6ab` from code without spending a training budget on it.
+
+162. I then tested a narrow reward-side cleanup targeted only at the surviving weak-side sensors:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ac-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightTurnContactClean-RelaxedHandle`.
+    `M6ac` kept the retained `M6q` strong-soft attachment scaffold intact and added one extra reward term only during right-turn-command episodes: a filtered invalid-contact penalty on `wheelchair_base_robot_contact` and `wheelchair_right_handle_invalid_contact`.
+    I ran a matched `50`-iteration model-only continuation from retained `M6q model_10150.pt`:
+    `unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6ac_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_rightturn_contactclean_relaxedhandle/2026-05-26_17-55-28_mixedturn_rightturncontact_from_m6q10150_modelonly_50it`
+    The run produced `model_10150.pt` and `model_10199.pt`; deterministic eval of the later checkpoint came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.2022933866306722`,
+      `turn_motion_score = 0.7843994962051511`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.38512715697288513`,
+      `clean_hold_rate = 0.796875`,
+      `invalid_contact_rate = 0.203125`,
+      `bad_orientation_rate = 0.078125`,
+      `base_height_rate = 0.078125`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.17755345293315306`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.24824529886245728`,
+      `clean_hold_rate = 0.9142857193946838`,
+      `invalid_contact_rate = 0.08571428805589676`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.16123353407766905`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.5503294467926025`,
+      `clean_hold_rate = 0.6551724076271057`,
+      `invalid_contact_rate = 0.3448275923728943`,
+      `bad_orientation_rate = 0.13793103396892548`
+    Relative to retained historical bounded `M6q model_10150.pt`, `M6ac` did not solve the actual tradeoff. Aggregate `physical_turn_motion_score` regressed (`0.2023` vs `0.2176`), aggregate `invalid_contact_rate` got worse (`0.203125` vs `0.171875`), and the right-turn half still stayed materially worse on both cleanliness and physical base score. In other words, extra right-turn-only penalty pressure on the already-identified weak-side sensors was not enough to clean the scaffold without also suppressing useful turn behavior. I discarded `M6ac` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
