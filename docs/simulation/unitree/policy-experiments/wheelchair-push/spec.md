@@ -476,6 +476,30 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M3h model_10148.pt`
     - retained `M3i model_10200.pt`
     The next useful experiment is to keep the same observation/reward scaffold again and either test a still lighter free-yaw damping rung from `M3i`, or start introducing explicit backward/turn command structure on top of this cleaner forward-motion ladder.
+97. That first lighter free-yaw damping jump from `M3i` was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3j-FreeYawLightBridgeDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3j` kept the retained `M3i` scaffold unchanged and only relaxed the planar damping further to `y_velocity_scale = 0.40` and `yaw_velocity_scale = 0.40`. Starting from retained `M3i model_10200.pt`, the bounded continuation selected `model_10200.pt` with:
+    `forward_motion_score = 0.37235095321666456`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.008854018524289131`,
+    `wheelchair_lateral_velocity_abs_mean = 0.012296464294195175`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.039986491203308105`.
+    This stayed physically valid, but it regressed from retained `M3i` on the primary motion score, forward velocity, and lateral/yaw cleanliness, so `M3j` was discarded rather than promoted into the retained ladder.
+98. The finer bridge between retained `M3i` and discarded `M3j` was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3k-FreeYawTransitionDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3k` kept the retained `M3i` reward and observation scaffold unchanged and only relaxed the planar damping partway to the failed `M3j` jump (`y_velocity_scale = 0.325`, `yaw_velocity_scale = 0.325`). Starting from retained `M3i model_10200.pt`, the bounded continuation selected `model_10299.pt` with:
+    `forward_motion_score = 0.3819064769661054`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.00948390457779169`,
+    `wheelchair_lateral_velocity_abs_mean = 0.009322939440608025`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.030022375285625458`.
+    Relative to retained `M3i`, this is only a narrow primary-score improvement (`0.3819064769661054` vs `0.3813771064276807`) and it gives up some forward-velocity and yaw/lateral cleanliness. But it does so while keeping the chair freer than `M3i`, and it remains fully stable and fully contact-clean, so `M3k` is retained as the next bridge rung rather than discarded.
+99. The retained forward-motion ladder is now:
+    - retained `M2 model_9900.pt`
+    - retained `M3e model_9950.pt`
+    - retained `M3f model_10049.pt`
+    - retained `M3h model_10148.pt`
+    - retained `M3i model_10200.pt`
+    - retained `M3k model_10299.pt`
+    The next useful lever is no longer another big damping jump. It should be either one more small free-yaw damping release from `M3k`, or the first explicit backward/turn command branch on top of this now-cleaner forward ladder.
 
 ## Autoresearch Harness
 
