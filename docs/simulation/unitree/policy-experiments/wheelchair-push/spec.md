@@ -1383,6 +1383,16 @@ The current retained `M0` solution is no longer the original direct-observation 
       `bad_orientation_rate = 0.3103448152542114`
     The right-turn sign stayed positive, but the physical base score collapsed because the branch immediately reintroduced large invalid contact, bad orientation, and base-height failures on the weak side. So the increased opposite-side assist is not the fix either. I discarded `M6y` from code without spending a train budget on it.
 
+159. The next geometry-only probe changed the dominant right palm grip point itself:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6z-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightGripOutboardRaised-RelaxedHandle`.
+    `M6z` kept the retained `M6q` strong-soft gains exactly as they were, but moved the right palm grip point farther forward, outward, and upward on the `right_rubber_hand` body during mixed-turn control. The goal was to reduce the right-turn `right_wrist_pitch_link` handle strike without weakening right-turn authority the way `M6x` did.
+    This branch did not produce a usable zero-shot eval result. The rollout never wrote `/tmp/m6z_zeroshot_eval.json`, and the active Kit log
+    `kit_20260526_172942.log`
+    reported repeated
+    `Hang detected`
+    events during the same run instead of completing the deterministic evaluation. I stopped the probe and removed `M6z` from code.
+    So the current lesson is that this larger right-palm grip relocation is not just unproven; in the present stack it is mechanically unstable enough to hang the zero-shot rollout before metrics are emitted.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
