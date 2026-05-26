@@ -517,6 +517,17 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M3k model_10299.pt`
     - retained `M3l model_10398.pt`
     The next useful branch should stop treating freer forward-only damping release as the only lever. The cleaner next move is either the first explicit backward/turn command-conditioned stage on top of `M3l`, or a motion-stage redesign that rewards more actual chair speed instead of marginal score gains from trading forward speed against lateral/yaw behavior.
+102. The evaluator now exposes a command-aligned linear motion metric, `command_motion_score`, for signed wheelchair command tasks. It keeps the same stability/contact penalties as `forward_motion_score`, but replaces the raw forward-velocity term with a command-aligned ratio so a physically good backward policy is not scored as failure just because its wheelchair velocity is negative in world X.
+103. The first explicit backward branch from retained `M3l` was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4a-FreeYawLightTransitionDampedBackward-Observed-BothHard-RelaxedHandle`.
+    `M4a` keeps the retained `M3l` free-yaw damping scaffold, flips the commanded X velocity to `-1.0`, zeroes the forward-progress reward, switches `wheelchair_backward_velocity` to the linear form, and biases the robot lean target slightly backward. Zero-shot transfer from retained `M3l model_10398.pt` already produced real backward chair motion, but through obvious failure modes: `command_motion_score = 0.25261443648487325`, `clean_hold_rate = 0.03125`, `time_out_rate = 0.0546875`, `bad_orientation_rate = 0.8984375`, `invalid_contact_rate = 0.890625`.
+104. A bounded continuation on `M4a` selected `model_10497.pt` with:
+    `command_motion_score = 0.2613088373094797`, `clean_hold_rate = 0.1015625`, `time_out_rate = 0.125`, `bad_orientation_rate = 0.84375`, `invalid_contact_rate = 0.75`,
+    `wheelchair_command_aligned_velocity_ratio = 0.4343257546424866`,
+    `wheelchair_forward_velocity_mean = -0.4343257546424866`,
+    `wheelchair_lateral_velocity_abs_mean = 0.0511283352971077`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.1161910742521286`.
+    This confirms that backward chair motion transfers directionally from the forward ladder, but the branch is still not physically usable. The continuation improves survival and reduces invalid contact compared with zero-shot transfer, yet it still relies heavily on bad orientation and chair-body contact. So `M4a` is not retained as a milestone; it is the first diagnostic backward branch, and the next backward iteration needs stronger stability/contact shaping rather than more damping release.
 
 ## Autoresearch Harness
 
