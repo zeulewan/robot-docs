@@ -837,6 +837,54 @@ The current retained `M0` solution is no longer the original direct-observation 
     1. a command-conditioned attachment/stiffness scaffold that changes dominance with the command sign, or
     2. a new neutral two-soft-hands scaffold that is explicitly tested across all four commands before mixed-command training starts.
 
+134. That neutral two-soft-hands branch was then tested directly on the same heavy-damped motion stage. Four zero-shot probes answered it cleanly.
+    The forward probe was
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3n-FreeYawHeavyDampedForward-Observed-BothSoft-RelaxedHandle`.
+    Zero-shot transfer from retained `M3f model_10049.pt` stayed fully stable and fully contact-clean:
+    `physical_command_motion_score = 0.9078378646518104`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_forward_velocity_ratio = 0.3246929943561554`.
+    But it also carried a very large lateral-offset bias:
+    `wheelchair_lateral_offset_norm = 0.9989199042320251`.
+    So the neutral scaffold can translate forward without falling apart, but it is not especially clean.
+
+135. The backward probe was
+    `Unitree-G1-29dof-Wheelchair-Scratch-M4k-FreeYawHeavyDampedBackward-Moderate-Observed-BothSoft-RelaxedHandle`.
+    Zero-shot transfer from retained `M4i model_10287.pt` was the strongest result on this neutral scaffold:
+    `physical_command_motion_score = 1.3269853260484525`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_velocity_ratio_symmetric = 0.6706080436706543`.
+    So the neutral scaffold is fully viable for backward pulling.
+
+136. The turning probes were the real discriminator.
+    Left turn on
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6e-FreeYawHeavyDampedLeftTurn-Observed-BothSoft-RelaxedHandle`
+    stayed fully stable and contact-clean, but it produced almost no yaw authority:
+    `physical_turn_motion_score = 0.005771564438546955`,
+    `clean_hold_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.007619310170412064`,
+    and `wheelchair_yaw_velocity_mean = 0.0026667648926377296`.
+    Right turn on
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6f-FreeYawHeavyDampedRightTurn-Observed-BothSoft-RelaxedHandle`
+    failed the same way:
+    `physical_turn_motion_score = 0.003245790785507999`,
+    `clean_hold_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.003883844008669257`,
+    and `wheelchair_yaw_velocity_mean = -0.001359348651021719`.
+    So the neutral two-soft scaffold is not a viable fixed turning scaffold in either direction. It preserves stability by effectively refusing to generate yaw.
+
+137. That resolves the neutral-scaffold question.
+    - both-soft heavy-damped can support translation, especially backward
+    - both-soft heavy-damped does not provide usable left-turn or right-turn control
+    - the fixed neutral scaffold therefore does not solve the unified-controller problem
+    The next unified branch should not keep adding fixed grip variants. It should move to a command-conditioned attachment or stiffness scaffold that changes left/right dominance with the requested motion.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
