@@ -940,6 +940,48 @@ The current retained `M0` solution is no longer the original direct-observation 
     In practice, `M6k` never reached deterministic evaluation. On repeated runs at `1`, `2`, `16`, and `64` environments, the process exited during environment setup before the manager/observation summary and before any `AUTORESEARCH_METRIC` or output file was written. The same evaluator and source checkpoint completed normally on the neighboring fixed task `M6a`, so this was not a shared evaluator failure. The last emitted `M6k` log lines were the base-environment setup banner plus the standard `/World/envs/.../Robot` rigid-body-property warnings, then silent exit.
     So `M6k` is discarded as a task-construction/runtime failure, not as evidence about mixed-command policy quality. The lesson is narrower: the current env-parity mixed-turn scaffold is not robust inside the present Isaac Lab manager/event path. The next unified-controller branch should stay inside the mechanically proven task family and use a different command-conditioned hybrid mechanism instead of parity-split hard/soft reset events.
 
+143. The next unified-turn probe stayed entirely inside the mechanically proven both-hard heavy-damped scaffold and only mixed the command sign:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6l-FreeYawHeavyDampedMixedTurn-Observed-BothHard-RelaxedHandle`.
+    This is the first clean fixed-scaffold mixed left/right turn task. Zero-shot transfer from retained `M3f model_10049.pt` was fully stable and fully contact-clean:
+    `physical_turn_motion_score = 0.3606618200187657`,
+    `turn_motion_score = 0.5175286232959478`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.10960268974304199`.
+    So the both-hard scaffold does not collapse under mixed-sign yaw commands. The failure mode is narrower: it still carries a strong left-turn bias, but it is no longer a pure wrong-sign branch.
+
+144. A matched `50`-iteration model-only continuation on `M6l` from the same retained `M3f model_10049.pt` produced a small real improvement and is worth retaining as the current mixed-sign baseline:
+    run:
+    `unitree_g1_29dof_wheelchair_scratch_m6l_freeyaw_heavydamped_mixedturn_observed_both_hard_relaxedhandle/2026-05-26_13-05-14_mixedturn_bothhard_from_m3f10049_modelonly_50it`
+    retained checkpoint:
+    `model_10098.pt`
+    deterministic eval:
+    `physical_turn_motion_score = 0.3666192910436557`,
+    `turn_motion_score = 0.5391623704694211`,
+    `clean_hold_rate = 1.0`,
+    `time_out_rate = 1.0`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.12723684310913086`.
+    This is still far from a good unified turn controller, but it is the first retained mixed-sign turn rung that stays fully stable and fully contact-clean while showing nonzero bidirectional command alignment on one fixed attachment topology.
+
+145. A follow-up reward-shaped branch tried to improve that same mixed-sign task without changing the scaffold itself. The discarded task was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6m-FreeYawHeavyDampedMixedTurn-Observed-BothHard-CommandShape-RelaxedHandle`.
+    It kept the same both-hard heavy-damped runtime scaffold as `M6l`, and only changed training rewards so that the hand-handle pose and axis-alignment shaping followed the commanded yaw sign. As expected, zero-shot evaluation was identical to `M6l`, because the runtime policy weights were unchanged. The meaningful check was the same matched `50`-iteration model-only continuation from `M3f model_10049.pt`:
+    run:
+    `unitree_g1_29dof_wheelchair_scratch_m6m_freeyaw_heavydamped_mixedturn_observed_both_hard_command_shape_relaxedhandle/2026-05-26_13-11-32_mixedturn_bothhard_commandshape_from_m3f10049_modelonly_50it`
+    evaluated checkpoint:
+    `model_10098.pt`
+    deterministic eval:
+    `physical_turn_motion_score = 0.3541501714724594`,
+    `turn_motion_score = 0.519261335162446`,
+    `clean_hold_rate = 0.984375`,
+    `time_out_rate = 0.984375`,
+    `bad_orientation_rate = 0.015625`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.11556387692689896`.
+    So this first reward-only command-conditioned branch did not beat retained `M6l`. It slightly regressed the mixed-sign turn score, slightly reduced symmetric yaw alignment, and reintroduced a small orientation failure rate. The conclusion is specific: a fixed both-hard scaffold can support a clean mixed-sign turn baseline, but the first command-conditioned single-side reward shaping pass was not a useful lever. The retained mixed-turn rung stays `M6l model_10098.pt`.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
