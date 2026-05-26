@@ -261,7 +261,36 @@ The current retained `M0` solution is no longer the original direct-observation 
       `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`
     - `model_9863.pt`:
       `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`
-46. The current read is therefore sharper now. `M1d` is the retained best transition checkpoint, `M1e` is a useful finer transfer rung but not yet a retained checkpoint stage, and the standard short continuation still destabilizes the lighter bridge tasks. The next likely lever is either an even shorter or otherwise gentler continuation schedule on `M1e`, or one more small dynamics step before the fully light-damped task, not a broad reward rewrite.
+46. Changing only the continuation mode on `M1e` helped, just as it had on `M1d`. A short model-only continuation from the retained `M1d model_9844.pt` produced a better `M1e` checkpoint:
+    - `model_9850.pt`:
+      `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`
+    - `model_9863.pt`:
+      `bad_orientation_rate = 0.453125`, `base_height_rate = 0.0`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.546875`, `clean_hold_rate = 0.546875`, `m0_score = 0.20703125`
+    The retained `M1e` checkpoint is now `model_9863.pt`.
+47. Re-testing the fully light-damped hold stage from that retained `M1e model_9863.pt` still did not lift the real blocker. Immediate transfer into
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-LightDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+    came back at:
+    `bad_orientation_rate = 0.5078125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4921875`, `clean_hold_rate = 0.4921875`, `m0_score = 0.111328125`.
+    So the `0.20 -> 0.15` dynamics gap was still too large.
+48. To narrow that final remaining gap, a third and finer transition stage was added:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1f-FineTransitionDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`.
+    It keeps the same hold scaffold and reward shaping, but uses a finer transition wheelchair with `linear_damping = 0.175`, `angular_damping = 0.175`, and wheel/caster drive stiffness `1.2`.
+49. Immediate transfer from the retained `M1e model_9863.pt` into `M1f` stayed physically clean but was still only a midpoint result:
+    `bad_orientation_rate = 0.4921875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5078125`, `clean_hold_rate = 0.5078125`, `m0_score = 0.138671875`.
+50. A short model-only continuation on `M1f` from that retained `M1e` checkpoint did retain the new rung. The saved `model_9882.pt` checkpoint evaluated to:
+    `bad_orientation_rate = 0.4375`, `base_height_rate = 0.0078125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5625`, `clean_hold_rate = 0.5625`, `m0_score = 0.228515625`.
+    This is the current retained `M1f` checkpoint.
+51. Using that stronger retained `M1f model_9882.pt` directly on the fully light-damped hold stage helped only slightly. Immediate transfer into
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-LightDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+    reached:
+    `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`.
+    That is marginally better than the old `0.111328125` light-damped transfer, but still not a promotable `M2` result.
+52. A short model-only continuation on the same `M2` stage from retained `M1f model_9882.pt` did not retain the slight gain. One saved checkpoint failed to emit a valid eval result file, and the surviving deterministic eval regressed:
+    - `model_9900.pt`:
+      no valid metrics file emitted by the benchmark wrapper
+    - `model_9901.pt`:
+      `bad_orientation_rate = 0.515625`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.484375`, `clean_hold_rate = 0.484375`, `m0_score = 0.09765625`
+53. The current read is now concrete. `M1d`, `M1e`, and `M1f` all became usable retained bridge rungs once continuation mode was softened to model-only, but the fully light-damped `M2` stage is still blocked even with the improved source checkpoints. The next likely lever is another task-design change at the light-damped boundary, not more continuation on the current `M2` setup.
 
 ## Autoresearch Harness
 
