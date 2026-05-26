@@ -154,6 +154,15 @@ The current retained `M0` solution is no longer the original direct-observation 
 9. A second follow-up that tightened the chair pose and velocity tethering on top of the relaxed-handle branch was also a regression. It overconstrained the release phase, increased wheelchair-base contact again, and dropped deterministic release eval to:
    `clean_hold_rate = 0.4453125`, `invalid_contact_rate = 0.5546875`, `time_out_rate = 0.796875`.
 10. The retained `Phase 1A` baseline is therefore still the relaxed-handle observed branch. The current evidence says the next useful lever is not stronger tethering or sharper invalid-contact penalties; it is a lighter release-phase shaping change that reduces drift without pushing the robot back into the chair.
+11. The first physically relevant `M1` branch is now a collidable braked-chair task with the same temporary same-side wrist-yaw handle allowance used by `M0`. This removed the earlier handle invalid-contact failure entirely, but the first bounded probe still failed purely through orientation instability:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1-BrakedHold-Observed-RelaxedHandle`
+    with deterministic eval
+    `invalid_contact_rate = 0.0`, `bad_orientation_rate = 1.0`, `time_out_rate = 0.0`, `m0_score = -0.75`.
+12. A follow-up `M1` variant that kept the same collidable relaxed-handle scaffold but switched to the stronger stationary-chair reward set improved stability materially without reintroducing invalid contact:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1-BrakedStationary-Observed-RelaxedHandle`
+    with deterministic eval
+    `invalid_contact_rate = 0.0`, `bad_orientation_rate = 0.9296875`, `time_out_rate = 0.0703125`, `clean_hold_rate = 0.0703125`, `m0_score = -0.626953125`.
+13. The current best physically valid post-`M0` branch is therefore the stationary collidable `M1` variant above. Contact semantics are no longer the blocker there; the remaining problem is upright stability under a free braked chair.
 
 ## Autoresearch Harness
 
