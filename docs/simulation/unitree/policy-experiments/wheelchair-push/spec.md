@@ -363,6 +363,29 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M2a model_9900.pt`
     - retained `M2 model_9900.pt`
 73. The next branch should start from retained `M2 model_9900.pt` and begin the first real motion curriculum step on top of the current physically clean hold scaffold, rather than revisiting old bridge rungs or latest-checkpoint heuristics.
+74. The first motion-stage branch on top of retained `M2 model_9900.pt` was
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3-CreepForward-Observed-LeftHardRightSoft-RelaxedHandle`.
+    This stage keeps the physically clean left-hard/right-soft hold scaffold, drops the stationary-chair objective, and introduces a small forward wheelchair command (`0.10 m/s`) with direct chair-motion shaping.
+75. The original motion-stage scalar was too forgiving. `forward_motion_score` had been using a clipped positive-only forward-velocity ratio, so high-survival rail runs could still look good even when the wheelchair was moving backward. The evaluator was then corrected to use a signed symmetric forward-velocity ratio together with lateral/yaw penalties. After that fix, old `M3` and rail results had to be re-read.
+76. Under the corrected directional metric, the retained free-chair `M3` branch is still not a usable forward-motion milestone. Raw transfer from retained `M2 model_9900.pt` into `M3` came back at:
+    `forward_motion_score = -0.013570901006460152`, `clean_hold_rate = 0.484375`, `time_out_rate = 0.484375`, `wheelchair_forward_velocity_mean = 0.0001815104780253023`, `wheelchair_forward_velocity_ratio_symmetric = 0.0023294897258020943`.
+    A bounded free-chair `M3` continuation improved only slightly:
+    `model_9999.pt` with
+    `forward_motion_score = 0.025361138582229645`, `clean_hold_rate = 0.515625`, `time_out_rate = 0.515625`, `wheelchair_forward_velocity_mean = 0.003041791496798396`, `wheelchair_forward_velocity_ratio_symmetric = 0.030903536826372147`.
+    So the chair was still barely moving.
+77. The first rail curriculum branch,
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3a-RailCreepForward-Observed-LeftHardRightSoft-RelaxedHandle`,
+    was then tested to simplify the motion problem. It solved survival on the rail, but after the scoring fix it was clearly a failed branch: the selected same-stage checkpoint `model_9950.pt` had
+    `forward_motion_score = -0.15196037504938428`, `clean_hold_rate = 0.9921875`, `time_out_rate = 0.9921875`, `wheelchair_forward_velocity_mean = -0.07597053050994873`, `wheelchair_forward_velocity_ratio_symmetric = -0.5507431030273438`.
+    Downstream transfer from that rail checkpoint back into free-chair `M3` was still effectively zero-motion:
+    `forward_motion_score = -0.01093803327530615`, `clean_hold_rate = 0.4921875`, `wheelchair_forward_velocity_mean = 0.0001280088904313743`.
+78. A second rail curriculum branch,
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3b-RailDenseForward-Observed-LeftHardRightSoft-RelaxedHandle`,
+    widened the forward-velocity well and made dense chair progress dominate the rail stage. That improved the training signal, but it still did not produce a valid forward-motion milestone. The selected same-stage checkpoint `model_9999.pt` still moved backward on the rail:
+    `forward_motion_score = 0.04777805805206303`, `clean_hold_rate = 0.984375`, `time_out_rate = 0.984375`, `wheelchair_forward_velocity_mean = -0.07038901746273041`, `wheelchair_forward_velocity_ratio_symmetric = -0.5341796875`.
+    Its downstream transfer into free-chair `M3` was slightly positive but still tiny:
+    `forward_motion_score = 0.015163969621062322`, `clean_hold_rate = 0.515625`, `wheelchair_forward_velocity_mean = 0.0014841918600723147`, `wheelchair_forward_velocity_ratio_symmetric = 0.015274673700332642`.
+79. The current motion-stage read is therefore straightforward. The retained hold scaffold through `M2` is physically clean, but the first forward-motion curriculum is still blocked. The corrected metric shows both rail branches failed to produce real forward chair motion, and the best free-chair `M3` result is still only marginally above zero. The next useful lever is not more reward nudging on the same rail tasks; it should be a different motion-stage scaffold or command structure that cannot hide behind backward or near-stationary solutions.
 
 ## Autoresearch Harness
 
@@ -395,3 +418,5 @@ conda run --no-capture-output -n isaaclab python scripts/autoresearch/benchmark_
 For later bridge stages such as `M1f`, `M1g`, and `M2a`, the single-stage `M0` wrapper is not sufficient. Use
 `scripts/autoresearch/benchmark_wheelchair_bridge.py`
 instead so the loop can score both same-stage hold quality and downstream transfer into the next damping rung, with downstream `m0_score` used as the primary metric.
+
+For motion-stage work such as `M3`, the same bridge harness should use `--primary-metric-key forward_motion_score`. That metric is now directional and should be treated as the gate: backward rail motion or near-zero chair motion is not a pass even if the rollout survives cleanly.
