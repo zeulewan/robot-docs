@@ -439,6 +439,14 @@ The current retained `M0` solution is no longer the original direct-observation 
     - retained `M3e model_9950.pt` for clean both-hard constrained motion
     - retained `M3f model_10049.pt` for free-yaw heavy-damped both-hard forward motion
     The next useful lever is to start reducing the remaining heavy planar damping on `M3f`, not to return to the older soft-right motion family.
+92. A first attempt to reduce that planar damping was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M3g-FreeYawMediumDampedForward-Observed-BothHard-RelaxedHandle`.
+    `M3g` relaxed the retained `M3f` scaffold from heavy planar damping to medium planar damping (`y_velocity_scale = 0.25`, `yaw_velocity_scale = 0.25`) while also strengthening the lateral/line/yaw penalties. The bounded continuation from retained `M3f model_10049.pt` selected `model_10100.pt` with:
+    `forward_motion_score = 0.37746714847162366`, `clean_hold_rate = 1.0`, `time_out_rate = 1.0`, `bad_orientation_rate = 0.0`, `invalid_contact_rate = 0.0`,
+    `wheelchair_forward_velocity_mean = 0.011438323184847832`,
+    `wheelchair_lateral_velocity_abs_mean = 0.007954314351081848`,
+    and `wheelchair_yaw_velocity_abs_mean = 0.026653502136468887`.
+    This stayed fully stable and contact-clean, but it was still a slight regression from retained `M3f` on the primary motion score and a clear regression in lateral/yaw cleanliness, so `M3g` was discarded rather than promoted into the retained ladder.
 
 ## Autoresearch Harness
 
