@@ -982,6 +982,31 @@ The current retained `M0` solution is no longer the original direct-observation 
     and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.11556387692689896`.
     So this first reward-only command-conditioned branch did not beat retained `M6l`. It slightly regressed the mixed-sign turn score, slightly reduced symmetric yaw alignment, and reintroduced a small orientation failure rate. The conclusion is specific: a fixed both-hard scaffold can support a clean mixed-sign turn baseline, but the first command-conditioned single-side reward shaping pass was not a useful lever. The retained mixed-turn rung stays `M6l model_10098.pt`.
 
+146. I then tested whether the mixed-sign both-hard baseline simply needed more continuation rather than a new mechanism. A longer bounded model-only continuation from retained `M3f model_10049.pt` was launched on `M6l`:
+    `unitree_g1_29dof_wheelchair_scratch_m6l_freeyaw_heavydamped_mixedturn_observed_both_hard_relaxedhandle/2026-05-26_13-21-47_mixedturn_bothhard_from_m3f10049_modelonly_200it`.
+    I stopped it after the `50/100/150` checkpoint ladder was already written, because that was enough to answer the selection question. The deterministic eval results were:
+    - `model_10050.pt`:
+      `physical_turn_motion_score = 0.3518808914450896`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.1114727109670639`,
+      `clean_hold_rate = 1.0`,
+      `invalid_contact_rate = 0.0`
+    - `model_10100.pt`:
+      `physical_turn_motion_score = 0.35305543622110797`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.09481938183307648`,
+      `clean_hold_rate = 0.984375`,
+      `invalid_contact_rate = 0.0`
+    - `model_10150.pt`:
+      `physical_turn_motion_score = 0.3413121377635986`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.08664043247699738`,
+      `clean_hold_rate = 0.984375`,
+      `invalid_contact_rate = 0.015625`
+    None of those beat the earlier retained short-run checkpoint `M6l model_10098.pt`, which stayed at
+    `physical_turn_motion_score = 0.3666192910436557`
+    and
+    `wheelchair_command_aligned_yaw_ratio_symmetric = 0.12723684310913086`
+    with `clean_hold_rate = 1.0` and `invalid_contact_rate = 0.0`.
+    So the longer same-task continuation is not the right lever. `M6l` does improve slightly from zero-shot, but then drifts backward with more training. The retained mixed-sign turn rung remains the short `50`-iteration `M6l model_10098.pt` result, and the next useful branch should change task structure again rather than just train `M6l` longer.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
