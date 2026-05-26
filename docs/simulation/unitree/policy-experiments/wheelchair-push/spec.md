@@ -241,7 +241,27 @@ The current retained `M0` solution is no longer the original direct-observation 
     That is still materially behind retained `M1c`, but it shows the dynamics cliff is at least partly smoothable with a finer damping ladder.
 40. A short `20`-iteration warm-start continuation on `M1d` did not consolidate that gain. The saved `model_9844.pt` checkpoint regressed to:
     `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`.
-41. The current read is therefore narrow: `M1d` is a useful intermediate transfer stage, but it is not yet a retained checkpoint stage because the same short continuation pattern that hurt the lighter-damped branches still hurts here. The next likely lever is another continuation-mode change or an even finer dynamics ladder, not a larger reward rewrite.
+41. Changing only the continuation mode on `M1d` helped, just as it had on `M1c`. A bounded full-PPO resume from the retained `M1c model_9825.pt` produced a better `M1d` checkpoint:
+    `model_9844.pt` with
+    `bad_orientation_rate = 0.4375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5625`, `clean_hold_rate = 0.5625`, `m0_score = 0.234375`.
+    That is a modest gain over the raw `M1d` transfer, but it is the current retained `M1d` result and shows that optimizer state still matters on the transition stages.
+42. Using that stronger retained `M1d` checkpoint directly on the old light-damped hold stage still did not lift the real blocker. Immediate transfer into
+    `Unitree-G1-29dof-Wheelchair-Scratch-M2-LightDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`
+    came back at:
+    `bad_orientation_rate = 0.5078125`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.4921875`, `clean_hold_rate = 0.4921875`, `m0_score = 0.111328125`.
+    So the `0.25 -> 0.15` dynamics gap was still too large.
+43. To narrow that remaining gap, a second finer transition stage was added:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M1e-LightTransitionDampedHold-Observed-LeftHardRightSoft-RelaxedHandle`.
+    It keeps the same hold scaffold and reward shaping, but uses a lighter transition wheelchair with `linear_damping = 0.20`, `angular_damping = 0.20`, and wheel/caster drive stiffness `1.4`.
+44. Immediate transfer from the retained `M1d model_9844.pt` into `M1e` improved over the failed light-damped stage while staying physically clean:
+    `bad_orientation_rate = 0.46875`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.53125`, `clean_hold_rate = 0.53125`, `m0_score = 0.1796875`.
+    That is still below retained `M1d`, but it is meaningfully better than the old `M2` raw transfer and confirms that the ladder can still be smoothed further by tightening the dynamics step.
+45. A bounded full-PPO continuation on `M1e` did not retain that improvement. Deterministic eval of the saved checkpoints regressed below the raw transfer:
+    - `model_9850.pt`:
+      `bad_orientation_rate = 0.484375`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.515625`, `clean_hold_rate = 0.515625`, `m0_score = 0.15234375`
+    - `model_9863.pt`:
+      `bad_orientation_rate = 0.5`, `invalid_contact_rate = 0.0`, `time_out_rate = 0.5`, `clean_hold_rate = 0.5`, `m0_score = 0.125`
+46. The current read is therefore sharper now. `M1d` is the retained best transition checkpoint, `M1e` is a useful finer transfer rung but not yet a retained checkpoint stage, and the standard short continuation still destabilizes the lighter bridge tasks. The next likely lever is either an even shorter or otherwise gentler continuation schedule on `M1e`, or one more small dynamics step before the fully light-damped task, not a broad reward rewrite.
 
 ## Autoresearch Harness
 
