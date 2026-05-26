@@ -1007,6 +1007,21 @@ The current retained `M0` solution is no longer the original direct-observation 
     with `clean_hold_rate = 1.0` and `invalid_contact_rate = 0.0`.
     So the longer same-task continuation is not the right lever. `M6l` does improve slightly from zero-shot, but then drifts backward with more training. The retained mixed-sign turn rung remains the short `50`-iteration `M6l model_10098.pt` result, and the next useful branch should change task structure again rather than just train `M6l` longer.
 
+147. The next task-structure branch was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6n-FreeYawHeavyDampedMixedTurn-RapidResample-Observed-BothHard-RelaxedHandle`.
+    `M6n` kept the exact same both-hard heavy-damped scaffold as retained `M6l`, but changed the command schedule so the yaw command resampled every `2.0 s` inside the episode instead of staying fixed for the whole rollout. The point was to force sign-switch experience instead of letting the policy treat left and right turns as separate static episodes.
+    I launched a matched `50`-iteration model-only continuation from retained `M6l model_10098.pt`:
+    `unitree_g1_29dof_wheelchair_scratch_m6n_freeyaw_heavydamped_mixedturn_rapidresample_observed_both_hard_relaxedhandle/2026-05-26_13-38-42_rapidresample_from_m6l10098_modelonly_50it`
+    and evaluated the resulting `model_10100.pt` back on the standard downstream `M6l` mixed-turn task. The downstream deterministic eval came back at:
+    `physical_turn_motion_score = 0.3448920971138997`,
+    `turn_motion_score = 0.5191973022185267`,
+    `clean_hold_rate = 0.984375`,
+    `time_out_rate = 0.984375`,
+    `base_height_rate = 0.015625`,
+    `invalid_contact_rate = 0.0`,
+    and `wheelchair_command_aligned_yaw_ratio_symmetric = 0.11264941841363907`.
+    So the rapid intra-episode sign-switch curriculum also failed to beat retained `M6l model_10098.pt`. It stayed physically clean, but it regressed both the mixed-turn physical score and the symmetric yaw-alignment score on the standard task. The conclusion is again narrow: the unified-turn blocker is not just lack of command switching within the episode. The retained mixed-turn rung still stays `M6l model_10098.pt`, and the next branch needs a different control or topology mechanism rather than more schedule tweaks on the same both-hard scaffold.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
