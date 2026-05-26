@@ -1461,6 +1461,45 @@ The current retained `M0` solution is no longer the original direct-observation 
       `bad_orientation_rate = 0.13793103396892548`
     Relative to retained historical bounded `M6q model_10150.pt`, `M6ac` did not solve the actual tradeoff. Aggregate `physical_turn_motion_score` regressed (`0.2023` vs `0.2176`), aggregate `invalid_contact_rate` got worse (`0.203125` vs `0.171875`), and the right-turn half still stayed materially worse on both cleanliness and physical base score. In other words, extra right-turn-only penalty pressure on the already-identified weak-side sensors was not enough to clean the scaffold without also suppressing useful turn behavior. I discarded `M6ac` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+163. I then tested a narrower physical-scaffold change inside the same `M6q` mechanism:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ad-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightForceCapped-RelaxedHandle`.
+    `M6ad` kept the retained `M6q` command-conditioned strong-soft scaffold and changed only one thing: during right-turn-command episodes, the dominant right-hand soft attachment kept the same stiffness/damping but lowered `max_force` from `1000.0` to `700.0`. The intent was to preserve the useful two-sign authority from `M6q` while reducing the specific right-turn chair intrusion without touching rewards or geometry.
+    Deterministic zero-shot transfer from retained `M6q model_10150.pt` came back at:
+    - aggregate:
+      `physical_turn_motion_score = 0.19002076231086962`,
+      `turn_motion_score = 0.6953225670315612`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.2520219683647156`,
+      `clean_hold_rate = 0.875`,
+      `invalid_contact_rate = 0.125`,
+      `base_height_rate = 0.015625`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.186151182969205`,
+      `clean_hold_rate = 0.9428571462631226`,
+      `invalid_contact_rate = 0.05714285746216774`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.1883712823501326`,
+      `clean_hold_rate = 0.7931034564971924`,
+      `invalid_contact_rate = 0.20689654350280762`
+    That zero-shot probe was cleaner than retained `M6q`, especially on the right-turn half, so I spent one matched bounded continuation budget from the same retained source:
+    `unitree_rl_lab/logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6ad_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_rightforcecapped_relaxedhandle/2026-05-26_18-21-17_mixedturn_rightforcecapped_from_m6q10150_modelonly_50it`
+    The saved checkpoints were `model_10150.pt` and `model_10199.pt`. Deterministic eval selected `model_10150.pt` as the better one:
+    - aggregate:
+      `physical_turn_motion_score = 0.18106631314477534`,
+      `turn_motion_score = 0.7072188844904302`,
+      `wheelchair_command_aligned_yaw_ratio_symmetric = 0.27011001110076904`,
+      `clean_hold_rate = 0.8125`,
+      `invalid_contact_rate = 0.1875`,
+      `base_height_rate = 0.03125`
+    - `left_turn_command`:
+      `physical_turn_motion_score = 0.19664195016651886`,
+      `clean_hold_rate = 0.8857142925262451`,
+      `invalid_contact_rate = 0.11428571492433548`
+    - `right_turn_command`:
+      `physical_turn_motion_score = 0.16070869259009296`,
+      `clean_hold_rate = 0.7241379022598267`,
+      `invalid_contact_rate = 0.27586206793785095`
+    Relative to retained historical bounded `M6q model_10150.pt`, `M6ad` did not hold its zero-shot cleanliness advantage once trained. Aggregate `physical_turn_motion_score` regressed (`0.1811` vs `0.2176`), aggregate `clean_hold_rate` regressed (`0.8125` vs `0.828125`), and aggregate `invalid_contact_rate` was still slightly worse (`0.1875` vs `0.171875`). The right-turn half also stayed worse than retained `M6q` on both cleanliness and physical turn score. So lowering only the right-turn dominant-side force cap was not a useful lever. I discarded `M6ad` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
