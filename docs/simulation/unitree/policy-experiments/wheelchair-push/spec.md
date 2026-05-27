@@ -1698,6 +1698,30 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.171875`
     The split confirms the same tradeoff as the earlier source-policy probes. The transferred branch bought back some cleanliness, especially on the right-turn half (`invalid_contact_rate = 0.27586206793785095` versus retained `0.3103448152542114`), but it still gave back too much turn authority to beat retained `M6q` on the real objective. So I discarded `M6aj` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+173. I then tested a narrower reward-only branch instead of another topology change:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6ak-FreeYawHeavyDampedMixedTurn-Observed-CommandConditionedStrongSoft-RightTurnRightGeometry-RelaxedHandle`.
+    `M6ak` kept the retained `M6q` strong-soft attachment scaffold and heavy-damped chair dynamics unchanged, and only added extra right-hand handle-position and axis-alignment shaping during right-turn-command episodes. The intent was to help the weak right-turn half without perturbing the already-good left-turn half. I ran a bounded low-noise `50`-iteration model-only continuation from retained `M6q model_10150.pt`:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6ak_freeyaw_heavydamped_mixedturn_observed_command_conditioned_strong_soft_rightturn_rightgeom_relaxedhandle/2026-05-26_20-11-19_mixedturn_rightturnrightgeom_from_m6q10150_modelonly_std005_50it`
+    The checkpoint selector still chose the earliest saved checkpoint, `model_10150.pt`; the later `model_10199.pt` regressed both same-task and downstream. On the real downstream gate, the selected result was:
+    - downstream `M6q` from `M6ak model_10150.pt`:
+      `physical_turn_motion_score = 0.20529377062368684`,
+      `clean_hold_rate = 0.8125`,
+      `invalid_contact_rate = 0.1875`
+    - retained `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    The weak-side split made the failure mode explicit. The added right-turn geometry reward did not buy back right-turn authority; it reduced it:
+    - downstream `right_turn_command` from `M6ak model_10150.pt`:
+      `physical_turn_motion_score = 0.15259989048398542`,
+      `clean_hold_rate = 0.6206896305084229`,
+      `invalid_contact_rate = 0.37931033968925476`
+    - retained `right_turn_command` from `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21480752041858034`,
+      `clean_hold_rate = 0.6896551847457886`,
+      `invalid_contact_rate = 0.3103448152542114`
+    So `M6ak` answered the question cleanly: extra right-turn-only hand geometry shaping on top of retained `M6q` does not fix the weak side. It makes the branch more constrained, but not more effective. I discarded `M6ak` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
