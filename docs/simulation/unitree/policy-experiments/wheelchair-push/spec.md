@@ -1678,6 +1678,26 @@ The current retained `M0` solution is no longer the original direct-observation 
       `invalid_contact_rate = 0.3103448152542114`
     So `M6u` confirmed the same lesson from a different angle: a cleaner source policy can reduce aggregate contact, but it still does not recover the missing right-turn authority on the real shared `M6q` scaffold. I discarded the `M6u -> M6q` transfer run and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
 
+172. I then tested whether a one-sided curriculum rung would help the retained shared scaffold recover right-turn authority without changing the mixed-turn task itself. The branch was:
+    `Unitree-G1-29dof-Wheelchair-Scratch-M6aj-FreeYawHeavyDampedRightTurnOnly-Observed-CommandConditionedStrongSoft-RelaxedHandle`.
+    `M6aj` kept the retained `M6q` strong-soft scaffold unchanged and only fixed the yaw command to the right-turn value `-0.35` on the same heavy-damped chair dynamics. I ran a bounded low-noise `50`-iteration model-only continuation from retained `M6q model_10150.pt` and scored every saved checkpoint back on the real symmetric mixed-turn `M6q` task:
+    `logs/rsl_rl/unitree_g1_29dof_wheelchair_scratch_m6aj_freeyaw_heavydamped_rightturnonly_observed_command_conditioned_strong_soft_relaxedhandle/2026-05-26_19-54-49_rightturnonly_m6aj_from_m6q10150_modelonly_std005_50it`
+    The branch was bad even on its own task. The selected same-task `M6aj model_10199.pt` only reached:
+    `physical_turn_motion_score = 0.03729120536368411`,
+    `clean_hold_rate = 0.5625`,
+    `invalid_contact_rate = 0.4375`,
+    with the dominant contact leaking into both `wheelchair_base_robot_contact` and `wheelchair_right_handle_invalid_contact`.
+    Downstream transfer back onto symmetric `M6q` was cleaner than the retained checkpoint but still weaker on the primary gate:
+    - transferred `M6q model_10199.pt`:
+      `physical_turn_motion_score = 0.21264488661933387`,
+      `clean_hold_rate = 0.859375`,
+      `invalid_contact_rate = 0.140625`
+    - retained `M6q model_10150.pt`:
+      `physical_turn_motion_score = 0.21757397106793339`,
+      `clean_hold_rate = 0.828125`,
+      `invalid_contact_rate = 0.171875`
+    The split confirms the same tradeoff as the earlier source-policy probes. The transferred branch bought back some cleanliness, especially on the right-turn half (`invalid_contact_rate = 0.27586206793785095` versus retained `0.3103448152542114`), but it still gave back too much turn authority to beat retained `M6q` on the real objective. So I discarded `M6aj` from code and kept retained `M6q model_10150.pt` as the active mixed-turn checkpoint.
+
 ## Autoresearch Harness
 
 The first `codex-autoresearch` loop targeted `M0`, not the later motion phases.
