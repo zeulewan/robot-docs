@@ -75,7 +75,25 @@ bashrunner, basic_service, battery_guard, log_system, master_service, net_switch
 | g1_arm_example / 2.0.0.11 | Arm demo |
 
 !!! warning "Video feed broken"
-    All three WebRTC services (bridge, signal_server, multicast_responder) are abnormal. This is why video streaming does not work, regardless of Wi-Fi speed.
+    App-side WebRTC is broken: `webrtc_bridge`, `webrtc_signal_server`, and `webrtc_multicast_responder` are abnormal. This breaks Unitree Explore video regardless of Wi-Fi speed.
+
+!!! success "Direct Jetson camera workaround"
+    The Jetson `video_hub_pc4` service is working. It reads `/dev/video4` and publishes H.264/RTP multicast to `230.1.1.1:1720` on `eth0`. From the Mac, bridge it over SSH and play it with `ffplay`:
+
+    ```bash
+    sshpass -p '123' ssh \
+      -o StrictHostKeyChecking=no \
+      -o PreferredAuthentications=password \
+      -o PubkeyAuthentication=no \
+      unitree@192.168.123.164 \
+      "gst-launch-1.0 -q udpsrc multicast-group=230.1.1.1 port=1720 auto-multicast=true caps='application/x-rtp,media=(string)video,clock-rate=(int)90000,encoding-name=(string)H264,payload=(int)96' ! rtph264depay ! h264parse config-interval=-1 ! mpegtsmux ! fdsink fd=1" |
+      ffplay -window_title g1-camera-live \
+        -fflags nobuffer -flags low_delay -framedrop \
+        -probesize 32768 -loglevel warning \
+        -f mpegts -i -
+    ```
+
+    This bypasses the robot app's WebRTC stack. It works over the wireless-only routed setup because the Mac can SSH to the Jetson at `192.168.123.164`.
 
 ## App Features
 
@@ -84,7 +102,7 @@ bashrunner, basic_service, battery_guard, log_system, master_service, net_switch
 | Bluetooth pairing | Working |
 | Mode switching (damping, free motor) | Previously working via Jetson hotspot, untested via built-in AP |
 | Joystick control | Previously working via Jetson hotspot, untested via built-in AP |
-| Video feed | Not working (WebRTC services abnormal) |
+| Video feed | App WebRTC broken; direct Jetson `video_hub_pc4` stream works |
 | Firmware updates (OTA) | Needs internet on robot |
 | Machine Inspection | Working (shows network, USB, Bluetooth status) |
 | Service Status | Working (shows all service health) |

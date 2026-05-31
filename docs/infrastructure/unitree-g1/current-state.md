@@ -98,7 +98,9 @@ The Unitree Explore app is **extremely flaky**:
 
 ### 7. Video feed (WebRTC)
 
-All three WebRTC services are abnormal on the locomotion computer. Video streaming is broken.
+All three app-side WebRTC services are abnormal on the locomotion computer, so Unitree Explore video streaming is broken.
+
+Direct Jetson camera streaming works as a workaround. The Jetson runs Unitree's `video_hub_pc4` service on `/dev/video4`, which publishes H.264/RTP multicast on `230.1.1.1:1720` from `eth0`. A short sample decoded successfully at 1280x720, and live playback works from the Mac over the wireless-only GL.iNet -> WG827 route by SSH-bridging that multicast stream.
 
 ## DDS Topic Discovery (77 topics)
 

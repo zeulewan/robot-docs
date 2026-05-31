@@ -258,7 +258,7 @@ This gives internet to the WG827 itself and all WiFi clients connected to the le
 | WG827 router password (RESOLVED) | LuCI web UI at http://192.168.123.1 — Username: `root`, Password: `indr0.com` (zero, not letter O). SSH on port 22 with same credentials. |
 | WG827 is optional | The WG827 is an add-on by Indro Robotics. The G1 has an internal switch connecting neck ports to all internal computers. Direct connection to neck port 4/5 works without the WG827. |
 | Wi-Fi provisioning | App sends WiFi credentials to RK3588's wlan0 via Bluetooth. Currently fails ("Internet Disconnected"). May require Unitree cloud registration. STA-L (local) mode via WG827 router is an untested workaround. |
-| Video feed (WebRTC) | webrtc_bridge, webrtc_signal_server, and webrtc_multicast_responder services are all abnormal on the locomotion computer. Video streaming does not work. |
+| Video feed (WebRTC) | Unitree Explore WebRTC is broken, but direct Jetson `video_hub_pc4` H.264 multicast works when bridged over SSH. See [Unitree Explore App](app.md). |
 | Abnormal services | ai_sport, motion_switcher, ros_bridge, lidar_driver, dex3 services all showing abnormal in app. May be related to Jetson or lidar connectivity. |
 | Two separate subnets | Wired (192.168.123.0/24) and Wi-Fi AP (192.168.12.0/24) are not routed. App works on 192.168.12.x, development SSH works on 192.168.123.x. |
 | HDMI output | Port 9 (USB-C Alt Mode) did not output video even with adapter connected at boot. |
