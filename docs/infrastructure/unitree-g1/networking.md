@@ -89,6 +89,7 @@ Current verified state:
 
 ```text
 Mac Wi-Fi: 192.168.8.109/24, gateway 192.168.8.1
+GL.iNet DHCP reservation: f8:5e:3c:ee:42:5e -> 192.168.8.190
 GL.iNet static route: 192.168.123.0/24 via 192.168.8.190
 WG827 br-lan: 192.168.123.1/24
 WG827 wlan0: GL-MT3000-8b4 client, DHCP 192.168.8.190/24
