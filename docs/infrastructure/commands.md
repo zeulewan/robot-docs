@@ -223,6 +223,27 @@ Expected default gateway:
 192.168.8.1
 ```
 
+Robot subnet over GL.iNet/WG827 Wi-Fi:
+
+```bash
+# Mac should route robot traffic to GL.iNet, not directly on-link
+ifconfig en0 | grep '192.168.123'  # should print nothing
+route -n get 192.168.123.164
+
+# Wireless-only checks
+ping -c 2 192.168.123.1
+ping -c 2 192.168.123.164
+ssh root@192.168.123.1      # WG827, password: indr0.com
+ssh unitree@192.168.123.164 # Jetson, password: 123
+```
+
+Expected route:
+
+```text
+gateway: 192.168.8.1
+interface: en0
+```
+
 ---
 
 ## Isaac Sim

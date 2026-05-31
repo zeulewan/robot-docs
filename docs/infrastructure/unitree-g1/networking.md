@@ -88,13 +88,20 @@ This keeps WPA2-Enterprise, Tailscale, WebFinder, and school-network weirdness o
 Current verified state:
 
 ```text
+Mac Wi-Fi: 192.168.8.109/24, gateway 192.168.8.1
+GL.iNet static route: 192.168.123.0/24 via 192.168.8.190
 WG827 br-lan: 192.168.123.1/24
 WG827 wlan0: GL-MT3000-8b4 client, DHCP 192.168.8.190/24
 WG827 default route: 192.168.8.1
 Jetson eth0: 192.168.123.164/24, default route via 192.168.123.1
 ```
 
+With the route and firewall rules applied, the Mac can reach `192.168.123.1` and `192.168.123.164` over Wi-Fi only. The Ethernet cable between the GL.iNet and robot/WG827 is not required for SSH or Jetson internet.
+
 `UnitreeRouter` AP is disabled in this mode. The WG827 has only one 2.4 GHz radio; AP+STA was tested against both TMU and the GL.iNet AP and was not reliable on this GoldenOrb firmware.
+
+!!! note "Mac route hygiene"
+    Do not keep a `192.168.123.100` alias on the Mac Wi-Fi interface in this routed setup. That alias makes macOS treat the robot subnet as directly on-link and bypass the GL.iNet static route.
 
 ## WG827 Direct TMU Uplink
 

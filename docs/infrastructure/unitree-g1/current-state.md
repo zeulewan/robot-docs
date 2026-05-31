@@ -264,6 +264,7 @@ The WG827 is not internal G1 infrastructure; it is an external/add-on router vel
 TMU Wi-Fi (WPA2-Enterprise)
   |
 GL.iNet GL-MT3000 "eph107" 192.168.8.1
+  |-- static route: 192.168.123.0/24 via 192.168.8.190
   |
 WG827 wlan0 192.168.8.190/24
 WG827 br-lan 192.168.123.1/24
@@ -277,7 +278,11 @@ G1 wired 192.168.123.0/24
 Verified:
 
 - WG827 uses `GL-MT3000-8b4` as its upstream.
+- GL.iNet has a persistent static route for `192.168.123.0/24` via `192.168.8.190`.
+- WG827 firewall allows GL LAN clients (`192.168.8.0/24`) to reach the robot LAN and WG827 SSH/web/ping.
+- Mac Wi-Fi no longer has the old `192.168.123.100` alias; routed access goes through GL.
 - Jetson can ping `1.1.1.1` and resolve DNS through the WG827.
+- Mac can SSH to the WG827 and Jetson with the GL-to-WG827 Ethernet cable unplugged.
 - `UnitreeRouter` AP is disabled in this mode. AP+STA on the same MT7603E radio failed on GoldenOrb; use the GL.iNet AP for operator devices instead.
 - Direct TMU from the WG827 was tested and works as a fallback after fixing the router clock, but it is not the preferred mode.
 
