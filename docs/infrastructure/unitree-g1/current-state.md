@@ -283,6 +283,7 @@ Verified:
 - WG827 uses `GL-MT3000-8b4` as its upstream.
 - GL.iNet has a persistent DHCP reservation for WG827 MAC `f8:5e:3c:ee:42:5e` at `192.168.8.190`.
 - GL.iNet has a persistent static route for `192.168.123.0/24` via `192.168.8.190`.
+- GL.iNet 2.4 GHz backhaul is pinned to channel 11, HE20, with legacy rates disabled.
 - WG827 firewall allows GL LAN clients (`192.168.8.0/24`) to reach the robot LAN and WG827 SSH/web/ping.
 - DHCP is split: GL.iNet serves `192.168.8.0/24`; WG827 serves only `192.168.123.0/24` and ignores DHCP on `wwan2`.
 - Mac Wi-Fi no longer has the old `192.168.123.100` alias; routed access goes through GL.
