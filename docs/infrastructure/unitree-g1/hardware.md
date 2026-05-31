@@ -54,9 +54,9 @@ The WG827 is **not required** for basic ethernet connectivity. The G1 has an int
 **WiFi / TMU uplink:**
 
 - The radio is 2.4GHz only and single-radio.
-- Current verified TMU mode disables the local AP and uses `wlan0` as a TMU WPA2-Enterprise STA uplink.
+- Current verified mode disables the local AP and uses `wlan0` as a client of the GL.iNet 2.4 GHz AP (`GL-MT3000-8b4`).
 - Legacy AP mode used SSID `UnitreeRouter`, password `Temp1234`, bridged to `br-lan` so clients joined 192.168.123.0/24.
-- AP+STA on the same radio failed on GoldenOrb after successful TMU EAP auth, so do not rely on simultaneous uplink and downlink Wi-Fi.
+- AP+STA on the same radio failed on GoldenOrb, so do not rely on simultaneous uplink and downlink Wi-Fi. Use the GL.iNet AP for operator devices.
 
 !!! warning "wwan2 STA interface"
     The router ships with a secondary STA client (`wwan2`) trying to connect to "Hotspot Manager Interface". This shares the same radio and prevents the AP from coming up (interface stays `NO-CARRIER`). It has been disabled. Do not re-enable it.

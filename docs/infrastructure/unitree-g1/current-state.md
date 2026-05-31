@@ -31,7 +31,8 @@ Secondary goals:
 | WG827 router admin | Working | SSH: `root` / `indr0.com`, WiFi SSID: "UnitreeRouter" / "Temp1234" (2.4GHz ch11, WPA2) |
 | Internet via Mac NAT | Working / legacy | pfctl NAT on Mac (192.168.123.100) still works for the G1 wired network. At TMU, Mac `en0` should usually be on the GL.iNet field router rather than directly on TMU. |
 | GL.iNet field router | Working | `eph107`, LAN 192.168.8.1, Tailscale 100.84.198.19, TMU WPA2-Enterprise uplink, WebFinder enabled |
-| WG827 direct TMU uplink | Working | Robot-mounted add-on router uses its single 2.4GHz radio as a TMU WPA2-Enterprise client; local AP disabled. Observed DHCP: 10.16.139.247/20. Jetson reaches internet through 192.168.123.1. |
+| WG827 GL.iNet uplink | Working / preferred | Robot-mounted add-on router uses its single 2.4GHz radio as a client of `GL-MT3000-8b4`; local AP disabled. Observed DHCP: 192.168.8.190/24. Jetson reaches internet through WG827 -> GL.iNet -> TMU. |
+| WG827 direct TMU uplink | Tested fallback | WPA2-Enterprise works with `wpad` and CA certs after the clock is correct. Prefer GL.iNet upstream so the WG827 does not hold TMU credentials or handle 802.1X. |
 | SDK installed on Jetson | Working | unitree_sdk2_python v1.0.1, CycloneDDS 0.10.2, latest git master |
 
 ## What Doesn't Work
@@ -255,14 +256,16 @@ Mac (en13) 192.168.123.100 -- USB ethernet to robot
               +-- Jetson 192.168.12.127 (via wlan0)
 ```
 
-### Current WG827 Direct TMU Mode
+### Current WG827 GL.iNet Uplink Mode
 
 The WG827 is not internal G1 infrastructure; it is an external/add-on router velcroed to the robot and plugged into the robot's 192.168.123.0/24 Ethernet network.
 
 ```text
-TMU Wi-Fi (WPA2-Enterprise, 2.4GHz)
+TMU Wi-Fi (WPA2-Enterprise)
   |
-WG827 wlan0 10.16.139.247/20
+GL.iNet GL-MT3000 "eph107" 192.168.8.1
+  |
+WG827 wlan0 192.168.8.190/24
 WG827 br-lan 192.168.123.1/24
   |
 G1 wired 192.168.123.0/24
@@ -273,10 +276,10 @@ G1 wired 192.168.123.0/24
 
 Verified:
 
-- WG827 has `wpad`, `wpa_supplicant`, `hostapd`, and CA certs installed.
-- TMU PEAP/MSCHAPv2 auth succeeds when the router clock is correct.
+- WG827 uses `GL-MT3000-8b4` as its upstream.
 - Jetson can ping `1.1.1.1` and resolve DNS through the WG827.
-- `UnitreeRouter` AP is disabled in this mode. AP+STA on the same MT7603E radio failed on GoldenOrb after EAP success with `HOSTAPD_START_FAILED`.
+- `UnitreeRouter` AP is disabled in this mode. AP+STA on the same MT7603E radio failed on GoldenOrb; use the GL.iNet AP for operator devices instead.
+- Direct TMU from the WG827 was tested and works as a fallback after fixing the router clock, but it is not the preferred mode.
 
 ## Locomotion Board Port Scan
 
@@ -312,7 +315,7 @@ Scanned from both 192.168.123.x and 192.168.12.x interfaces:
 
 This section is for the robot-mounted WG827 on the G1 wired network, not the GL.iNet field router.
 
-Use this only when the WG827 is not directly joined to TMU. In the current direct-TMU mode, the WG827 itself is the internet gateway and these Mac NAT commands are not needed.
+Use this only when the WG827 is not joined to the GL.iNet or TMU. In the current GL.iNet-uplink mode, the WG827 itself is the robot internet gateway and these Mac NAT commands are not needed.
 
 ```bash
 # SSH into router
