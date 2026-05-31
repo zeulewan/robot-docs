@@ -79,6 +79,34 @@ Internet uplink (TMU directly, or GL.iNet field router Wi-Fi)
 !!! note "WG827 is optional"
     The WG827 router velcroed to the robot's back is an add-on by Indro Robotics for WiFi and optional 4G/5G. The G1 has an **internal L2 switch** that connects neck ports 4/5 directly to the Jetson, locomotion computer, and lidar. The WG827 is not required for basic ethernet connectivity.
 
+## WG827 Direct TMU Uplink
+
+The WG827 can join TMU directly as a WPA2-Enterprise client and route the wired 192.168.123.0/24 robot network to the internet.
+
+This is useful when the router is velcroed to the robot and the robot-side connection is Ethernet. In the verified working mode, the WG827's local AP is disabled and its single 2.4 GHz radio is used only for the TMU uplink.
+
+Verified state:
+
+```text
+WG827 br-lan: 192.168.123.1/24
+WG827 wlan0: TMU WPA2-Enterprise client, DHCP 10.16.139.247/20
+Jetson eth0: 192.168.123.164/24, default route via 192.168.123.1
+```
+
+The current GoldenOrb firmware has the required pieces installed:
+
+- `wpad` provides `wpa_supplicant` / `hostapd`
+- CA bundle exists at `/etc/ssl/certs/ca-certificates.crt`
+- TMU PEAP/MSCHAPv2 authentication succeeds after the router clock is correct
+
+Do **not** try to run TMU uplink and `UnitreeRouter` AP on this firmware unless you are debugging radio behavior. The MT7603E is a single 2.4 GHz radio and GoldenOrb failed to keep AP+STA up together after successful EAP auth (`HOSTAPD_START_FAILED`). STA-only works.
+
+!!! warning "Clock matters"
+    If the WG827 has no internet after boot, its clock can be wrong. TMU 802.1X certificate validation will fail until the date is set or NTP works.
+
+!!! warning "Firmware upgrade"
+    Official OpenWrt release profiles checked for `ramips/mt7621` include several ZBT devices, but not this exact board ID: `zbtlink,zbt-wg827-16m`. Do not flash a nearby WG1608/WG3526 image unless the board DTS/flash layout has been verified.
+
 ## Locomotion Computer Wi-Fi (built-in)
 
 The RK3588 locomotion computer has two Wi-Fi interfaces:
@@ -154,7 +182,12 @@ sudo dnsmasq --interface=br0 --bind-interfaces \
 
 ## Sharing Internet with G1
 
-The field router gives the Mac internet on `en0`, but the G1 wired network is still separate. If the Jetson / WG827 / locomotion board needs internet through the wired 192.168.123.0/24 side, keep using Mac pf NAT with `en0` as the outbound interface.
+The field router gives the Mac internet on `en0`, but the G1 wired network is still separate.
+
+Preferred options:
+
+- Use [WG827 Direct TMU Uplink](#wg827-direct-tmu-uplink) when the router is mounted on the robot and wired to the robot network.
+- Use Mac pf NAT when you are directly cabled to the G1 and do not want the WG827 on TMU.
 
 ### On Mac (zmac)
 
@@ -183,7 +216,7 @@ ip route add default via 192.168.123.100
 echo 'nameserver 8.8.8.8' > /tmp/resolv.conf.auto
 ```
 
-This gives internet to the WG827 itself and all WiFi clients connected to `UnitreeG1-Router`.
+This gives internet to the WG827 itself and all WiFi clients connected to the legacy `UnitreeRouter` AP.
 
 !!! warning
     Do NOT use the WG827's WAN port for internet sharing. OpenWrt blocks SSH on the WAN interface by default, making the router inaccessible. Use the LAN side (neck port) with pfctl NAT instead.

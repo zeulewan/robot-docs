@@ -20,7 +20,7 @@ Unitree G1 EDU humanoid robot with Jetson Orin NX development computer.
 | Locomotion Computer (RK3588) | 192.168.123.161 (eth0) | Rockchip RK3588 (8-core ARM, 8GB RAM, 32GB eMMC). Runs Unitree locomotion controller, WebRTC bridge, network manager, and all proprietary Unitree services. Has integrated WiFi 6 (wlan0 STA + wlan1 AP at 192.168.12.1, SSID "UnitreeG1") and Bluetooth 5.2 (for app pairing). Not open to user (no SSH). |
 | Development Computer (Jetson Orin NX) | 192.168.123.164 | User development PC. Ubuntu 20.04, aarch64. |
 | Livox Mid-360 Lidar | 192.168.123.20 | 3D LIDAR for mapping and obstacle detection |
-| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides WiFi (SSID: UnitreeG1-Router) and optional 4G/5G. SSH/LuCI: root / indr0.com |
+| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides optional WiFi uplink/AP and optional 4G/5G. SSH/LuCI: root / indr0.com |
 
 All boards are connected via an **internal L2 switch** inside the G1 on the 192.168.123.0/24 subnet. Neck ports 4/5 connect directly to this internal switch. The WG827 router is an add-on plugged into the same switch, not the core network bridge.
 
@@ -51,13 +51,18 @@ The WG827 is **not required** for basic ethernet connectivity. The G1 has an int
 !!! success "Credentials"
     Web UI (LuCI) at `http://192.168.123.1` — Username: `root`, Password: `indr0.com` (zero, not letter O). SSH also open on port 22 with same credentials.
 
-**WiFi AP:**
+**WiFi / TMU uplink:**
 
-- **SSID:** `UnitreeG1-Router`, **Password:** `Temp1234`, Channel 11 (2.4GHz), WPA2
-- AP (`wlan0`) is bridged to `br-lan` - clients join 192.168.123.0/24, same subnet as Jetson and locomotion computer
+- The radio is 2.4GHz only and single-radio.
+- Current verified TMU mode disables the local AP and uses `wlan0` as a TMU WPA2-Enterprise STA uplink.
+- Legacy AP mode used SSID `UnitreeRouter`, password `Temp1234`, bridged to `br-lan` so clients joined 192.168.123.0/24.
+- AP+STA on the same radio failed on GoldenOrb after successful TMU EAP auth, so do not rely on simultaneous uplink and downlink Wi-Fi.
 
 !!! warning "wwan2 STA interface"
     The router ships with a secondary STA client (`wwan2`) trying to connect to "Hotspot Manager Interface". This shares the same radio and prevents the AP from coming up (interface stays `NO-CARRIER`). It has been disabled. Do not re-enable it.
+
+!!! warning "OpenWrt upgrade"
+    The running board ID is `zbtlink,zbt-wg827-16m`. Official OpenWrt release profiles checked for `ramips/mt7621` do not include this exact target. Use only an exact WG827 image or a custom build after verifying the DTS and flash layout.
 
 ## Electrical Interface (back of neck)
 

@@ -31,6 +31,7 @@ Secondary goals:
 | WG827 router admin | Working | SSH: `root` / `indr0.com`, WiFi SSID: "UnitreeRouter" / "Temp1234" (2.4GHz ch11, WPA2) |
 | Internet via Mac NAT | Working / legacy | pfctl NAT on Mac (192.168.123.100) still works for the G1 wired network. At TMU, Mac `en0` should usually be on the GL.iNet field router rather than directly on TMU. |
 | GL.iNet field router | Working | `eph107`, LAN 192.168.8.1, Tailscale 100.84.198.19, TMU WPA2-Enterprise uplink, WebFinder enabled |
+| WG827 direct TMU uplink | Working | Robot-mounted add-on router uses its single 2.4GHz radio as a TMU WPA2-Enterprise client; local AP disabled. Observed DHCP: 10.16.139.247/20. Jetson reaches internet through 192.168.123.1. |
 | SDK installed on Jetson | Working | unitree_sdk2_python v1.0.1, CycloneDDS 0.10.2, latest git master |
 
 ## What Doesn't Work
@@ -254,6 +255,29 @@ Mac (en13) 192.168.123.100 -- USB ethernet to robot
               +-- Jetson 192.168.12.127 (via wlan0)
 ```
 
+### Current WG827 Direct TMU Mode
+
+The WG827 is not internal G1 infrastructure; it is an external/add-on router velcroed to the robot and plugged into the robot's 192.168.123.0/24 Ethernet network.
+
+```text
+TMU Wi-Fi (WPA2-Enterprise, 2.4GHz)
+  |
+WG827 wlan0 10.16.139.247/20
+WG827 br-lan 192.168.123.1/24
+  |
+G1 wired 192.168.123.0/24
+  +-- Jetson eth0 192.168.123.164, default via 192.168.123.1
+  +-- Locomotion board 192.168.123.161
+  +-- Livox 192.168.123.20
+```
+
+Verified:
+
+- WG827 has `wpad`, `wpa_supplicant`, `hostapd`, and CA certs installed.
+- TMU PEAP/MSCHAPv2 auth succeeds when the router clock is correct.
+- Jetson can ping `1.1.1.1` and resolve DNS through the WG827.
+- `UnitreeRouter` AP is disabled in this mode. AP+STA on the same MT7603E radio failed on GoldenOrb after EAP success with `HOSTAPD_START_FAILED`.
+
 ## Locomotion Board Port Scan
 
 Scanned from both 192.168.123.x and 192.168.12.x interfaces:
@@ -284,11 +308,11 @@ Scanned from both 192.168.123.x and 192.168.12.x interfaces:
 
 **Known SDK bug:** Writing `Request_` type objects with CycloneDDS 0.10.2 on ARM64 (Jetson) causes segfaults. The `binary` field (`sequence[uint8]`) serialization appears broken.
 
-## Router Config (must re-apply after each robot reboot)
+## Legacy Mac-NAT Router Config
 
-This section is for the robot-mounted WG827 on the G1 internal network, not the GL.iNet field router.
+This section is for the robot-mounted WG827 on the G1 wired network, not the GL.iNet field router.
 
-The WG827 router firewall blocks forwarding by default and loses its default route on reboot. Run these commands after each power cycle to give the locomotion board internet:
+Use this only when the WG827 is not directly joined to TMU. In the current direct-TMU mode, the WG827 itself is the internet gateway and these Mac NAT commands are not needed.
 
 ```bash
 # SSH into router
