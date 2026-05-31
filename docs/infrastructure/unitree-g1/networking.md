@@ -79,13 +79,28 @@ Internet uplink (TMU directly, or GL.iNet field router Wi-Fi)
 !!! note "WG827 is optional"
     The WG827 router velcroed to the robot's back is an add-on by Indro Robotics for WiFi and optional 4G/5G. The G1 has an **internal L2 switch** that connects neck ports 4/5 directly to the Jetson, locomotion computer, and lidar. The WG827 is not required for basic ethernet connectivity.
 
+## WG827 Uplink Through GL.iNet
+
+The preferred robot-mounted setup is to let the GL.iNet field router handle TMU and let the WG827 use the GL.iNet 2.4 GHz AP as its upstream.
+
+This keeps WPA2-Enterprise, Tailscale, WebFinder, and school-network weirdness on the GL.iNet, which is much better suited to that job. The WG827 just NATs the wired 192.168.123.0/24 robot network out through the GL.iNet.
+
+Current verified state:
+
+```text
+WG827 br-lan: 192.168.123.1/24
+WG827 wlan0: GL-MT3000-8b4 client, DHCP 192.168.8.190/24
+WG827 default route: 192.168.8.1
+Jetson eth0: 192.168.123.164/24, default route via 192.168.123.1
+```
+
+`UnitreeRouter` AP is disabled in this mode. The WG827 has only one 2.4 GHz radio; AP+STA was tested against both TMU and the GL.iNet AP and was not reliable on this GoldenOrb firmware.
+
 ## WG827 Direct TMU Uplink
 
-The WG827 can join TMU directly as a WPA2-Enterprise client and route the wired 192.168.123.0/24 robot network to the internet.
+The WG827 can join TMU directly as a WPA2-Enterprise client and route the wired 192.168.123.0/24 robot network to the internet, but this is a fallback, not the preferred setup.
 
-This is useful when the router is velcroed to the robot and the robot-side connection is Ethernet. In the verified working mode, the WG827's local AP is disabled and its single 2.4 GHz radio is used only for the TMU uplink.
-
-Verified state:
+Verified direct-TMU state:
 
 ```text
 WG827 br-lan: 192.168.123.1/24
@@ -93,13 +108,13 @@ WG827 wlan0: TMU WPA2-Enterprise client, DHCP 10.16.139.247/20
 Jetson eth0: 192.168.123.164/24, default route via 192.168.123.1
 ```
 
-The current GoldenOrb firmware has the required pieces installed:
+The current GoldenOrb firmware has the required direct-TMU pieces installed:
 
 - `wpad` provides `wpa_supplicant` / `hostapd`
 - CA bundle exists at `/etc/ssl/certs/ca-certificates.crt`
 - TMU PEAP/MSCHAPv2 authentication succeeds after the router clock is correct
 
-Do **not** try to run TMU uplink and `UnitreeRouter` AP on this firmware unless you are debugging radio behavior. The MT7603E is a single 2.4 GHz radio and GoldenOrb failed to keep AP+STA up together after successful EAP auth (`HOSTAPD_START_FAILED`). STA-only works.
+Do **not** try to run TMU uplink and `UnitreeRouter` AP on this firmware unless you are debugging radio behavior. The MT7603E is a single 2.4 GHz radio and GoldenOrb failed to keep AP+STA up together after successful EAP auth (`HOSTAPD_START_FAILED`). STA-only works, but GL.iNet upstream is cleaner.
 
 !!! warning "Clock matters"
     If the WG827 has no internet after boot, its clock can be wrong. TMU 802.1X certificate validation will fail until the date is set or NTP works.
@@ -186,8 +201,9 @@ The field router gives the Mac internet on `en0`, but the G1 wired network is st
 
 Preferred options:
 
-- Use [WG827 Direct TMU Uplink](#wg827-direct-tmu-uplink) when the router is mounted on the robot and wired to the robot network.
-- Use Mac pf NAT when you are directly cabled to the G1 and do not want the WG827 on TMU.
+- Use [WG827 Uplink Through GL.iNet](#wg827-uplink-through-glinet) when the GL.iNet field router is available.
+- Use [WG827 Direct TMU Uplink](#wg827-direct-tmu-uplink) only as a fallback when the GL.iNet is unavailable.
+- Use Mac pf NAT when you are directly cabled to the G1 and do not want the WG827 handling upstream internet.
 
 ### On Mac (zmac)
 
