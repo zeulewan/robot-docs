@@ -53,6 +53,14 @@ When direct connections fail (school NAT, mobile hotspot symmetric NAT), devices
 
 Do not set `--relay-server-static-endpoints` -- Bell PPPoE IP is dynamic. STUN + UPnP discovers the public IP automatically.
 
+On 2026-05-24, `tsrelay` had a stale static endpoint (`142.114.208.227:40000`). Peer-relay sessions were allocated but stuck at `<no handshake>`. Clear stale endpoint config with:
+
+```bash
+sudo tailscale set --relay-server-static-endpoints=
+```
+
+Workstation needed Tailscale `1.98.3`; with `1.96.4`, relay candidates were visible but traffic still preferred DERP in cases where peer relay should have been available.
+
 ### Connection priority (automatic)
 
 ```mermaid
