@@ -100,6 +100,12 @@ With the route and firewall rules applied, the Mac can reach `192.168.123.1` and
 
 `UnitreeRouter` AP is disabled in this mode. The WG827 has only one 2.4 GHz radio; AP+STA was tested against both TMU and the GL.iNet AP and was not reliable on this GoldenOrb firmware.
 
+DHCP roles are split by subnet:
+
+- GL.iNet serves `192.168.8.0/24` for Mac/iPad/operator devices.
+- WG827 serves only `192.168.123.0/24` for robot-side LAN clients.
+- WG827 DHCP is explicitly ignored on `wwan2`/`wlan0`, so it does not serve the GL.iNet LAN.
+
 !!! note "Mac route hygiene"
     Do not keep a `192.168.123.100` alias on the Mac Wi-Fi interface in this routed setup. That alias makes macOS treat the robot subnet as directly on-link and bypass the GL.iNet static route.
 

@@ -282,6 +282,7 @@ Verified:
 - WG827 uses `GL-MT3000-8b4` as its upstream.
 - GL.iNet has a persistent static route for `192.168.123.0/24` via `192.168.8.190`.
 - WG827 firewall allows GL LAN clients (`192.168.8.0/24`) to reach the robot LAN and WG827 SSH/web/ping.
+- DHCP is split: GL.iNet serves `192.168.8.0/24`; WG827 serves only `192.168.123.0/24` and ignores DHCP on `wwan2`.
 - Mac Wi-Fi no longer has the old `192.168.123.100` alias; routed access goes through GL.
 - Jetson can ping `1.1.1.1` and resolve DNS through the WG827.
 - Mac can SSH to the WG827 and Jetson with the GL-to-WG827 Ethernet cable unplugged.
