@@ -3,6 +3,9 @@
 !!! warning "Robot is in dormant state - cannot be activated"
     The G1 locomotion board (RK3588) boots and runs all DDS services, but publishes zero data on any topic. The robot appears stuck in a boot standby state. WiFi STA mode is broken, SSH is closed, jailbreak is patched on firmware 1.4.5. The app connection is flaky (AP WiFi intermittent). Without activation via app or remote controller, the robot cannot be controlled.
 
+!!! note "TMU field network update"
+    A GL.iNet GL-MT3000 field router (`eph107`) now handles TMU WPA2-Enterprise uplink, local 192.168.8.0/24 Wi-Fi, Tailscale, and WebFinder. This is the preferred operator network at school. It does not replace the G1 wired 192.168.123.0/24 DDS network; use it as the Mac's internet/tailnet side while keeping USB Ethernet to the robot for DDS work.
+
 ## Goal
 
 Get the robot into an active state where it can be controlled via the Unitree SDK2 over wired Ethernet DDS.
@@ -26,7 +29,8 @@ Secondary goals:
 | Bluetooth pairing | Working | App pairs via BLE to locomotion computer (RK3588), MAC: FC:23:CD:91:30:B4 |
 | BLE protocol communication | Working | Full handshake, serial number retrieval, WiFi config commands all ACK'd. Serial: E21D6000P9GCAE |
 | WG827 router admin | Working | SSH: `root` / `indr0.com`, WiFi SSID: "UnitreeRouter" / "Temp1234" (2.4GHz ch11, WPA2) |
-| Internet via Mac NAT | Working | pfctl NAT on Mac (192.168.123.100), router + Jetson have internet |
+| Internet via Mac NAT | Working / legacy | pfctl NAT on Mac (192.168.123.100) still works for the G1 wired network. At TMU, Mac `en0` should usually be on the GL.iNet field router rather than directly on TMU. |
+| GL.iNet field router | Working | `eph107`, LAN 192.168.8.1, Tailscale 100.84.198.19, TMU WPA2-Enterprise uplink, WebFinder enabled |
 | SDK installed on Jetson | Working | unitree_sdk2_python v1.0.1, CycloneDDS 0.10.2, latest git master |
 
 ## What Doesn't Work
@@ -209,10 +213,28 @@ The ros_bridge process provides ROS2 service endpoints:
 
 ## Network Topology
 
+### Current TMU Operator Network
+
+```
+TMU Wi-Fi (WPA2-Enterprise)
+  |
+GL.iNet GL-MT3000 "eph107"
+  |-- wwan: TMU DHCP, observed 10.16.144.207/20
+  |-- LAN: 192.168.8.1/24
+  |-- Tailscale: 100.84.198.19
+  |
+  +-- Mac Wi-Fi (en0) 192.168.8.109
+  +-- operator devices / tablets / robot tools 192.168.8.x
+```
+
+The GL.iNet gives the Mac stable internet and tailnet access. For SDK/DDS work, the Mac still uses a separate USB Ethernet adapter to the G1 neck port.
+
+### Legacy G1 Wired Network
+
 ```
 Internet
   |
-Mac (en0) -- NAT via pfctl
+Mac (en0) -- NAT via pfctl (now usually through GL.iNet Wi-Fi)
   |
 Mac (en13) 192.168.123.100 -- USB ethernet to robot
   |
@@ -263,6 +285,8 @@ Scanned from both 192.168.123.x and 192.168.12.x interfaces:
 **Known SDK bug:** Writing `Request_` type objects with CycloneDDS 0.10.2 on ARM64 (Jetson) causes segfaults. The `binary` field (`sequence[uint8]`) serialization appears broken.
 
 ## Router Config (must re-apply after each robot reboot)
+
+This section is for the robot-mounted WG827 on the G1 internal network, not the GL.iNet field router.
 
 The WG827 router firewall blocks forwarding by default and loses its default route on reboot. Run these commands after each power cycle to give the locomotion board internet:
 

@@ -186,6 +186,45 @@ isaac-clip watch unitree-wheelchair-relaxed-push-attached --every-iterations 250
 
 ---
 
+## Field Router
+
+GL.iNet router checks for the TMU field network. See [Field Router](networking/field-router.md).
+
+```bash
+# SSH to router over Tailscale MagicDNS or local LAN
+ssh eph107
+
+# Check TMU Wi-Fi uplink
+ifstatus wwan
+uci show wireless.tmu_sta | sed "s/password=.*/password='<hidden>'/"
+ip route
+
+# Check Tailscale and WebFinder
+tailscale status --self
+web-finder status --debug
+tailscale serve status
+
+# Restart router-side network services if needed
+wifi reload
+ifup wwan
+/etc/init.d/tailscale restart
+```
+
+Mac should use GL.iNet Wi-Fi as its default route at TMU:
+
+```bash
+route -n get default
+ping -c 2 192.168.8.1
+```
+
+Expected default gateway:
+
+```text
+192.168.8.1
+```
+
+---
+
 ## Isaac Sim
 
 ### Launching

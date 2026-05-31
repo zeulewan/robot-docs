@@ -38,8 +38,9 @@
 ### Networking
 
 - [Tailscale Setup](infrastructure/networking/tailscale.md): Tailscale VPN ACL policy, peer relay setup, connection priority.
+- [Field Router](infrastructure/networking/field-router.md): GL.iNet GL-MT3000 TMU WPA2-Enterprise uplink, 192.168.8.0/24 field LAN, Tailscale, WebFinder, and recovery commands.
 - [NAT Troubleshooting](infrastructure/networking/nat.md): NAT concepts (EIM/EDM, EIF/EDF), CGNAT, STUN, UPnP, troubleshooting commands.
-- [Network Topology](infrastructure/networking/topology.md): Toronto/Kingston network layout, Tailscale devices, throughput benchmarks.
+- [Network Topology](infrastructure/networking/topology.md): TMU field router, Toronto/Kingston network layout, Tailscale devices, throughput benchmarks.
 
 ### Commands
 

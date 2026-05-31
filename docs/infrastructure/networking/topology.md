@@ -2,6 +2,33 @@
 
 Network layout across Toronto and Kingston locations with Tailscale VPN.
 
+## Current Field Network
+
+At TMU / school, the portable GL.iNet router is the preferred network anchor. It joins TMU Wi-Fi with WPA2-Enterprise and gives the Mac plus lab devices a private LAN.
+
+| | |
+|---|---|
+| **Router** | GL.iNet GL-MT3000 / Beryl AX |
+| **Hostname** | `eph107` |
+| **LAN** | 192.168.8.0/24, gateway 192.168.8.1 |
+| **Tailscale IP** | 100.84.198.19 |
+| **Uplink** | TMU Wi-Fi, WPA2-Enterprise PEAP/MSCHAPv2 |
+| **Current uplink IP** | DHCP, observed as 10.16.144.207/20 |
+| **Admin UI** | `https://eph107.tailee9084.ts.net/` or LAN `http://192.168.8.1/` |
+| **WebFinder** | `https://eph107.tailee9084.ts.net:9321/.well-known/web-finder.json` |
+
+```mermaid
+flowchart TD
+    TMU["TMU Wi-Fi<br/>DHCP 10.16.x.x"] --> GL["eph107<br/>GL-MT3000<br/>192.168.8.1"]
+    GL --> ZMACS["zmac<br/>192.168.8.109<br/>TS: 100.117.222.41"]
+    GL --> LAB["robot tools / tablets / lab devices<br/>192.168.8.x"]
+    GL --> TSNET["Tailnet<br/>eph107: 100.84.198.19"]
+```
+
+See [Field Router](field-router.md) for setup, recovery, and WebFinder details.
+
+---
+
 ## Locations
 
 ### Toronto (Home) -- Primary location
@@ -85,6 +112,7 @@ flowchart TD
 | Device | Hostname | Tailscale IP | OS | Tags | Location |
 |--------|----------|-------------|-----|------|----------|
 | zmac | zeul-mac | 100.117.222.41 | macOS | tag:clients | Toronto |
+| field-router | eph107 | 100.84.198.19 | OpenWrt | -- | TMU / mobile |
 | tsrelay | tsrelay | 100.95.40.19 | Linux | tag:relay | Toronto |
 | workstation | workstation | 100.101.214.44 | Linux | tag:clients | Kingston |
 | workstation-kvm | workstation-kvm | 100.67.214.102 | Linux | -- | Kingston |
