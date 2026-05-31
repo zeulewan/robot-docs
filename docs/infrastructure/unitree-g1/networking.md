@@ -1,5 +1,41 @@
 # Networking
 
+## Preferred Field Network at TMU
+
+Use the GL.iNet field router as the internet and tailnet gateway.
+
+```text
+TMU Wi-Fi (WPA2-Enterprise)
+    |
+GL.iNet GL-MT3000 "eph107"
+    - uplink: TMU via 5 GHz station
+    - LAN: 192.168.8.0/24
+    - Tailscale: 100.84.198.19
+    - Web UI: https://eph107.tailee9084.ts.net/
+    |
+Mac Wi-Fi: 192.168.8.x
+robot tools / tablets / dev devices: 192.168.8.x
+```
+
+The Mac should connect to the GL.iNet Wi-Fi, not TMU directly, when using this setup:
+
+```bash
+networksetup -setairportnetwork en0 GL-MT3000-8b4-5G '<router-wifi-password>'
+route -n get default
+```
+
+Expected:
+
+```text
+gateway: 192.168.8.1
+interface: en0
+```
+
+The router handles the ugly part: TMU WPA2-Enterprise / PEAP / MSCHAPv2. Keep TMU credentials out of this repo. See [Field Router](../networking/field-router.md).
+
+!!! note
+    This router does not magically bridge into the G1's internal 192.168.123.0/24 DDS network. For wired DDS/Jetson work, still connect the Mac USB Ethernet adapter to G1 neck port 4/5. The field router is the clean internet/tailnet/operator LAN.
+
 ## Connecting from Mac
 
 1. Plug USB-A to USB-C ethernet adapter into Mac
@@ -17,10 +53,10 @@ ssh unitree@192.168.123.164
 !!! warning
     The Mac's built-in ethernet adapters (en4/5/6) are dead (Thunderbolt virtual ports, show "media: none"). Must use the USB ethernet adapter.
 
-## Network Topology (at school)
+## Legacy Direct-Mac Topology
 
 ```
-School Wi-Fi (10.17.x.x)
+Internet uplink (TMU directly, or GL.iNet field router Wi-Fi)
     |
   Mac en0 (Wi-Fi) ---- internet
   Mac en13 (USB ethernet) ---- 192.168.123.100
@@ -118,10 +154,12 @@ sudo dnsmasq --interface=br0 --bind-interfaces \
 
 ## Sharing Internet with G1
 
+The field router gives the Mac internet on `en0`, but the G1 wired network is still separate. If the Jetson / WG827 / locomotion board needs internet through the wired 192.168.123.0/24 side, keep using Mac pf NAT with `en0` as the outbound interface.
+
 ### On Mac (zmac)
 
 ```bash
-# Enable IP forwarding and NAT (en0 = WiFi with internet)
+# Enable IP forwarding and NAT (en0 = Wi-Fi with internet, usually via GL.iNet)
 sudo sysctl -w net.inet.ip.forwarding=1
 echo 'nat on en0 from 192.168.123.0/24 to any -> (en0)' | sudo pfctl -ef -
 ```
@@ -149,6 +187,9 @@ This gives internet to the WG827 itself and all WiFi clients connected to `Unitr
 
 !!! warning
     Do NOT use the WG827's WAN port for internet sharing. OpenWrt blocks SSH on the WAN interface by default, making the router inaccessible. Use the LAN side (neck port) with pfctl NAT instead.
+
+!!! note "GL.iNet vs WG827"
+    The GL.iNet router is the external field gateway for TMU Wi-Fi, Tailscale, WebFinder, and operator devices on 192.168.8.0/24. The WG827 is the robot-mounted OpenWrt router on the G1's internal 192.168.123.0/24 network. Keep these roles separate unless deliberately building a routed bridge.
 
 !!! note
     macOS Internet Sharing GUI does not work for this setup. The config plist caches stale interface names. Use pfctl NAT directly instead.
