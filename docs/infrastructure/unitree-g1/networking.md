@@ -91,6 +91,7 @@ Current verified state:
 Mac Wi-Fi: 192.168.8.109/24, gateway 192.168.8.1
 GL.iNet DHCP reservation: f8:5e:3c:ee:42:5e -> 192.168.8.190
 GL.iNet static route: 192.168.123.0/24 via 192.168.8.190
+GL.iNet 2.4 GHz AP: channel 11, HE20, legacy rates disabled
 WG827 br-lan: 192.168.123.1/24
 WG827 wlan0: GL-MT3000-8b4 client, DHCP 192.168.8.190/24
 WG827 default route: 192.168.8.1
@@ -109,6 +110,9 @@ DHCP roles are split by subnet:
 
 !!! note "Mac route hygiene"
     Do not keep a `192.168.123.100` alias on the Mac Wi-Fi interface in this routed setup. That alias makes macOS treat the robot subnet as directly on-link and bypass the GL.iNet static route.
+
+!!! note "2.4 GHz backhaul tuning"
+    The WG827 is 2.4 GHz only. The GL.iNet 2.4 GHz AP was moved from channel 1 to channel 11 and left at HE20/20 MHz with legacy rates disabled. This reduced retry pressure in the current TMU lab environment, but 2.4 GHz can still have UDP jitter and packet loss.
 
 ## WG827 Direct TMU Uplink
 
