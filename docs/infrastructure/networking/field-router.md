@@ -12,6 +12,8 @@ This replaces the older pattern where the Mac was the main internet-sharing rout
 flowchart TD
     TMU["TMU Wi-Fi<br/>WPA2-Enterprise / PEAP / MSCHAPv2"] --> GL["GL.iNet GL-MT3000<br/>eph107<br/>LAN 192.168.8.0/24"]
     GL --> MAC["zmac<br/>Wi-Fi 192.168.8.109"]
+    GL --> UBUNTU["jeffxi-ubuntu<br/>Home Assistant<br/>192.168.8.241"]
+    GL --> POWER["iDevices Switch 00101614<br/>main robot power switch<br/>192.168.8.115"]
     GL --> DEV["robot tools / tablets / dev devices<br/>DHCP 192.168.8.x"]
     GL --> TS["Tailscale<br/>100.84.198.19"]
     GL --> WF["WebFinder manifest<br/>https://eph107.tailee9084.ts.net:9321"]
@@ -32,6 +34,26 @@ flowchart TD
 | Router password | stored locally in macOS Keychain as `gl-mt3000-router-password` |
 
 Do not commit the TMU account password or router admin password to this repo.
+
+## Lab LAN Services
+
+| Device | Address | Role |
+|---|---|---|
+| `jeffxi-ubuntu` | `192.168.8.241` Ethernet, `192.168.8.242` Wi-Fi backup, Tailscale `100.108.86.74` | Ubuntu operator host, Docker, Home Assistant |
+| Home Assistant | `http://192.168.8.241:8123/` | HomeKit Controller for the lab iDevices switch |
+| `Switch 00101614` | `192.168.8.115` | iDevices/HomeKit switch used as the main robot power switch |
+
+The Ubuntu host should keep Ethernet as the primary route and Wi-Fi as backup:
+
+```text
+eno1 Ethernet: DHCP reservation 192.168.8.241/24, route metric 100
+wlxa8b58e476aec Wi-Fi: DHCP reservation 192.168.8.242/24, route metric 600
+```
+
+Home Assistant runs as Docker container `homeassistant` with host networking and `restart=unless-stopped`. It is paired to the iDevices switch through HomeKit Controller.
+
+!!! warning "Main robot power switch"
+    `switch.switch_00101614` controls robot power. Check state freely, but do not toggle it unless intentionally powering the robot on/off.
 
 ## Wi-Fi Layout
 
