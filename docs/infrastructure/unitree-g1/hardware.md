@@ -13,6 +13,20 @@ Unitree G1 EDU humanoid robot with Jetson Orin NX development computer.
 - **Indicator:** LED flashes at 1Hz during charging, turns off when full
 - **No tethered/wall power mode.** Robot is battery-only during operation.
 
+## External Lab Power Control
+
+The lab iDevices `Switch 00101614` is used as the main robot power switch. It is on the GL.iNet field LAN at `192.168.8.115` and is paired to Home Assistant on `jeffxi-ubuntu`.
+
+| Item | Value |
+|------|-------|
+| Home Assistant | `http://192.168.8.241:8123/` |
+| Area | `Lab` |
+| Main power entity | `switch.switch_00101614` |
+| Night light entity | `light.switch_00101614_night_light` |
+
+!!! warning
+    Treat `switch.switch_00101614` as robot power. Do not toggle it while robot software is running unless intentionally powering the robot on/off.
+
 ## Internal Computers
 
 | Board | IP | Role |

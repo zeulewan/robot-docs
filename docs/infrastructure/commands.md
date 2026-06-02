@@ -244,6 +244,21 @@ gateway: 192.168.8.1
 interface: en0
 ```
 
+Home Assistant and main robot power switch:
+
+```bash
+# Home Assistant runs on jeffxi-ubuntu.
+curl -sS http://192.168.8.241:8123/api/ \
+  -H "Authorization: Bearer $HA_TOKEN"
+
+# Read robot power switch state. This is safe.
+curl -sS http://192.168.8.241:8123/api/states/switch.switch_00101614 \
+  -H "Authorization: Bearer $HA_TOKEN"
+```
+
+!!! warning
+    `switch.switch_00101614` is the main robot power switch. Do not call `switch.turn_on` or `switch.turn_off` unless intentionally powering the robot on/off.
+
 ---
 
 ## Isaac Sim

@@ -4,7 +4,7 @@ Network layout across Toronto and Kingston locations with Tailscale VPN.
 
 ## Current Field Network
 
-At TMU / school, the portable GL.iNet router is the preferred network anchor. It joins TMU Wi-Fi with WPA2-Enterprise and gives the Mac plus lab devices a private LAN.
+At TMU / school, the portable GL.iNet router is the preferred network anchor. It joins TMU Wi-Fi with WPA2-Enterprise and gives the Mac plus lab devices a private LAN. The lab Ubuntu host runs Home Assistant and controls the iDevices switch that acts as the robot's main power switch.
 
 | | |
 |---|---|
@@ -16,16 +16,23 @@ At TMU / school, the portable GL.iNet router is the preferred network anchor. It
 | **Current uplink IP** | DHCP, observed as 10.16.144.207/20 |
 | **Admin UI** | `https://eph107.tailee9084.ts.net/` or LAN `http://192.168.8.1/` |
 | **WebFinder** | `https://eph107.tailee9084.ts.net:9321/.well-known/web-finder.json` |
+| **Home Assistant** | `http://192.168.8.241:8123/` on `jeffxi-ubuntu` |
+| **Robot power switch** | iDevices `Switch 00101614`, `192.168.8.115`, HA entity `switch.switch_00101614` |
 
 ```mermaid
 flowchart TD
     TMU["TMU Wi-Fi<br/>DHCP 10.16.x.x"] --> GL["eph107<br/>GL-MT3000<br/>192.168.8.1"]
     GL --> ZMACS["zmac<br/>192.168.8.109<br/>TS: 100.117.222.41"]
+    GL --> UBUNTU["jeffxi-ubuntu<br/>HA 192.168.8.241<br/>TS: 100.108.86.74"]
+    GL --> POWER["iDevices Switch 00101614<br/>main robot power switch<br/>192.168.8.115"]
     GL --> LAB["robot tools / tablets / lab devices<br/>192.168.8.x"]
     GL --> TSNET["Tailnet<br/>eph107: 100.84.198.19"]
 ```
 
 See [Field Router](field-router.md) for setup, recovery, and WebFinder details.
+
+!!! warning "Main robot power switch"
+    `Switch 00101614` is not a random lab accessory. It is the main robot power switch. Treat `switch.switch_00101614` as a power-control command and do not toggle it while robot software is running unless intentionally powering the robot on/off.
 
 ---
 
@@ -113,6 +120,7 @@ flowchart TD
 |--------|----------|-------------|-----|------|----------|
 | zmac | zeul-mac | 100.117.222.41 | macOS | tag:clients | Toronto |
 | field-router | eph107 | 100.84.198.19 | OpenWrt | -- | TMU / mobile |
+| jeffxi-ubuntu | jeffxi-ubuntu | 100.108.86.74 | Ubuntu | -- | TMU / lab |
 | tsrelay | tsrelay | 100.95.40.19 | Linux | tag:relay | Toronto |
 | workstation | workstation | 100.101.214.44 | Linux | tag:clients | Kingston |
 | workstation-kvm | workstation-kvm | 100.67.214.102 | Linux | -- | Kingston |

@@ -4,7 +4,7 @@
     The G1 locomotion board (RK3588) boots and runs all DDS services, but publishes zero data on any topic. The robot appears stuck in a boot standby state. WiFi STA mode is broken, SSH is closed, jailbreak is patched on firmware 1.4.5. The app connection is flaky (AP WiFi intermittent). Without activation via app or remote controller, the robot cannot be controlled.
 
 !!! note "TMU field network update"
-    A GL.iNet GL-MT3000 field router (`eph107`) now handles TMU WPA2-Enterprise uplink, local 192.168.8.0/24 Wi-Fi, Tailscale, and WebFinder. This is the preferred operator network at school. It does not replace the G1 wired 192.168.123.0/24 DDS network; use it as the Mac's internet/tailnet side while keeping USB Ethernet to the robot for DDS work.
+    A GL.iNet GL-MT3000 field router (`eph107`) now handles TMU WPA2-Enterprise uplink, local 192.168.8.0/24 Wi-Fi, Tailscale, and WebFinder. The lab Ubuntu host on that LAN runs Home Assistant and controls the iDevices switch used as the main robot power switch. This is the preferred operator network at school. It does not replace the G1 wired 192.168.123.0/24 DDS network; use it as the Mac's internet/tailnet side while keeping USB Ethernet or routed WG827 access for robot-side DDS/SSH work.
 
 ## Goal
 
@@ -31,6 +31,9 @@ Secondary goals:
 | WG827 router admin | Working | SSH: `root` / `indr0.com`, WiFi SSID: "UnitreeRouter" / "Temp1234" (2.4GHz ch11, WPA2) |
 | Internet via Mac NAT | Working / legacy | pfctl NAT on Mac (192.168.123.100) still works for the G1 wired network. At TMU, Mac `en0` should usually be on the GL.iNet field router rather than directly on TMU. |
 | GL.iNet field router | Working | `eph107`, LAN 192.168.8.1, Tailscale 100.84.198.19, TMU WPA2-Enterprise uplink, WebFinder enabled |
+| Ubuntu operator host | Working | `jeffxi-ubuntu`, Ethernet 192.168.8.241, Wi-Fi backup 192.168.8.242, Tailscale 100.108.86.74, Docker enabled, sleep disabled |
+| Home Assistant | Working | `http://192.168.8.241:8123/`, Docker container `homeassistant`, HomeKit Controller paired to the iDevices switch |
+| Main robot power switch | Working | iDevices `Switch 00101614`, 192.168.8.115, HA entity `switch.switch_00101614`; do not toggle unless intentionally powering robot on/off |
 | WG827 GL.iNet uplink | Working / preferred | Robot-mounted add-on router uses its single 2.4GHz radio as a client of `GL-MT3000-8b4`; local AP disabled. Observed DHCP: 192.168.8.190/24. Jetson reaches internet through WG827 -> GL.iNet -> TMU. |
 | WG827 direct TMU uplink | Tested fallback | WPA2-Enterprise works with `wpad` and CA certs after the clock is correct. Prefer GL.iNet upstream so the WG827 does not hold TMU credentials or handle 802.1X. |
 | SDK installed on Jetson | Working | unitree_sdk2_python v1.0.1, CycloneDDS 0.10.2, latest git master |
@@ -230,11 +233,20 @@ GL.iNet GL-MT3000 "eph107"
   |-- Tailscale: 100.84.198.19
   |
   +-- Mac Wi-Fi (en0) 192.168.8.109
-  +-- Jeff Xi Ubuntu host 192.168.8.241 Ethernet
+  +-- Jeff Xi Ubuntu host
+  |     |-- Ethernet 192.168.8.241, primary
+  |     |-- Wi-Fi 192.168.8.242, backup
+  |     |-- Home Assistant http://192.168.8.241:8123/
+  |     +-- Tailscale 100.108.86.74
+  +-- iDevices Switch 00101614 192.168.8.115
+  |     +-- Home Assistant entity switch.switch_00101614 (main robot power)
   +-- operator devices / tablets / robot tools 192.168.8.x
 ```
 
-The GL.iNet gives operator machines stable internet and tailnet access. The Mac still uses a separate USB Ethernet adapter to the G1 neck port for direct SDK/DDS work. `jeffxi-ubuntu` is an Ubuntu 22.04.5 desktop on the GL.iNet LAN; its `eno1` Ethernet has a DHCP reservation at `192.168.8.241`, and Wi-Fi is intentionally disabled.
+The GL.iNet gives operator machines stable internet and tailnet access. The Mac still uses a separate USB Ethernet adapter to the G1 neck port for direct SDK/DDS work when low-jitter local DDS is needed. `jeffxi-ubuntu` is an Ubuntu 22.04.5 desktop on the GL.iNet LAN; its `eno1` Ethernet has a DHCP reservation at `192.168.8.241`, and Wi-Fi is enabled as a lower-priority backup at `192.168.8.242`.
+
+!!! warning "Main robot power switch"
+    `Switch 00101614` is robot power. Read state through Home Assistant freely, but do not call the switch service unless intentionally powering the robot on/off.
 
 ### Legacy G1 Wired Network
 

@@ -16,6 +16,8 @@ GL.iNet GL-MT3000 "eph107"
     - Web UI: https://eph107.tailee9084.ts.net/
     |
 Mac Wi-Fi: 192.168.8.x
+jeffxi-ubuntu: 192.168.8.241 Ethernet / 192.168.8.242 Wi-Fi backup
+iDevices Switch 00101614: 192.168.8.115, main robot power switch
 robot tools / tablets / dev devices: 192.168.8.x
 ```
 
@@ -67,19 +69,52 @@ Current network state:
 
 ```text
 eno1 Ethernet:        DHCP reservation 192.168.8.241/24, default via 192.168.8.1, metric 100
-wlxa8b58e476aec WiFi: disabled
+wlxa8b58e476aec WiFi: DHCP reservation 192.168.8.242/24, default via 192.168.8.1, metric 600
 tailscale0:           100.108.86.74/32
 ```
 
-Ethernet is the preferred path. The GL.iNet has a DHCP reservation for the Ubuntu Ethernet MAC so `192.168.8.241` stays stable across reboots. Wi-Fi is intentionally disabled on the Ubuntu host so the flashing/operator path does not drift between interfaces.
+Ethernet is the preferred path. The GL.iNet has a DHCP reservation for the Ubuntu Ethernet MAC so `192.168.8.241` stays stable across reboots. Wi-Fi is enabled as backup on the same GL.iNet AP with a worse route metric, so Ethernet stays primary when both links are up.
 
 Verify:
 
 ```bash
 ip -br addr show eno1
-nmcli radio wifi
+ip -br addr show wlxa8b58e476aec
 ip route
 ```
+
+Docker and Home Assistant should come back after reboot:
+
+```text
+docker.service: enabled
+homeassistant container: restart=unless-stopped, network=host
+sleep/suspend/hibernate targets: masked
+```
+
+## Home Assistant and Robot Power Switch
+
+The lab Ubuntu host runs Home Assistant as the local HomeKit controller:
+
+| Field | Value |
+|-------|-------|
+| Home Assistant URL | `http://192.168.8.241:8123/` |
+| Area | `Lab` |
+| iDevices device | `Switch 00101614`, IP `192.168.8.115` |
+| Main power entity | `switch.switch_00101614` |
+| Night light entity | `light.switch_00101614_night_light` |
+| Identify button | `button.switch_00101614_identify` |
+
+`Switch 00101614` is the main robot power switch. It is paired to Home Assistant through HomeKit Controller, not Apple Home.
+
+Read-only state check:
+
+```bash
+curl -sS http://192.168.8.241:8123/api/states/switch.switch_00101614 \
+  -H "Authorization: Bearer $HA_TOKEN"
+```
+
+!!! warning
+    Do not casually call `switch.turn_on` or `switch.turn_off` for `switch.switch_00101614`. That is robot power, not a harmless test switch.
 
 ## Connecting from Mac
 
