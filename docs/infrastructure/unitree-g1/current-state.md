@@ -224,14 +224,17 @@ TMU Wi-Fi (WPA2-Enterprise)
   |
 GL.iNet GL-MT3000 "eph107"
   |-- wwan: TMU DHCP, observed 10.16.144.207/20
+  |-- 5 GHz radio: TMU station/uplink only; private 5 GHz AP disabled
+  |-- 2.4 GHz AP: GL-MT3000-8b4 local downlink
   |-- LAN: 192.168.8.1/24
   |-- Tailscale: 100.84.198.19
   |
   +-- Mac Wi-Fi (en0) 192.168.8.109
+  +-- Jeff Xi Ubuntu host 192.168.8.241 Ethernet
   +-- operator devices / tablets / robot tools 192.168.8.x
 ```
 
-The GL.iNet gives the Mac stable internet and tailnet access. For SDK/DDS work, the Mac still uses a separate USB Ethernet adapter to the G1 neck port.
+The GL.iNet gives operator machines stable internet and tailnet access. The Mac still uses a separate USB Ethernet adapter to the G1 neck port for direct SDK/DDS work. `jeffxi-ubuntu` is an Ubuntu 22.04.5 desktop on the GL.iNet LAN; its `eno1` Ethernet has a DHCP reservation at `192.168.8.241`, and Wi-Fi is intentionally disabled.
 
 ### Legacy G1 Wired Network
 

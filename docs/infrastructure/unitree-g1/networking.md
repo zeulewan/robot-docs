@@ -9,6 +9,8 @@ TMU Wi-Fi (WPA2-Enterprise)
     |
 GL.iNet GL-MT3000 "eph107"
     - uplink: TMU via 5 GHz station
+    - downlink AP: GL-MT3000-8b4 via 2.4 GHz
+    - 5 GHz private AP: disabled
     - LAN: 192.168.8.0/24
     - Tailscale: 100.84.198.19
     - Web UI: https://eph107.tailee9084.ts.net/
@@ -17,10 +19,10 @@ Mac Wi-Fi: 192.168.8.x
 robot tools / tablets / dev devices: 192.168.8.x
 ```
 
-The Mac should connect to the GL.iNet Wi-Fi, not TMU directly, when using this setup:
+The Mac should connect to the GL.iNet 2.4 GHz Wi-Fi, not TMU directly, when using this setup. The GL.iNet 5 GHz radio is reserved for the TMU WPA2-Enterprise uplink.
 
 ```bash
-networksetup -setairportnetwork en0 GL-MT3000-8b4-5G '<router-wifi-password>'
+networksetup -setairportnetwork en0 GL-MT3000-8b4 '<router-wifi-password>'
 route -n get default
 ```
 
@@ -33,8 +35,51 @@ interface: en0
 
 The router handles the ugly part: TMU WPA2-Enterprise / PEAP / MSCHAPv2. Keep TMU credentials out of this repo. See [Field Router](../networking/field-router.md).
 
+Current GL.iNet persisted radio split:
+
+```text
+wireless.default_radio0.disabled=0   # 2.4 GHz local AP on
+wireless.default_radio1.disabled=1   # 5 GHz local AP off
+wireless.tmu_sta.disabled=0          # 5 GHz TMU client/uplink on
+```
+
+If the router is rebooted and loses internet, check that `wireless.tmu_sta.disabled` did not come back as `1`.
+
 !!! note
     This router does not magically bridge into the G1's internal 192.168.123.0/24 DDS network. For wired DDS/Jetson work, still connect the Mac USB Ethernet adapter to G1 neck port 4/5. The field router is the clean internet/tailnet/operator LAN.
+
+## Jeff Xi Ubuntu Operator Host
+
+`jeffxi-ubuntu` is an Ubuntu desktop on the GL.iNet field LAN. It is useful as a Linux operator/flashing/deploy host when a native Ubuntu machine is better than the Mac.
+
+| Field | Value |
+|-------|-------|
+| SSH over GL.iNet LAN | `jeff-xi@192.168.8.241` |
+| SSH from Mac through router/Tailscale | `ssh -J eph107 jeff-xi@192.168.8.241` |
+| Hostname | `jeffxi-ubuntu` |
+| OS | Ubuntu 22.04.5 LTS |
+| Kernel | Linux `6.8.0-111-generic` |
+| Architecture | x86-64 |
+| Tailscale | `100.108.86.74` |
+| Docker bridge | `172.17.0.1/16` |
+
+Current network state:
+
+```text
+eno1 Ethernet:        DHCP reservation 192.168.8.241/24, default via 192.168.8.1, metric 100
+wlxa8b58e476aec WiFi: disabled
+tailscale0:           100.108.86.74/32
+```
+
+Ethernet is the preferred path. The GL.iNet has a DHCP reservation for the Ubuntu Ethernet MAC so `192.168.8.241` stays stable across reboots. Wi-Fi is intentionally disabled on the Ubuntu host so the flashing/operator path does not drift between interfaces.
+
+Verify:
+
+```bash
+ip -br addr show eno1
+nmcli radio wifi
+ip route
+```
 
 ## Connecting from Mac
 
@@ -92,6 +137,7 @@ Mac Wi-Fi: 192.168.8.109/24, gateway 192.168.8.1
 GL.iNet DHCP reservation: f8:5e:3c:ee:42:5e -> 192.168.8.190
 GL.iNet static route: 192.168.123.0/24 via 192.168.8.190
 GL.iNet 2.4 GHz AP: channel 11, HE20, legacy rates disabled
+GL.iNet 5 GHz AP: disabled; 5 GHz radio is reserved for TMU uplink
 WG827 br-lan: 192.168.123.1/24
 WG827 wlan0: GL-MT3000-8b4 client, DHCP 192.168.8.190/24
 WG827 default route: 192.168.8.1

@@ -37,10 +37,37 @@ Do not commit the TMU account password or router admin password to this repo.
 
 | Band | Role | Notes |
 |---|---|---|
-| 5 GHz | TMU uplink + GL.iNet AP | The router is associated to `TMU` as `phy1-sta0` and also broadcasts the private 5 GHz SSID. |
-| 2.4 GHz | GL.iNet AP | Useful for devices that need range or have weaker 5 GHz support. |
+| 5 GHz | TMU uplink only | The router is associated to `TMU` as `phy1-sta0`. The private 5 GHz AP is intentionally disabled. |
+| 2.4 GHz | GL.iNet downlink AP | Broadcasts `GL-MT3000-8b4` for the Mac, WG827, tablets, and other local devices. |
 
 The 5 GHz uplink was selected because TMU was visible around `-48 dBm` during setup. Use 2.4 GHz uplink only if 5 GHz becomes unstable in a different room.
+
+Current persisted UCI state:
+
+```text
+wireless.default_radio0.disabled=0   # 2.4 GHz AP on
+wireless.default_radio1.disabled=1   # 5 GHz AP off
+wireless.tmu_sta.disabled=0          # TMU station/uplink on
+```
+
+Runtime check:
+
+```bash
+ssh root@192.168.8.1
+iw dev
+ls /var/run/hostapd
+ifstatus wwan
+```
+
+Expected:
+
+```text
+wlan0: AP, SSID GL-MT3000-8b4, channel 11 / 2.4 GHz
+phy1-sta0: managed/client, SSID TMU, 5 GHz
+/var/run/hostapd/wlan0 exists
+/var/run/hostapd/wlan1 does not exist
+wwan up with a 10.16.x.x address and default route
+```
 
 ## TMU WPA2-Enterprise Settings
 
@@ -89,10 +116,10 @@ default via 10.16.x.1 dev phy1-sta0 metric 20
 
 ## Mac Client Setup
 
-The Mac should join the GL.iNet Wi-Fi, not TMU directly, when the router is the field gateway.
+The Mac should join the GL.iNet 2.4 GHz Wi-Fi or use USB Ethernet to the router LAN when the router is the field gateway. The GL.iNet 5 GHz private AP is disabled so 5 GHz can stay dedicated to TMU uplink.
 
 ```bash
-networksetup -setairportnetwork en0 GL-MT3000-8b4-5G '<router-wifi-password>'
+networksetup -setairportnetwork en0 GL-MT3000-8b4 '<router-wifi-password>'
 route -n get default
 ```
 
@@ -111,7 +138,18 @@ curl -I https://example.com
 ssh eph107
 ```
 
-If a USB Ethernet adapter was previously plugged into the router LAN, disable that macOS network service or move it below Wi-Fi so the Mac does not fight itself:
+If a USB Ethernet adapter is plugged into the router LAN, the currently observed service is `USB 10/100/1000 LAN 2` on `en18`. It should receive a `192.168.8.x` DHCP lease from the router. After a reboot, re-enable/renew it if macOS leaves it disabled:
+
+```bash
+networksetup -setnetworkserviceenabled 'USB 10/100/1000 LAN 2' on
+networksetup -setdhcp 'USB 10/100/1000 LAN 2'
+ifconfig en18
+ping -c 2 192.168.8.1
+```
+
+Do not confuse this with the iPad USB-NCM interface (`en23`), which can appear as a live Ethernet-like link but only gets a `169.254.x.x` address.
+
+If a USB Ethernet adapter was previously plugged into the router LAN and is not needed, disable that macOS network service or move it below Wi-Fi so the Mac does not fight itself:
 
 ```bash
 networksetup -setnetworkserviceenabled 'USB 10/100/1000 LAN 2' off
@@ -174,6 +212,10 @@ If the router loses TMU uplink:
 
 ```bash
 ssh root@192.168.8.1
+uci get wireless.tmu_sta.disabled
+uci set wireless.tmu_sta.disabled='0'
+uci set wireless.default_radio1.disabled='1'
+uci commit wireless
 wifi reload
 ifup wwan
 logread | grep -Ei 'phy1-sta0|TMU|EAP|MSCHAP|wwan|wpa' | tail -120
@@ -193,4 +235,3 @@ If LAN SSH does not work:
 - connect to the GL.iNet Wi-Fi SSID
 - if using Ethernet, plug into the GL.iNet LAN port, not WAN
 - check that the Mac has a `192.168.8.x` address
-
