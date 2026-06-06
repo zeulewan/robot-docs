@@ -16,9 +16,9 @@ Workstation configuration, networking, and command reference.
 
     ---
 
-    Tailscale VPN, TMU field router, NAT troubleshooting, network topology
+    Tailscale VPN, TMU field router, Vicon LAN, NAT troubleshooting, network topology
 
-    [:octicons-arrow-right-24: Field Router](networking/field-router.md) · [:octicons-arrow-right-24: Tailscale](networking/tailscale.md) · [:octicons-arrow-right-24: Topology](networking/topology.md)
+    [:octicons-arrow-right-24: Field Router](networking/field-router.md) · [:octicons-arrow-right-24: Vicon LAN](networking/vicon-lan.md) · [:octicons-arrow-right-24: Tailscale](networking/tailscale.md) · [:octicons-arrow-right-24: Topology](networking/topology.md)
 
 -   :material-robot:{ .lg .middle } **Unitree G1**
 
