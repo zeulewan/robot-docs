@@ -28,6 +28,14 @@ hide:
 
 <div class="grid cards" markdown>
 
+-   :material-account-hard-hat:{ .lg .middle } **Manraj Handoff**
+
+    ---
+
+    Current lab state and the safest path into the Vicon, Quest, SONIC, and G1 work
+
+    [:octicons-arrow-right-24: Start Here](getting-started/manraj-handoff.md)
+
 -   :material-rocket-launch:{ .lg .middle } **Getting Started**
 
     ---

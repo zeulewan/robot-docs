@@ -5,13 +5,13 @@ Isaac Sim and Isaac ROS — simulation, perception, and the ROS 2 bridge.
 <div style="display: flex; gap: 1em; justify-content: center; flex-wrap: wrap; margin: 1em auto;">
   <div style="flex: 1; min-width: 300px; max-width: 48%;">
     <video controls autoplay muted loop style="width: 100%; border-radius: 8px;">
-      <source src="../assets/demo.mp4" type="video/mp4">
+      <source src="/robot-docs/assets/demo.mp4" type="video/mp4">
     </video>
     <p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Carter robot warehouse demo with Foxglove Studio</p>
   </div>
   <div style="flex: 1; min-width: 300px; max-width: 48%;">
     <video controls autoplay muted loop style="width: 100%; border-radius: 8px;">
-      <source src="../assets/g1-walking.mp4" type="video/mp4">
+      <source src="/robot-docs/assets/g1-walking.mp4" type="video/mp4">
     </video>
     <p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Unitree G1 locomotion policy trained with RL in Isaac Lab</p>
   </div>
@@ -39,8 +39,8 @@ Isaac Sim and Isaac ROS — simulation, perception, and the ROS 2 bridge.
 
     ---
 
-    Unitree RL Lab, sim-to-real stack, URDF/USD workflow, and G1 locomotion training
+    Unitree RL Lab, Quest teleoperation, GEAR-SONIC, wheelchair policies, and G1 deployment gates
 
-    [:octicons-arrow-right-24: Overview](unitree/) · [:octicons-arrow-right-24: Workflow](unitree/developer-workflow.md) · [:octicons-arrow-right-24: Training](unitree/rl-training-guide.md)
+    [:octicons-arrow-right-24: Overview](unitree/) · [:octicons-arrow-right-24: Quest](unitree/quest-3-teleoperation.md) · [:octicons-arrow-right-24: SONIC](unitree/gear-sonic.md) · [:octicons-arrow-right-24: Training](unitree/rl-training-guide.md)
 
 </div>

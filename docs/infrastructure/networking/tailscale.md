@@ -51,13 +51,37 @@ When direct connections fail (school NAT, mobile hotspot symmetric NAT), devices
 | **Systemd override** | `/etc/systemd/system/tailscaled.service.d/relay.conf` |
 | **Grant** | `tag:clients` -> `tag:relay` (requires both `app` and `ip` grants) |
 
-Do not set `--relay-server-static-endpoints` -- Bell PPPoE IP is dynamic. STUN + UPnP discovers the public IP automatically.
+The Toronto Bell PPPoE address is dynamic, and automatic discovery does not
+reliably advertise the forwarded relay port. The relay therefore advertises the
+current public `IP:40000` explicitly. A systemd timer refreshes it every five
+minutes when the public address changes:
 
-On 2026-05-24, `tsrelay` had a stale static endpoint (`142.114.208.227:40000`). Peer-relay sessions were allocated but stuck at `<no handshake>`. Clear stale endpoint config with:
+| | |
+|---|---|
+| **Updater** | `/usr/local/sbin/tailscale-relay-endpoint-sync` |
+| **Timer** | `tailscale-relay-endpoint.timer` |
+| **Check interval** | 5 minutes |
+
+Check the updater and advertised endpoint with:
+
+```bash
+systemctl status tailscale-relay-endpoint.timer
+sudo systemctl start tailscale-relay-endpoint.service
+tailscale debug prefs | grep -A3 RelayServer
+```
+
+On 2026-05-24, `tsrelay` had a stale static endpoint (`142.114.208.227:40000`). Peer-relay sessions were allocated but stuck at `<no handshake>`. The timer now prevents this. To clear static endpoint config while troubleshooting:
 
 ```bash
 sudo tailscale set --relay-server-static-endpoints=
 ```
+
+Do not leave the endpoint empty afterward. Run the updater service to restore
+the current public endpoint.
+
+On 2026-07-21, Mac-to-workstation traffic was verified through
+`peer-relay <public-ip>:40000`; both clients reported the same VNI and the relay
+session counters increased in both directions.
 
 Workstation needed Tailscale `1.98.3`; with `1.96.4`, relay candidates were visible but traffic still preferred DERP in cases where peer relay should have been available.
 

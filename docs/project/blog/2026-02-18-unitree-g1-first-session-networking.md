@@ -12,7 +12,7 @@ The Mac's built-in ethernet adapters (en4/5/6 — Thunderbolt virtual ports) all
 
 ```bash
 sudo ifconfig en13 192.168.123.100 netmask 255.255.255.0 up
-ssh unitree@192.168.123.164  # password: ***REMOVED***
+ssh unitree@192.168.123.164  # credentials are stored privately
 ```
 
 ## SSH Banner Timeout Fix
@@ -31,7 +31,7 @@ SSH now connects instantly. This persists across reboots.
 
 Indro Robotics velcroed a ZBT WG827 router to the robot's back and plugged it into the internal switch. It's an add-on for WiFi and optional 4G/5G, not required for basic ethernet connectivity. The LuCI web UI is at `http://192.168.123.1`.
 
-The password wasn't in any docs. Emailed Indro Robotics and they responded within a couple hours: **root / ***REMOVED***** (that's a zero, not the letter O). SSH on port 22 uses the same credentials.
+The password was not in the supplied docs. Indro Robotics provided working LuCI and SSH credentials, which are now stored only in the private infrastructure secrets file.
 
 The WG827 is optional — the G1's internal switch connects neck ports directly to the Jetson, locomotion computer, and lidar regardless of whether the router is powered on.
 
@@ -56,7 +56,7 @@ sudo dnsmasq --interface=br0 --bind-interfaces \
   --dhcp-range=192.168.123.200,192.168.123.250,255.255.255.0,12h ...
 ```
 
-**SSID:** UnitreeG1-Dev / **Password:** ***REMOVED***. None of this persists after reboot.
+The temporary SSID was `UnitreeG1-Dev`; its password is stored privately. None of this persists after reboot.
 
 The Docker daemon sets `iptables FORWARD policy DROP` on startup, which blocks bridge traffic — the `iptables -I FORWARD` line fixes that.
 

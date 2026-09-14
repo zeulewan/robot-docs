@@ -1,248 +1,238 @@
-# Vicon LAN Access
+# Vicon LAN
 
-Notes for the Vicon/D-Link lab network and the Windows Vicon host.
+Operational notes for the Vicon camera network, the physical Windows Nexus host,
+the D-Link PoE switch, `jeff-xi`, and the field-router path.
 
-## Quick Access
+No credentials, tokens, camera serials, or raw private keys belong in this public
+doc. The private copy lives under `/home/zeul/GIT/robot-docs/.secrets/`, which is
+ignored by Git.
 
-### Windows Vicon Host
+## Current State
 
-| | |
+Updated 2026-09-14 from the last verified lab state.
+
+The physical Vicon kit is:
+
+- six Vicon Vero v2.2 motion-capture cameras
+- one Vicon Lock Lab sync/interface box
+- one D-Link DGS-1520-28MP PoE switch
+- one physical Windows Vicon host with Nexus installed
+- `jeff-xi`, the Ubuntu operator/capture host
+- `eph107`, the GL.iNet field router and Tailscale path
+- a native Windows Isaac Lab environment plus WSL 2 for utilities
+
+The cameras are not normal ONVIF, RTSP, or web cameras. They use Vicon-specific
+discovery and control. Treating them as generic RGB cameras will not work.
+
+The physical Windows host now has both required subnets on its linked `Ethernet`
+adapter: `192.168.8.132/24` for field-router management and `192.168.10.1/24`
+for the Vicon camera network. Local SSH and router ping to `192.168.8.132` were
+verified on 2026-08-27. Camera and D-Link reachability must still be rechecked
+whenever the Vicon kit is recabled or powered up.
+
+The current plan is to use official Vicon Nexus on the physical Windows host. The
+old standalone reverse-engineering notes and VM experiments are historical
+fallback material, not the primary path.
+
+## Hosts
+
+| Role | Host | Notes |
+|---|---|---|
+| Field router | `eph107` | GL.iNet GL-MT3000, field LAN gateway `192.168.8.1`, Tailscale reachable |
+| Ubuntu operator host | `jeffxi-ubuntu` / `jeff-xi` | Can reach the D-Link management IP when the lab hardware is cabled |
+| Physical Vicon Windows host | `vicon-windows` / `OMG-TMU-DAE` | Has Nexus, Sunshine, Tailscale, and OpenSSH |
+| Vicon switch | D-Link DGS-1520-28MP | Management IP `10.90.90.90` |
+
+Zeul reaches the physical Windows host through the local field-router path at
+`192.168.8.132`. Manraj can use either that local address or the host's separate
+Manraj-tailnet identity at `100.84.179.109`. The Vicon host is no longer enrolled
+in Zeul's tailnet. Private key paths and account passwords are documented only
+in the private secrets file.
+
+## Physical Windows Host
+
+The physical host is distinct from the older `vicon-win11` VM. For current lab
+work, assume `vicon-windows` means the physical Vicon/Nexus computer.
+
+Verified on 2026-08-27:
+
+- hostname: `OMG-TMU-DAE`
+- user: `Vicon-OEM`
+- OpenSSH is running
+- Tailscale is running
+- Sunshine is running
+- Nexus 2.16 is installed
+- WSL 2.7.12 with Ubuntu 22.04 is installed
+- Sunshine listens on the normal Moonlight ports, including TCP `47984`,
+  `47989`, `47990`, and `48010`
+
+Current Windows network state:
+
+| Interface | State |
 |---|---|
-| **LAN IP** | `192.168.8.132` |
-| **Hostname** | `OMG-TMU-DAE` |
-| **SSH user** | `Vicon-OEM` |
-| **SSH key on zmac** | `~/.ssh/vicon_oem_ed25519` |
+| `Ethernet` | up at 1 Gbps, `192.168.8.132/24` and `192.168.10.1/24` |
+| `Ethernet` field-router reservation | MAC reserved as `192.168.8.132` on `eph107` |
+| `ViconMX1` | disconnected |
+| `ViconMX2` | disconnected |
+| `Wi-Fi` | up on TMU network |
+| `Tailscale` | up at `100.84.179.109` on Manraj's separate tailnet |
 
-Connect from zmac:
+Reachability from Windows on 2026-06-09:
 
-```sh
-ssh -i ~/.ssh/vicon_oem_ed25519 Vicon-OEM@192.168.8.132
+| Target | Result |
+|---|---|
+| `192.168.8.241` (`jeff-xi`) | reachable |
+| `10.90.90.90` D-Link switch | not reachable from Windows |
+| `192.168.10.10-.16` Vicon camera Telnet/control ports | not reachable from Windows |
+
+The 2026-06-09 failures pointed to a cabling, VLAN, or duplicate-host-IP issue,
+not a Nexus install issue. On 2026-08-27, `192.168.8.132` had been removed from
+Windows while `192.168.10.1` remained. Restoring `.132` as a persistent secondary
+address fixed router visibility without changing the Vicon camera address or
+adding another default gateway. Windows Firewall permits ICMP echo only from
+`192.168.8.0/24`, and local SSH remains available on TCP 22.
+
+## Windows Isaac Lab and WSL
+
+Isaac Sim and Isaac Lab are installed **natively on Windows** for Manraj. The
+verified stack includes Isaac Sim `5.1.0.0`, Isaac Lab `2.3.2`, Python `3.11.16`,
+PyTorch `2.7`, and Unitree RL Lab in the `env_isaaclab` Conda environment. A
+four-environment, one-iteration G1 velocity-policy smoke test completed on the
+RTX 4060 and wrote a checkpoint.
+
+See [Isaac Lab on the Vicon Windows Host](../../simulation/unitree/windows-isaac-lab.md)
+for the setup and local handoff-file paths.
+
+WSL is retained for Linux command-line tools and ROS-side work. It is not the
+Isaac Sim runtime because its Vulkan path was not usable for Kit/PhysX rendering.
+
+WSL was installed and verified on 2026-08-27 without changing the Windows
+NVIDIA driver:
+
+| Component | Verified state |
+|---|---|
+| WSL | `2.7.12.0`, default version 2 |
+| Kernel | `6.18.33.2-2-microsoft-standard-WSL2` |
+| Distribution | Ubuntu `22.04.5 LTS` |
+| Default Linux user | `manraj`, member of `sudo` |
+| Python | `3.10.12` |
+| Git | `2.34.1` |
+| GCC | `11.4.0` |
+| GPU | RTX 4060 visible through `/dev/dxg` |
+| WSL CUDA view | driver `560.94`, CUDA `12.6`, 8188 MiB VRAM |
+
+The baseline packages are `git`, `curl`, `build-essential`, `python3-venv`,
+`python3-pip`, and `openssh-client`. The package database passed `dpkg --audit`
+after installation.
+
+Enter the default distribution from a Windows shell:
+
+```powershell
+wsl -d Ubuntu-22.04
 ```
 
-Confirmed on 2026-06-05:
+Run a non-interactive Linux command through Windows SSH:
 
-- SSH works after the Windows user signs out.
-- `sshd` is running and set to automatic startup.
-- The SSH session is elevated admin:
-  - User: `omg-tmu-dae\vicon-oem`
-  - Group includes `BUILTIN\Administrators`
-  - Integrity level is `Mandatory Label\High Mandatory Level`
-- Sleep and hibernate are disabled for both AC and battery.
-- Display sleep is disabled on AC.
-- Active power scheme observed: `Vicon`.
-
-### OpenSSH Fix Applied
-
-Windows OpenSSH initially rejected the Mac key. The working fix was to force the user authorized-keys path and relax strict mode:
-
-```text
-PubkeyAuthentication yes
-AuthorizedKeysFile .ssh/authorized_keys
-StrictModes no
+```powershell
+wsl -d Ubuntu-22.04 -- bash -lc "whoami; nvidia-smi"
 ```
 
-Key file:
-
-```text
-C:\Users\Vicon-OEM\.ssh\authorized_keys
-```
-
-Config backup from the working fix:
-
-```text
-C:\ProgramData\ssh\sshd_config.backup-20260605-153245
-```
-
-Useful setup/recovery scripts on zmac:
-
-```text
-/Users/zeul/Desktop/enable-ssh.ps1
-/Users/zeul/Desktop/reset-sshd-key-config.ps1
-/Users/zeul/Desktop/diagnose-sshd-auth.ps1
-```
+Do not install a Linux NVIDIA display driver inside WSL. GPU access is provided
+by the Windows host driver through `/usr/lib/wsl/lib`.
 
 ## Vicon Network Shape
 
-The Vicon devices expect a Vicon-style host on `192.168.10.1/24`.
+Expected control subnet:
 
-Observed protocol shape:
-
-- Vicon DHCP-like discovery: UDP `8568 -> 8567`
-- Host should assign devices in `192.168.10.0/24`
-- Devices send heartbeat/registration packets to host UDP `8570`
-- Device Telnet CLI opens after they are on the expected Vicon subnet
-- Camera stream output appears gated by Vicon control/sync commands; direct IP/Telnet access works, but raw frame streaming was not fully unlocked
-
-Helper scripts on zmac:
-
-```sh
-cd /Users/zeul
-./vicon_fixed_dhcp.sh
+```text
+Vicon host: 192.168.10.1/24
+cameras:    192.168.10.10-.16
 ```
 
-This starts a Vicon-style DHCP responder for one hour and drains UDP `8570` so macOS does not reply with port-unreachable packets.
+Observed protocol behavior:
+
+```text
+UDP 8568 -> 8567    Vicon DHCP-like discovery
+UDP 8570            camera heartbeat to host
+Telnet 23/tcp       opens on cameras after correct Vicon IP assignment
+UDP 4000/6000       centroid/greyscale stream family
+UDP 7000/8000       video stream family
+```
+
+The host at `192.168.10.1` must be unique. If Windows marks that address
+`Duplicate`, Nexus will not be able to own the Vicon host role cleanly.
 
 ## D-Link Switch
 
-| | |
-|---|---|
-| **Model** | `DGS-1520-28MP` |
-| **Hardware** | `A1` |
-| **Firmware/runtime seen** | `1.00.029` |
-| **Role** | Flat Layer-2 switch for Vicon and lab LAN |
+Observed switch facts:
 
-Available management services after setup:
+- model: D-Link DGS-1520-28MP
+- management IP: `10.90.90.90`
+- HTTP management available when on the correct layer-2 path
+- Telnet management available when on the correct layer-2 path
+- VLAN state was previously flat VLAN 1 with all relevant ports untagged
+- PoE camera ports were previously `eth1/0/2-.7`
+- Lock Lab was previously on `eth1/0/24`
 
-- `22/tcp` SSH
-- `23/tcp` Telnet
-- `80/tcp` HTTP
-- `443/tcp` filtered
-
-Switch behavior:
-
-- Only VLAN 1 was present.
-- All ports were untagged VLAN 1.
-- No routed/VLAN segmentation was configured.
-
-PoE gotcha:
-
-- `poe power-inline never` disables PoE on a port.
-- `poe power-inline auto` did not reliably restore delivery on this switch.
-- `no poe power-inline` restored default/auto delivery correctly.
-
-## Vicon Device Layout
-
-Operational fixed layout:
+PoE restore gotcha:
 
 ```text
-192.168.10.10-.12  Vero v2.2 cameras
-192.168.10.13      Vicon Lock Lab
-192.168.10.14-.16  Vero v2.2 cameras
+poe power-inline never   disables PoE
+no poe power-inline      restored default/auto delivery during testing
+poe power-inline auto    did not reliably restore delivery
 ```
 
-Exact fixed lease map, MAC addresses, device IDs, and serial numbers are kept out of public docs.
+## Recommended Bring-Up
 
-## Camera Details
-
-The six Vero devices reported this common profile via Telnet `info`:
+1. Cable the Vicon switch, cameras, Lock Lab, `jeff-xi`, and the physical Windows
+   host onto the intended lab layer-2 network.
+2. Confirm `jeff-xi` can reach the switch at `10.90.90.90`.
+3. Confirm exactly one machine owns `192.168.10.1/24` on the Vicon layer-2
+   network.
+4. If Windows/Nexus should drive the cameras, remove any competing
+   `192.168.10.1` address from `jeff-xi` before launching Nexus.
+5. Confirm the physical Windows host can reach:
 
 ```text
-Display Device Type: Vero v2.2
-Device Type: VeroV22
-Camera Type: Smartcam
-Sensor: Vero 2.2
-Sensor Dimensions: 2048 x 1088
-Ethernet Code Version: 1.0.0+a5da955a built Jul 15 2024 16:45:20
-FPGA Firmware Version: 00c4ab23 built Jul 03 2024
-Nios2 SDK Version: 22.1std
-Firmware Target: Signet
-Firmware Version: 810
-Bundle: 810
-Frame Rate Range: 23.80 - 331
-Max Frame Rate Non Windowed: 331
-Stream: V2 7000 8000 Video
-Stream: V2 6000 4000 Centroids Greyscale
-Allowable Gains: 1 2 4 8
-Video Gain Range: 0 - 16.0
-Video Exposure Range: 0 - 1000
-Strobe Type: IR
-Strobe Range: 0 - 1000
-Ethernet Master Able: yes
-Data Redirection Able: yes
-Video Able: yes
-Accelerometer Able: yes
+10.90.90.90
+192.168.10.10:23
+192.168.10.11:23
+192.168.10.12:23
+192.168.10.13:23
+192.168.10.14:23
+192.168.10.15:23
+192.168.10.16:23
 ```
 
-Useful read-only-ish commands:
+6. Launch Nexus on the physical Windows host.
+7. Capture the official startup/control traffic from `jeff-xi`:
 
-```text
-info
-version
-help
-?
-getframerate
-getthreshold
-getexposure
-exptime
-dims
-window
-windowsize
-videomode
-strobeinfo
-greymodeshow
-lockshow
-```
-
-Useful control knobs discovered:
-
-```text
-dest-interface a.b.c.d AA:BB:CC:DD:EE
-datadisable [true|false]
-coordmode {some|none|only}
-greymode {some|none|all|only}
-frate [-m][-s][-v][-c clk] [rate]
-syncmode freerun
-exposure value
-gain val
-setthreshold val
-threshold [-p] [value]
-strobeenable 1|0
-setstrobe value
-videomode [auto|1080|720]
-pktsize [-u size][-v size][size]
-sendmaskeddata on | off
-```
-
-## What Worked
-
-Add the Mac alias for Vicon host emulation:
-
-```sh
-sudo ifconfig en0 alias 192.168.10.1 netmask 255.255.255.0 broadcast 192.168.10.255
-```
-
-Run the Vicon DHCP helper:
-
-```sh
-cd /Users/zeul
-./vicon_fixed_dhcp.sh
-```
-
-Verify heartbeats:
-
-```sh
-sudo tcpdump -i en0 -n -e 'udp port 8570 and net 192.168.10.0/24'
-```
-
-Telnet after clean Vicon DHCP:
-
-```sh
-telnet 192.168.10.10 23
-```
-
-Then:
-
-```text
-info
-help
-```
-
-## What Did Not Work
-
-- Treating the cameras as normal LAN cameras.
-- HTTP/RTSP/ONVIF probing.
-- Normal DHCP on `67/68`.
-- Leaving them on the normal router LAN; they heartbeat but Telnet/control behavior is wrong or incomplete.
-- Manual `dest-interface` plus `datadisable false` alone; no stream came out.
-- `poe power-inline auto` as the restore command on the D-Link; use `no poe power-inline`.
-
-## Next Step
-
-The fastest route to raw data is to run official Vicon Nexus/Tracker/Shogun/Evoke once on a host at `192.168.10.1` and capture the startup/control traffic:
-
-```sh
-sudo tcpdump -i en0 -w /tmp/vicon_official_handshake.pcap -s 0 \
+```bash
+sudo tcpdump -i br-vicon-lab -w /tmp/vicon_official_handshake.pcap -s 0 \
   'net 192.168.10.0/24 or udp port 8567 or udp port 8568 or udp port 8570'
 ```
 
-Compare official host broadcast/control packets against manual Telnet attempts, then clone the minimum commands needed to start `V2 6000/4000` centroid/greyscale or `V2 7000/8000` video streams.
+8. If needed, compare the Nexus startup packets against the historical manual
+   Telnet and DHCP-like discovery attempts. Keep Nexus/official software as the
+   primary path.
+
+## Private Material
+
+Secrets and local-only details are stored inside the main repo working tree but
+outside Git:
+
+```text
+/home/zeul/GIT/robot-docs/.secrets/vicon-lan-secrets.md
+/home/zeul/GIT/robot-docs/.secrets/robot-infrastructure-secrets.md
+/home/zeul/GIT/robot-docs/.secrets/vicon_fixed_leases.zsh
+```
+
+On zmac, related copies and key files are under:
+
+```text
+/Users/zeul/.secrets/
+/Users/zeul/.ssh/
+```
+
+Do not copy passwords, API tokens, switch credentials, TMU credentials, camera
+serial/MAC mappings, or private key blocks into `robot-docs`.

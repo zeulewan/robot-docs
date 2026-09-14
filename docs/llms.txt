@@ -39,8 +39,14 @@
 
 - [Tailscale Setup](infrastructure/networking/tailscale.md): Tailscale VPN ACL policy, peer relay setup, connection priority.
 - [Field Router](infrastructure/networking/field-router.md): GL.iNet GL-MT3000 TMU WPA2-Enterprise uplink, 192.168.8.0/24 field LAN, Tailscale, WebFinder, and recovery commands.
+- [Vicon LAN](infrastructure/networking/vicon-lan.md): Vicon camera LAN, physical Windows Nexus host, D-Link switch, jeff-xi capture path, and secret storage boundaries.
 - [NAT Troubleshooting](infrastructure/networking/nat.md): NAT concepts (EIM/EDM, EIF/EDF), CGNAT, STUN, UPnP, troubleshooting commands.
 - [Network Topology](infrastructure/networking/topology.md): TMU field router, Toronto/Kingston network layout, Tailscale devices, throughput benchmarks.
+- [Manraj Handoff](getting-started/manraj-handoff.md): Current operator handoff for G1 safety state, lab access, Vicon, Quest teleoperation, GEAR-SONIC, and Isaac Lab.
+- [Meta Quest 3 Teleoperation](simulation/unitree/quest-3-teleoperation.md): Working NVIDIA Isaac Teleop and CloudXR simulation route, wheelchair scene, legacy Vuer path, and gated real-robot plan.
+- [GEAR-SONIC](simulation/unitree/gear-sonic.md): Whole-body controller architecture, MuJoCo launch, local Vicon adapters, dirty-repo warning, and physical deployment gate.
+- [Dex3 ACT](simulation/unitree/dex3-act.md): LeRobot ACT manipulation result, validated unified-policy block stack, and dataset path.
+- [Windows Isaac Lab](simulation/unitree/windows-isaac-lab.md): Native Windows Unitree RL Lab installation on the Vicon RTX 4060 host and WSL limitations.
 
 ### Commands
 

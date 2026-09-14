@@ -9,7 +9,7 @@ hide:
 Robotics simulation and perception stack for the **Unitree G1** humanoid robot using **NVIDIA Isaac Sim**, **Isaac ROS**, and an **RTX 3090 workstation**.
 
 <video controls autoplay muted loop style="width: 60%; border-radius: 8px; margin: 1em auto; display: block;">
-  <source src="../assets/demo.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/demo.mp4" type="video/mp4">
 </video>
 <p style="text-align: center; opacity: 0.7; font-size: 0.85em;">Driving the Carter robot through the warehouse with lidar visualization in Foxglove Studio</p>
 
@@ -118,6 +118,12 @@ block-beta
 Each major component has its own section with setup instructions, configuration details, and troubleshooting:
 
 <div class="grid cards" markdown>
+
+-   :material-account-hard-hat:{ .lg .middle } **[Manraj Handoff](manraj-handoff.md)**
+
+    ---
+
+    Current robot gate, lab access, Vicon, Quest teleoperation, GEAR-SONIC, and Isaac Lab entry points
 
 -   :material-cube-outline:{ .lg .middle } **[Simulation](../simulation/index.md)**
 

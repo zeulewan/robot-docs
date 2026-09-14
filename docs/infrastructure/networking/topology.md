@@ -34,6 +34,29 @@ See [Field Router](field-router.md) for setup, recovery, and WebFinder details.
 !!! warning "Main robot power switch"
     `Switch 00101614` is not a random lab accessory. It is the main robot power switch. Treat `switch.switch_00101614` as a power-control command and do not toggle it while robot software is running unless intentionally powering the robot on/off.
 
+### Manraj Local SSH Access
+
+Manraj's Windows laptop (`MANIBOB`) was provisioned for local-network SSH on
+2026-08-27. It is not enrolled in Zeul's tailnet. The public key fingerprint is
+`SHA256:HirgBqvYEsLkRKRJ/MScUqCc9fM5NqQMpbahP/1Oue0`.
+
+| Target | Local SSH endpoint | Account and privilege |
+|---|---|---|
+| jeff-xi | `manraj@192.168.8.241` | `sudo` member |
+| Field router | `root@192.168.8.1` | OpenWrt root, key only |
+| Robot router | `root@192.168.8.190` | OpenWrt root, key only |
+| Robot Jetson | `manraj@192.168.123.164` through `192.168.8.190` | `sudo` member |
+| Vicon Windows | `manraj@192.168.8.132` | Windows Administrator |
+
+The private key stays on `MANIBOB`. The initial account password and onboarding
+record are stored outside the repository in
+the private robot infrastructure secrets file provided separately.
+
+For remote access, Manraj's separate tailnet contains only his laptop
+(`MANIBOB`, `100.94.97.30`) and Vicon Windows (`100.84.179.109`). The Vicon host
+is used as an SSH jump host to the local lab targets; it does not advertise the
+lab subnet or act as an exit node.
+
 ---
 
 ## Locations

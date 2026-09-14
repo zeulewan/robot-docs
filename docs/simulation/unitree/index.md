@@ -2,7 +2,7 @@
 
 Unitree repos and tools for simulating, training, validating, and eventually deploying G1 policies.
 
-**Guides:** [Developer Workflow](developer-workflow.md) · [RL Training Guide](rl-training-guide.md) · [Policy Experiments](policy-experiments/index.md) · [TensorBoard - Training Monitoring](tensorboard.md) · [Sim-to-Real Deploy](deploy.md) · [Operator Tools](../../infrastructure/operator-tools.md)
+**Guides:** [Manraj Handoff](../../getting-started/manraj-handoff.md) · [Developer Workflow](developer-workflow.md) · [Quest 3 Teleoperation](quest-3-teleoperation.md) · [GEAR-SONIC](gear-sonic.md) · [Dex3 ACT](dex3-act.md) · [Windows Isaac Lab](windows-isaac-lab.md) · [RL Training Guide](rl-training-guide.md) · [Policy Experiments](policy-experiments/index.md) · [TensorBoard](tensorboard.md) · [Sim-to-Real Deploy](deploy.md) · [Operator Tools](../../infrastructure/operator-tools.md)
 
 ## Repo Overview
 
@@ -16,6 +16,8 @@ Unitree repos and tools for simulating, training, validating, and eventually dep
 | **unitree_sdk2 / unitree_sdk2_python** | Real robot C++/Python control SDKs over Unitree DDS/CycloneDDS. | Physical robot control path. |
 | **unitree_ros2** | ROS 2 message/package layer for Unitree DDS topics. | ROS 2 integration with real or simulated Unitree DDS topics. |
 | **xr_teleoperate / unitree_lerobot** | XR teleoperation and imitation-learning/data workflows. | Data collection and downstream learning for manipulation. |
+| **GR00T-WholeBodyControl / GEAR-SONIC** | NVIDIA whole-body motion tracking, planning, and deployment stack. | MuJoCo whole-body control plus local Vicon-to-SONIC experiments. |
+| **IsaacLab-current / Isaac Teleop** | Current Isaac Lab development stack with OpenXR and CloudXR. | Working immersive Quest 3 simulation teleoperation. |
 
 ### How they relate
 

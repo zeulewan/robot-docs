@@ -233,8 +233,8 @@ route -n get 192.168.123.164
 # Wireless-only checks
 ping -c 2 192.168.123.1
 ping -c 2 192.168.123.164
-ssh root@192.168.123.1      # WG827, password: ***REMOVED***
-ssh unitree@192.168.123.164 # Jetson, password: ***REMOVED***
+ssh root@192.168.123.1      # WG827; credentials are private
+ssh unitree@192.168.123.164 # Jetson; credentials are private
 ```
 
 Expected route:

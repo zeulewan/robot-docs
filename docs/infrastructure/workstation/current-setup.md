@@ -1,8 +1,23 @@
 # Current Setup
 
-Accurate snapshot of the workstation's Isaac Sim / ROS 2 / IsaacLab stack (February 2026).
+Workstation simulation environments. The original Isaac Sim 5.1 and ROS 2 stack
+below remains the stable perception environment; Quest teleoperation uses a
+newer, separate Isaac Lab checkout.
 
-## System
+## Environment Matrix
+
+Verified 2026-09-14:
+
+| Workload | Location | Key versions | Notes |
+|---|---|---|---|
+| Stable perception and Unitree RL | `~/miniconda3/envs/isaaclab`, `~/IsaacLab` | Isaac Sim 5.1, Isaac Lab 2.3.2 | Existing Carter, ROS 2, and Unitree RL documentation below |
+| Quest / CloudXR teleoperation | `/home/zeul/IsaacLab-current/.venv` | Isaac Sim 6.0.1.0, Isaac Lab 18.0.1, Isaac Lab Teleop 0.8.0, PyTorch 2.11.0+cu128 | Detached commit `d508d9587`; local `xr_anchor_manager.py` and lockfile changes must be preserved |
+| GEAR-SONIC playback | `/home/zeul/GIT/GR00T-WholeBodyControl/.venv_sim` | MuJoCo plus released SONIC ONNX stack | Repository has substantial local changes; do not update blindly |
+
+The workstation has an RTX 3090 with 24 GB VRAM. No Isaac, CloudXR,
+GEAR-SONIC, or training process was running during the September 14 check.
+
+## Stable 5.1 System
 
 | Component | Value |
 |-----------|-------|

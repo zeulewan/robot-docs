@@ -8,6 +8,15 @@ The current auto-loop entrypoint for `codex-autoresearch` is documented in the [
 
 ## Current Status
 
+<video controls muted loop style="width: 100%; max-width: 960px; display: block; margin: 1em auto;">
+  <source src="/robot-docs/assets/g1-wheelchair-model-13300-single-env-clean-follow.mp4" type="video/mp4">
+</video>
+
+The video is the preserved `model_13300.pt` hard-attachment visual reference.
+It demonstrates the best known walking-with-chair behavior from this branch, not
+a completed sim-to-real policy. Training is currently paused while the contact
+model and moving-chair curriculum are reconsidered.
+
 | Item | Value |
 |---|---|
 | Active training task | Paused after Phase 1D5 visual/contact diagnosis |
@@ -32,6 +41,44 @@ The previous soft-attachment run was stopped at `model_15900.pt` and used as the
 Current status: the fixed-chair standing curriculum advanced through Phase 1D4. The latest stable checkpoint is `model_3349.pt`, trained with the wheelchair root fixed, hard hand-handle attachment, no forward push objective, and individual per-axis handle-force penalties. A May 24 playback probe loaded this policy into the Phase 1E free-chair task, where the chair is ground-locked but free in X/Y/yaw. The checkpoint loads, but it does not hold the free chair still: with zero command the chair drifts/backward and yaws. Treat `model_3349.pt` as a good fixed-chair standing/load-reduction policy, not as a free-chair hold policy. The May 25 pose-tethered bridge is paused: a no-collision release video looked catastrophic because the robot visually interpenetrated the chair, and a collidable rerun confirmed large invalid chair contacts immediately.
 
 Current plan correction: do not treat the hand attachment itself as the failed mechanism. The older hard-attach branch worked, and the fixed-chair branch also produced stable standing. The next release attempt should train under moving-chair dynamics directly, likely with a controlled damping/release curriculum, instead of assuming fixed-chair standing transfers cleanly to the free chair.
+
+## August 24 CC0 Articulated Chair Candidate
+
+A separate articulated chair was added to `unitree_rl_lab` from Poly Haven's
+CC0 `Wheelchair 01` model. It is a candidate replacement for the older Free3D
+chair; the existing training-task configuration and checkpoints have not been
+switched to it.
+
+![Poly Haven wheelchair running in Isaac Sim](/robot-docs/assets/polyhaven-wheelchair-isaac-preview.png)
+
+| Item | Value |
+|---|---|
+| Source | `https://polyhaven.com/a/wheelchair_01`, CC0, by Garreth Dean |
+| Asset config | `POLY_HAVEN_WHEELCHAIR_CFG` |
+| URDF | `assets/objects/wheelchair/polyhaven_wheelchair_01/urdf/polyhaven_wheelchair_01.urdf` |
+| Importer | `scripts/assets/import_polyhaven_wheelchair.py` |
+| Diagnostic | `scripts/diagnostics/polyhaven_wheelchair_check.py` |
+| Articulation | Free base, two rear-wheel joints, two caster-yaw joints, and two front-wheel joints |
+| Contact contract | Preserves `base_link`, left/right wheel bodies, and `left_handle_frame` / `right_handle_frame` |
+
+The detailed source mesh is split into moving visual groups, while collisions
+are stable URDF primitives. The caster yaw defaults are rotated by 180 degrees
+so the wheel axles trail the swivel axes when the chair moves forward.
+
+Chair-only validation used a constant world-X force with no robot in the scene.
+A `12 N` push over `360` steps at `120 Hz` moved the chair `0.2981 m` forward,
+with `0.0016 m` lateral drift and `0.0059 rad` yaw. The interactive `8 N`,
+`480`-step cycle repeated at `0.2624 m` forward, `0.0014 m` lateral drift, and
+`0.0053 rad` yaw. Rear and front wheel joint positions changed in both tests.
+
+```bash
+conda activate isaaclab
+python scripts/diagnostics/polyhaven_wheelchair_check.py --headless
+
+# Repeating desktop preview
+python scripts/diagnostics/polyhaven_wheelchair_check.py \
+  --interactive --steps 480 --force 8
+```
 
 Resume rule to keep straight: use full RSL-RL continuation only when continuing the same task/checkpoint lineage. For this fixed-chair standing continuation, the command intentionally uses `--resume --checkpoint <model_350.pt>` without `--load_model_only`, without `--reset_critic`, and without a new `--policy_std`. Actor warm-start mode remains appropriate when changing task lineage: `--resume --checkpoint <model.pt> --load_model_only --reset_critic --policy_std <value>`.
 

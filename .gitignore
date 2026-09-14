@@ -1,5 +1,7 @@
 site/
 .venv/
+.secrets/
+.private/
 __pycache__/
 *.pyc
 .cache/

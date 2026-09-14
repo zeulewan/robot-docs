@@ -1,6 +1,14 @@
 # Isaac Sim & Isaac Lab
 
-Isaac Sim 5.1 and Isaac Lab setup, ROS 2 bridge, and troubleshooting.
+Isaac Sim and Isaac Lab setup, ROS 2 bridge, and troubleshooting. The workstation
+currently keeps two environments: stable Isaac Sim 5.1 / Isaac Lab 2.3.2 for the
+existing perception and Unitree RL workflows, and `/home/zeul/IsaacLab-current`
+with Isaac Sim 6.0.1.0 / Isaac Lab 18.0.1 for Quest 3 teleoperation. Do not mix
+their Python environments or lockfiles.
+
+See [Meta Quest 3 Teleoperation](../unitree/quest-3-teleoperation.md) for the
+newer OpenXR/CloudXR launch and [Workstation Current Setup](../../infrastructure/workstation/current-setup.md)
+for the environment matrix.
 
 ## Current Installation
 

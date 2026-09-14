@@ -127,7 +127,7 @@ sudo ifconfig en13 192.168.123.100 netmask 255.255.255.0 up
 4. SSH into the Jetson:
 ```bash
 ssh unitree@192.168.123.164
-# password: ***REMOVED***
+# password is stored in the private infrastructure secrets file
 ```
 
 !!! warning
@@ -265,7 +265,7 @@ wmm_enabled=1
 macaddr_acl=0
 auth_algs=1
 wpa=2
-wpa_passphrase=***REMOVED***
+wpa_passphrase=<from-private-secrets-file>
 wpa_key_mgmt=WPA-PSK
 rsn_pairwise=CCMP
 ieee80211n=1
@@ -290,7 +290,7 @@ sudo dnsmasq --interface=br0 --bind-interfaces \
 ### iPad Connection
 
 - **SSID:** UnitreeG1-Dev
-- **Password:** ***REMOVED***
+- **Password:** stored in the private infrastructure secrets file
 - iPad gets IP in 192.168.123.200-250 range, same L2 subnet as the robot
 - Uses a different SSID than the locomotion computer's "UnitreeG1" to avoid confusion
 
@@ -324,7 +324,7 @@ sudo bash -c 'echo nameserver 8.8.8.8 > /etc/resolv.conf'
 
 ```bash
 # SSH into router first
-ssh root@192.168.123.1  # password: ***REMOVED***
+ssh root@192.168.123.1  # credentials are private
 
 # Add default route via Mac
 ip route add default via 192.168.123.100
@@ -347,7 +347,7 @@ This gives internet to the WG827 itself and all WiFi clients connected to the le
 | Issue | Details |
 |-------|---------|
 | SSH banner timeout (FIXED) | Jetson sshd hangs 60-90s on reverse DNS lookup. Fixed by adding `UseDNS no` to `/etc/ssh/sshd_config`. Persists across reboots. |
-| WG827 router password (RESOLVED) | LuCI web UI at http://192.168.123.1 — Username: `root`, Password: `***REMOVED***` (zero, not letter O). SSH on port 22 with same credentials. |
+| WG827 router access (RESOLVED) | LuCI web UI at http://192.168.123.1 and SSH on port 22 work; credentials are in the private infrastructure secrets file. |
 | WG827 is optional | The WG827 is an add-on by Indro Robotics. The G1 has an internal switch connecting neck ports to all internal computers. Direct connection to neck port 4/5 works without the WG827. |
 | Wi-Fi provisioning | App sends WiFi credentials to RK3588's wlan0 via Bluetooth. Currently fails ("Internet Disconnected"). May require Unitree cloud registration. STA-L (local) mode via WG827 router is an untested workaround. |
 | Video feed (WebRTC) | Unitree Explore WebRTC is broken, but direct Jetson `video_hub_pc4` H.264 multicast works when bridged over SSH. See [Unitree Explore App](app.md). |

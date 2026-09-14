@@ -10,7 +10,7 @@ I trained a locomotion policy for the Unitree G1 humanoid using reinforcement le
 
 <figure>
   <video controls autoplay muted loop style="width: 100%; border-radius: 8px;">
-    <source src="/assets/g1-walking.mp4" type="video/mp4">
+    <source src="/robot-docs/assets/g1-walking.mp4" type="video/mp4">
   </video>
   <figcaption>100 G1 robots walking in parallel using the trained policy. 4,096 were training simultaneously in the background.</figcaption>
 </figure>

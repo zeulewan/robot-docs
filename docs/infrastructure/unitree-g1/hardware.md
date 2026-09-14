@@ -34,13 +34,13 @@ The lab iDevices `Switch 00101614` is used as the main robot power switch. It is
 | Locomotion Computer (RK3588) | 192.168.123.161 (eth0) | Rockchip RK3588 (8-core ARM, 8GB RAM, 32GB eMMC). Runs Unitree locomotion controller, WebRTC bridge, network manager, and all proprietary Unitree services. Has integrated WiFi 6 (wlan0 STA + wlan1 AP at 192.168.12.1, SSID "UnitreeG1") and Bluetooth 5.2 (for app pairing). Not open to user (no SSH). |
 | Development Computer (Jetson Orin NX) | 192.168.123.164 | User development PC. Ubuntu 20.04, aarch64. |
 | Livox Mid-360 Lidar | 192.168.123.20 | 3D LIDAR for mapping and obstacle detection |
-| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides optional WiFi uplink/AP and optional 4G/5G. SSH/LuCI: root / ***REMOVED*** |
+| ZBT WG827 Router | 192.168.123.1 | OpenWrt router added by Indro Robotics (velcroed to back). Provides optional Wi-Fi uplink/AP and optional 4G/5G. Credentials are in the private infrastructure secrets file. |
 
 All boards are connected via an **internal L2 switch** inside the G1 on the 192.168.123.0/24 subnet. Neck ports 4/5 connect directly to this internal switch. The WG827 router is an add-on plugged into the same switch, not the core network bridge.
 
 ### Jetson Orin NX Details
 
-- **SSH:** `unitree@192.168.123.164` / password: `***REMOVED***`
+- **SSH:** `unitree@192.168.123.164`; credentials are in the private infrastructure secrets file
 - **OS:** Ubuntu 20.04.5 LTS, Linux 5.10.104-tegra, aarch64
 - **Wi-Fi:** Realtek wlan0 (disabled, radio off). Supports AP mode via hostapd only (NOT nmcli), but not needed since the locomotion computer has a built-in AP.
 - **Bluetooth:** Realtek hci0, named "ubuntu" (separate from the locomotion computer's Bluetooth)
@@ -63,13 +63,13 @@ All boards are connected via an **internal L2 switch** inside the G1 on the 192.
 The WG827 is **not required** for basic ethernet connectivity. The G1 has an internal L2 switch connecting neck ports (4/5) directly to all internal computers. The WG827 is an add-on for WiFi, plugged into the same switch.
 
 !!! success "Credentials"
-    Web UI (LuCI) at `http://192.168.123.1` — Username: `root`, Password: `***REMOVED***` (zero, not letter O). SSH also open on port 22 with same credentials.
+    Web UI (LuCI) at `http://192.168.123.1`. SSH is also open on port 22. Credentials are in the private infrastructure secrets file.
 
 **WiFi / TMU uplink:**
 
 - The radio is 2.4GHz only and single-radio.
 - Current verified mode disables the local AP and uses `wlan0` as a client of the GL.iNet 2.4 GHz AP (`GL-MT3000-8b4`).
-- Legacy AP mode used SSID `UnitreeRouter`, password `***REMOVED***`, bridged to `br-lan` so clients joined 192.168.123.0/24.
+- Legacy AP mode used SSID `UnitreeRouter`, bridged to `br-lan` so clients joined 192.168.123.0/24. Its password is private.
 - AP+STA on the same radio failed on GoldenOrb, so do not rely on simultaneous uplink and downlink Wi-Fi. Use the GL.iNet AP for operator devices.
 
 !!! warning "wwan2 STA interface"

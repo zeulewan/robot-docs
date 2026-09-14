@@ -37,7 +37,7 @@ This is the chronological archive for the wheelchair-push work. It intentionally
 Quick demo requested on May 15, 2026: use the existing walking policy, put a wheelchair-like prop in front of the G1, and make the pair move forward.
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-push-demo.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-push-demo.mp4" type="video/mp4">
 </video>
 
 ## Setup
@@ -140,7 +140,7 @@ The committed URDF is the physics source of truth. It uses primitive collisions 
 Recorded on May 15, 2026 to inspect the actual wheelchair proxy the dynamic push policies train against: the primitive collision/articulation model from the URDF, without the detailed Free3D visual mesh.
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/active-manual-wheelchair-training-collision-two-orbits.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/active-manual-wheelchair-training-collision-two-orbits.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -169,7 +169,7 @@ TERM=xterm conda run -n isaaclab python scripts/assets/render_wheelchair_asset_t
 Recorded on May 15, 2026 to inspect the underlying downloaded wheelchair visual by itself, without the G1, contact helpers, or policy playback:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/free3d-active-wheelchair-asset-two-orbits.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/free3d-active-wheelchair-asset-two-orbits.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -234,7 +234,7 @@ Early metrics around iteration `7305` were stable enough to keep training: mean 
 Recorded on May 15, 2026 from the first handle-grip checkpoint:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-grip-model-7300.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-grip-model-7300.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -251,7 +251,7 @@ After recording the preview, training was resumed from `model_7300.pt` in tmux s
 Recorded on May 15, 2026 as the first explicit hand-to-handle visual attachment demo using the downloaded Free3D wheelchair mesh:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-stage1-hand-connectors.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-stage1-hand-connectors.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -330,7 +330,7 @@ Early restart status: the run loaded `left_rubber_hand` and `right_rubber_hand` 
 Recorded and emailed on May 15, 2026 from the rubber-hand-only restart:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-rubber-hands-model-18000-latest.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-rubber-hands-model-18000-latest.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -349,7 +349,7 @@ This clip was produced with the repeatable sender script, which finds the latest
 
 The script accepts overrides through environment variables such as `RUN_DIR`, `CHECKPOINT`, `EMAIL_TO`, `SEND_EMAIL=0`, `VIDEO_LENGTH`, and `VIDEO_CAMERA_ORBIT_DEG`. It intentionally does not store local keyring passwords or OAuth details.
 
-For newer runs, prefer the general workstation tool documented in [Operator Tools](../../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-clip):
+For newer runs, prefer the general workstation tool documented in [Operator Tools](../../../../infrastructure/operator-tools.md#isaac-playback-videos-isaac-clip):
 
 ```bash
 isaac-clip send unitree-wheelchair-attached
@@ -362,7 +362,7 @@ That tool stores project/view presets in `~/.config/isaac-clip/projects.toml`, a
 Recorded and emailed on May 15, 2026 from the same rubber-hand-only restart, using a `720` degree follow-camera orbit so the camera revolves around the policy twice:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-rubber-hands-model-18100-two-orbits.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-rubber-hands-model-18100-two-orbits.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -425,7 +425,7 @@ Run folder:
 Recorded and emailed on May 15, 2026 from the wrist-alignment restart, using the same `720` degree two-orbit follow camera as the previous comparison clip:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-wrist-alignment-model-18700-two-orbits.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-wrist-alignment-model-18700-two-orbits.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -491,7 +491,7 @@ The run loaded `model_10000.pt` and started at RSL-RL iteration `10000/15000`.
 Recorded and emailed on May 15, 2026 after the first dynamic-task checkpoint:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-dynamic-model-10100.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-dynamic-model-10100.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -525,7 +525,7 @@ TERM=xterm python scripts/rsl_rl/train.py \
 Recorded and emailed on May 15, 2026 after the hand-only contact fix had trained past `model_11800.pt`. Commit `955aac8 Hide wheelchair helper visuals` removed the URDF primitive wheel/caster/handle visuals from rendered output while keeping the collision geometry active for training.
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-dynamic-hidden-helpers-model-11800.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-dynamic-hidden-helpers-model-11800.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -555,7 +555,7 @@ TERM=xterm python scripts/rsl_rl/train.py \
 Recorded and emailed on May 15, 2026 from the completed hidden-helper dynamic run:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-dynamic-final-model-14999.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-dynamic-final-model-14999.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -607,7 +607,7 @@ Training tmux:
 Recorded and emailed on May 15, 2026 from the four-wheel ground-bias fine-tune:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-four-wheel-model-15200-forward-orbit.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-four-wheel-model-15200-forward-orbit.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -673,7 +673,7 @@ Training tmux:
 Recorded and emailed on May 15, 2026 from the straight-line bias run:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-straight-line-model-15800-fixed-chase.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-straight-line-model-15800-fixed-chase.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -723,7 +723,7 @@ Startup loaded `model_15700.pt`, showed the soft weights active, and had `bad_or
 Recorded and emailed on May 15, 2026 from the soft straight-line run:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-soft-straight-line-model-16000-fixed-chase.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-soft-straight-line-model-16000-fixed-chase.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -809,7 +809,7 @@ Early status: after the initial value/action-rate spike, the conservative run re
 Recorded and emailed on May 15, 2026 from the observed dynamic wheelchair-push run:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-observed-model-16200.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-observed-model-16200.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -850,7 +850,7 @@ Emailing note: videos can be sent with the local `gog send` CLI and the existing
 Recorded and emailed on May 15, 2026 from the observed dynamic wheelchair-push run with a two-revolution follow camera:
 
 <video controls muted loop style="width: 100%; border-radius: 8px; margin: 1em 0;">
-  <source src="../../../../assets/g1-wheelchair-observed-model-16300-two-orbits.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-observed-model-16300-two-orbits.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -938,7 +938,7 @@ The updated constants are in `source/unitree_rl_lab/unitree_rl_lab/tasks/locomot
 Short preview with the tuned startup geometry:
 
 <video controls width="100%">
-  <source src="../../../../assets/g1-wheelchair-attached-start-pose-tuned-model-20100-preview.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-attached-start-pose-tuned-model-20100-preview.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
@@ -1100,7 +1100,7 @@ The takeaway is that this is not just an arm-freezing mistake or an overly tight
 Passive ragdoll diagnostic recorded on May 16, 2026:
 
 <video controls preload="metadata" style="max-width: 100%;">
-  <source src="../../../../assets/g1-wheelchair-relaxed-attached-ragdoll-startup.mp4" type="video/mp4">
+  <source src="/robot-docs/assets/g1-wheelchair-relaxed-attached-ragdoll-startup.mp4" type="video/mp4">
 </video>
 
 | Item | Value |
