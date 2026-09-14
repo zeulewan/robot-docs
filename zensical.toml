@@ -7,6 +7,104 @@ repo_url = "https://github.com/zeulewan/robot-docs"
 repo_name = "zeulewan/robot-docs"
 copyright = "&copy; 2026 Zeul Mordasiewicz"
 
+nav = [
+    { "Home" = "index.md" },
+    { "Getting started" = [
+        { "Overview" = "getting-started/index.md" },
+        { "Manraj handoff" = "getting-started/manraj-handoff.md" },
+        { "System architecture" = "getting-started/architecture.md" },
+        { "Demo quick reference" = "getting-started/demo.md" },
+    ] },
+    { "Simulation" = [
+        { "Overview" = "simulation/index.md" },
+        { "Isaac Sim" = [
+            { "Setup and environments" = "simulation/isaac-sim/setup.md" },
+            { "ROS 2 topics" = "simulation/isaac-sim/topics.md" },
+        ] },
+        { "Isaac ROS" = [
+            { "Container" = "simulation/isaac-ros/container.md" },
+            { "Dockerfile" = "simulation/isaac-ros/dockerfile.md" },
+            { "Nodes" = [
+                { "Overview" = "simulation/isaac-ros/nodes/index.md" },
+                { "AprilTag" = "simulation/isaac-ros/nodes/apriltag.md" },
+                { "cuVSLAM" = "simulation/isaac-ros/nodes/cuvslam.md" },
+                { "Foxglove bridge" = "simulation/isaac-ros/nodes/foxglove-bridge.md" },
+                { "H.264 republisher" = "simulation/isaac-ros/nodes/h264-republisher.md" },
+                { "Nav2" = "simulation/isaac-ros/nodes/nav2.md" },
+                { "Keyboard teleop" = "simulation/isaac-ros/nodes/teleop-keyboard.md" },
+                { "Joystick teleop" = "simulation/isaac-ros/nodes/teleop-twist-joy.md" },
+            ] },
+        ] },
+        { "Unitree G1" = [
+            { "Stack overview" = "simulation/unitree/index.md" },
+            { "Quest 3 teleoperation" = "simulation/unitree/quest-3-teleoperation.md" },
+            { "GEAR-SONIC" = "simulation/unitree/gear-sonic.md" },
+            { "Dex3 ACT manipulation" = "simulation/unitree/dex3-act.md" },
+            { "Isaac Lab on Vicon Windows" = "simulation/unitree/windows-isaac-lab.md" },
+            { "Developer workflow" = "simulation/unitree/developer-workflow.md" },
+            { "RL training guide" = "simulation/unitree/rl-training-guide.md" },
+            { "Parameter tuning" = "simulation/unitree/parameter-tuning.md" },
+            { "TensorBoard" = "simulation/unitree/tensorboard.md" },
+            { "Sim-to-real deployment" = "simulation/unitree/deploy.md" },
+            { "Warehouse progress" = "simulation/unitree/weekly-progress-march-27.md" },
+            { "Policy experiments" = [
+                { "Overview" = "simulation/unitree/policy-experiments/index.md" },
+                { "Wheelchair pushing" = [
+                    { "Current status" = "simulation/unitree/policy-experiments/wheelchair-push/index.md" },
+                    { "Goal and acceptance criteria" = "simulation/unitree/policy-experiments/wheelchair-push/spec.md" },
+                    { "Experiment archive" = "simulation/unitree/policy-experiments/wheelchair-push/archive.md" },
+                ] },
+                { "Wheelchair demo" = "simulation/unitree/policy-experiments/wheelchair-push-demo.md" },
+                { "G1 running" = [
+                    { "Overview" = "simulation/unitree/policy-experiments/g1-running/index.md" },
+                    { "10 m/s sprint" = "simulation/unitree/policy-experiments/g1-running/sprint-10ms.md" },
+                    { "Running policy" = "simulation/unitree/policy-experiments/g1-running/running.md" },
+                    { "Fast-running policy" = "simulation/unitree/policy-experiments/g1-running/fast-running.md" },
+                ] },
+            ] },
+        ] },
+    ] },
+    { "Infrastructure" = [
+        { "Overview" = "infrastructure/index.md" },
+        { "Operator tools" = "infrastructure/operator-tools.md" },
+        { "Command reference" = "infrastructure/commands.md" },
+        { "Workstation" = [
+            { "Current setup" = "infrastructure/workstation/current-setup.md" },
+            { "Hardware" = "infrastructure/workstation/hardware.md" },
+            { "GPU and display" = "infrastructure/workstation/gpu-display.md" },
+            { "Sunshine and Moonlight" = "infrastructure/workstation/sunshine.md" },
+        ] },
+        { "Unitree G1 hardware" = [
+            { "Current state" = "infrastructure/unitree-g1/current-state.md" },
+            { "Hardware" = "infrastructure/unitree-g1/hardware.md" },
+            { "Networking" = "infrastructure/unitree-g1/networking.md" },
+            { "Unitree Explore app" = "infrastructure/unitree-g1/app.md" },
+        ] },
+        { "Networking" = [
+            { "Topology" = "infrastructure/networking/topology.md" },
+            { "Field router" = "infrastructure/networking/field-router.md" },
+            { "Tailscale" = "infrastructure/networking/tailscale.md" },
+            { "Vicon LAN" = "infrastructure/networking/vicon-lan.md" },
+            { "NAT troubleshooting" = "infrastructure/networking/nat.md" },
+        ] },
+    ] },
+    { "Project" = [
+        { "Overview" = "project/index.md" },
+        { "Progress" = "project/progress.md" },
+        { "About" = "project/about.md" },
+        { "Blog" = [
+            { "Overview" = "project/blog/index.md" },
+            { "G1 RL locomotion" = "project/blog/2026-03-13-g1-rl-locomotion-training-and-simulation.md" },
+            { "G1 first networking session" = "project/blog/2026-02-18-unitree-g1-first-session-networking.md" },
+            { "Nav2 autonomous navigation" = "project/blog/2026-02-11-nav2-autonomous-navigation.md" },
+            { "Teleop and docs restructure" = "project/blog/2026-02-09-teleop-and-docs-restructure.md" },
+            { "Isaac ROS full image" = "project/blog/2026-02-08-isaac-ros-full-image.md" },
+            { "ROS 2 bridge and headless sim" = "project/blog/2026-02-07-ros2-bridge-and-headless-sim.md" },
+            { "Ubuntu and Sunshine" = "project/blog/2026-02-06-ubuntu-upgrade-and-sunshine.md" },
+        ] },
+    ] },
+]
+
 
 [project.theme]
 language = "en"
@@ -84,6 +182,7 @@ link = "https://github.com/zeulewan/robot-docs"
 
 [project.markdown_extensions.toc]
 permalink = true
+toc_depth = 2
 
 [project.markdown_extensions.pymdownx.details]
 
